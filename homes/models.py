@@ -1,3 +1,2 @@
-from django.db import models
-
-# Create your models here.
+# Models are defined in:
+# app/infrastructure/db/models/
