@@ -46,12 +46,12 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = "accounts.User"
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
-    ],
-    "DEFAULT_PERMISSION_CLASSES": [
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
-    ],
+    ),
 }
 
 MIDDLEWARE = [
@@ -147,4 +147,10 @@ JAZZMIN_SETTINGS = {
     "site_brand": "HomeGuard System",
     "welcome_sign": "Welcome to HomeGuard Dashboard",
     "copyright": "HomeGuard",
+}
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }

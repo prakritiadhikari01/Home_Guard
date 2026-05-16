@@ -10,9 +10,10 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
 from .serializers import UserSerializer
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 class RegisterView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         data = request.data
 
@@ -34,6 +35,7 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         email = request.data.get("email")
         password = request.data.get("password")
@@ -50,8 +52,21 @@ class LoginView(APIView):
             "access": str(refresh.access_token),
         })
 
-
 class MeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        print("HEADERS:", request.META)
+        print("AUTH HEADER:", request.META.get("HTTP_AUTHORIZATION"))
+        return Response({"user": str(request.user)})
+
+class MeVieww(APIView):
+
+    def get(self, request):
+        print("USER:", request.user)
+        print("AUTH:", request.auth)
+        return Response({"user": str(request.user)})
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
