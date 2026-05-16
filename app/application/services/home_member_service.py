@@ -1,8 +1,11 @@
 from django.core.exceptions import PermissionDenied
 
-from app.infrastructure.db.models.home_member_model import HomeMember
-from app.infrastructure.db.repositories.home_repo import HomeRepository
 from app.domain.value_objects.role import Role
+from app.domain.services.access_policy import AccessPolicy
+
+from app.infrastructure.db.repositories.home_member_repo import (
+    HomeMemberRepository,
+)
 
 
 class HomeMemberService:
@@ -15,34 +18,103 @@ class HomeMemberService:
         role=Role.MEMBER.value,
     ):
 
-        # check if acting user is OWNER
-        membership = HomeMember.objects.filter(
-            home=home,
-            user=acting_user,
-        ).first()
+        acting_membership = (
+            HomeMemberRepository.get_membership(
+                home=home,
+                user=acting_user,
+            )
+        )
 
-        if not membership:
-            raise PermissionDenied("You are not a member of this home")
+        if not AccessPolicy.is_owner(acting_membership):
+            raise PermissionDenied(
+                "Only OWNER can add members"
+            )
 
-        if membership.role != Role.OWNER.value:
-            raise PermissionDenied("Only OWNER can add members")
-
-        # prevent duplicate members
-        existing_member = HomeMember.objects.filter(
-            home=home,
-            user=target_user,
-        ).exists()
+        existing_member = (
+            HomeMemberRepository.member_exists(
+                home=home,
+                user=target_user,
+            )
+        )
 
         if existing_member:
-            raise Exception("User already exists in home")
+            raise Exception(
+                "User already exists in home"
+            )
 
-        permissions = HomeMemberService.get_role_permissions(role)
+        permissions = (
+            HomeMemberService.get_role_permissions(role)
+        )
 
-        return HomeRepository.create_home_member(
+        return HomeMemberRepository.create_member(
             home=home,
             user=target_user,
             role=role,
             **permissions
+        )
+
+    @staticmethod
+    def remove_member(
+        acting_user,
+        home,
+        target_user,
+    ):
+
+        acting_membership = (
+            HomeMemberRepository.get_membership(
+                home=home,
+                user=acting_user,
+            )
+        )
+
+        if not AccessPolicy.is_owner(acting_membership):
+            raise PermissionDenied(
+                "Only OWNER can remove members"
+            )
+
+        return HomeMemberRepository.remove_member(
+            home=home,
+            user=target_user,
+        )
+
+    @staticmethod
+    def update_member_role(
+        acting_user,
+        home,
+        target_user,
+        role,
+    ):
+
+        acting_membership = (
+            HomeMemberRepository.get_membership(
+                home=home,
+                user=acting_user,
+            )
+        )
+
+        if not AccessPolicy.is_owner(acting_membership):
+            raise PermissionDenied(
+                "Only OWNER can update roles"
+            )
+
+        target_membership = (
+            HomeMemberRepository.get_membership(
+                home=home,
+                user=target_user,
+            )
+        )
+
+        if not target_membership:
+            raise Exception("Member not found")
+
+        permissions = (
+            HomeMemberService.get_role_permissions(role)
+        )
+
+        return HomeMemberRepository.update_role(
+            membership=target_membership,
+            role=role,
+            permissions=permissions,
         )
 
     @staticmethod

@@ -1,7 +1,6 @@
 from django.db import IntegrityError
 from django.shortcuts import render
 
-# Create your views here.
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -56,19 +55,10 @@ class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        print("HEADERS:", request.META)
-        print("AUTH HEADER:", request.META.get("HTTP_AUTHORIZATION"))
-        return Response({"user": str(request.user)})
-
-class MeVieww(APIView):
-
-    def get(self, request):
         print("USER:", request.user)
         print("AUTH:", request.auth)
-        return Response({"user": str(request.user)})
+        print("HEADERS:", request.META.get("HTTP_AUTHORIZATION"))
 
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+    

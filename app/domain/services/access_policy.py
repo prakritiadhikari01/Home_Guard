@@ -4,13 +4,26 @@ from app.domain.value_objects.role import Role
 class AccessPolicy:
 
     @staticmethod
-    def can_manage_members(member):
-        return member.role in [Role.OWNER.value, Role.ADMIN.value]
+    def can_manage_members(membership):
+        if not membership:
+            return False
+
+        return membership.role in [
+            Role.OWNER.value,
+            Role.ADMIN.value,
+        ]
 
     @staticmethod
-    def can_control_devices(member):
-        return member.can_control_devices
+    def is_owner(membership):
+        if not membership:
+            return False
+
+        return membership.role == Role.OWNER.value
 
     @staticmethod
-    def can_unlock_door(member):
-        return member.can_unlock_door
+    def can_control_devices(membership):
+        return membership.can_control_devices
+
+    @staticmethod
+    def can_unlock_door(membership):
+        return membership.can_unlock_door
