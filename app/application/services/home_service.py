@@ -1,9 +1,10 @@
 from app.domain.value_objects.role import Role
 from app.infrastructure.db.repositories.home_repo import HomeRepository
-
+from django.db import transaction
 
 class HomeService:
 
+    @transaction.atomic
     @staticmethod
     def create_home(user, validated_data):
 

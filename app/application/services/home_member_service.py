@@ -1,15 +1,55 @@
 from django.core.exceptions import PermissionDenied
-
+from django.db import transaction
 from app.domain.value_objects.role import Role
 from app.domain.services.access_policy import AccessPolicy
 
 from app.infrastructure.db.repositories.home_member_repo import (
     HomeMemberRepository,
 )
-
+from rest_framework.exceptions import (
+    ValidationError,
+    NotFound,
+)
 
 class HomeMemberService:
+    ROLE_PERMISSIONS = {
+        Role.OWNER.value: {
+            "can_control_devices": True,
+            "can_manage_members": True,
+            "can_unlock_door": True,
+            "receive_alerts": True,
+        },
 
+        Role.ADMIN.value: {
+            "can_control_devices": True,
+            "can_manage_members": True,
+            "can_unlock_door": True,
+            "receive_alerts": True,
+        },
+
+        Role.MEMBER.value: {
+            "can_control_devices": False,
+            "can_manage_members": False,
+            "can_unlock_door": False,
+            "receive_alerts": True,
+        },
+
+        Role.GUEST.value: {
+            "can_control_devices": False,
+            "can_manage_members": False,
+            "can_unlock_door": False,
+            "receive_alerts": False,
+        },
+
+        Role.SECURITY.value: {
+            "can_control_devices": False,
+            "can_manage_members": False,
+            "can_unlock_door": True,
+            "receive_alerts": True,
+        },
+    }
+
+    @transaction.atomic
     @staticmethod
     def add_member(
         acting_user,
@@ -38,7 +78,7 @@ class HomeMemberService:
         )
 
         if existing_member:
-            raise Exception(
+            raise ValidationError(
                 "User already exists in home"
             )
 
@@ -53,6 +93,7 @@ class HomeMemberService:
             **permissions
         )
 
+    @transaction.atomic
     @staticmethod
     def remove_member(
         acting_user,
@@ -71,12 +112,27 @@ class HomeMemberService:
             raise PermissionDenied(
                 "Only OWNER can remove members"
             )
+        if acting_user == target_user:
+            raise ValidationError(
+            "Owner cannot remove themselves"
+            )
+
+        target_membership = (
+            HomeMemberRepository.get_membership(
+                home=home,
+                user=target_user,
+            )
+        )
+
+        if not target_membership:
+            raise NotFound("Member not found")
 
         return HomeMemberRepository.remove_member(
             home=home,
             user=target_user,
         )
 
+    @transaction.atomic
     @staticmethod
     def update_member_role(
         acting_user,
@@ -97,6 +153,17 @@ class HomeMemberService:
                 "Only OWNER can update roles"
             )
 
+        if role == Role.OWNER.value:
+            if role not in [
+                r.value for r in Role
+            ]:
+                raise ValidationError(
+                    "Invalid role"
+                )
+            raise ValidationError(
+                "Cannot assign OWNER role"
+            )
+        
         target_membership = (
             HomeMemberRepository.get_membership(
                 home=home,
@@ -105,8 +172,11 @@ class HomeMemberService:
         )
 
         if not target_membership:
-            raise Exception("Member not found")
-
+            raise NotFound("Member not found")
+        if target_membership.role == Role.OWNER.value:
+            raise ValidationError(
+                "Owner role cannot be modified"
+            )
         permissions = (
             HomeMemberService.get_role_permissions(role)
         )
@@ -119,26 +189,13 @@ class HomeMemberService:
 
     @staticmethod
     def get_role_permissions(role):
+        permissions = (
+            HomeMemberService.ROLE_PERMISSIONS.get(role)
+        )
 
-        if role == Role.OWNER.value:
-            return {
-                "can_control_devices": True,
-                "can_manage_members": True,
-                "can_unlock_door": True,
-                "receive_alerts": True,
-            }
+        if not permissions:
+            raise ValidationError(
+                "Invalid role permissions"
+            )
 
-        if role == Role.ADMIN.value:
-            return {
-                "can_control_devices": True,
-                "can_manage_members": True,
-                "can_unlock_door": True,
-                "receive_alerts": True,
-            }
-
-        return {
-            "can_control_devices": False,
-            "can_manage_members": False,
-            "can_unlock_door": False,
-            "receive_alerts": True,
-        }
+        return permissions

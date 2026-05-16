@@ -1,6 +1,5 @@
 from app.infrastructure.db.models.home_member_model import HomeMember
 
-
 class HomeMemberRepository:
 
     @staticmethod
@@ -23,9 +22,11 @@ class HomeMemberRepository:
 
     @staticmethod
     def get_home_members(home):
-        return HomeMember.objects.filter(
-            home=home
-        ).select_related("user")
+        return (
+            HomeMember.objects.filter(home=home)
+            .select_related("user")
+            .order_by("-joined_at")
+        )
 
     @staticmethod
     def remove_member(home, user):
@@ -34,10 +35,12 @@ class HomeMemberRepository:
             user=user,
         ).first()
 
-        if membership:
-            membership.delete()
+        if not membership:
+            return None
 
-        return membership
+        membership.delete()
+
+        return True
 
     @staticmethod
     def update_role(membership, role, permissions):

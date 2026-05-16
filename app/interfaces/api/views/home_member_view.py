@@ -1,4 +1,4 @@
-from rest_framework.views import APIView
+from rest_framework.views import APIView, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
@@ -11,6 +11,7 @@ from app.application.services.home_member_service import HomeMemberService
 from app.interfaces.api.serializers.home_member_serializer import (
     AddHomeMemberSerializer,
     HomeMemberListSerializer,
+    UpdateMemberRoleSerializer,
 )
 from app.infrastructure.db.repositories.home_member_repo import (
     HomeMemberRepository,
@@ -30,7 +31,8 @@ class AddHomeMemberView(APIView):
 
         home = get_object_or_404(Home, id=home_id)
 
-        target_user = User.objects.get(
+        target_user = get_object_or_404(
+            User,
             id=serializer.validated_data["user_id"]
         )
 
@@ -59,6 +61,16 @@ class ListHomeMembersView(APIView):
 
         home = get_object_or_404(Home, id=home_id)
 
+        membership = (
+            HomeMemberRepository.get_membership(
+                home=home,
+                user=request.user,
+            )
+        )
+        if not membership:
+            raise PermissionDenied(
+                "Access denied"
+        )
         members = (
             HomeMemberRepository.get_home_members(home)
         )
@@ -78,7 +90,10 @@ class RemoveHomeMemberView(APIView):
 
         home = get_object_or_404(Home, id=home_id)
 
-        target_user = User.objects.get(id=user_id)
+        target_user = get_object_or_404(
+            User,
+            id=user_id
+        )
 
         HomeMemberService.remove_member(
             acting_user=request.user,
@@ -95,12 +110,21 @@ class UpdateMemberRoleView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, home_id, user_id):
+        
+        serializer = UpdateMemberRoleSerializer(
+            data=request.data
+        )
 
-        role = request.data.get("role")
+        serializer.is_valid(raise_exception=True)
+
+        role = serializer.validated_data["role"]
 
         home = get_object_or_404(Home, id=home_id)
 
-        target_user = User.objects.get(id=user_id)
+        target_user = get_object_or_404(
+            User,
+                id=user_id
+        )
 
         member = (
             HomeMemberService.update_member_role(

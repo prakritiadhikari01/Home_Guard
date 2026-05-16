@@ -11,6 +11,11 @@ class AddHomeMemberSerializer(serializers.Serializer):
         default=Role.MEMBER.value,
     )
 
+class UpdateMemberRoleSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(
+        choices=Role.choices()
+    )
+ 
 class HomeMemberListSerializer(serializers.Serializer):
 
     id = serializers.UUIDField()
