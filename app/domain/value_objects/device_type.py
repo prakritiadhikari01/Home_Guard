@@ -1,0 +1,11 @@
+from enum import Enum
+
+
+class DeviceType(Enum):
+
+    CAMERA = "camera"
+    SMART_LOCK = "smart_lock"
+
+    @classmethod
+    def choices(cls):
+        return [(item.value, item.name) for item in cls]

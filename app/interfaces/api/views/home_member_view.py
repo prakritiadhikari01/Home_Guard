@@ -13,9 +13,11 @@ from app.interfaces.api.serializers.home_member_serializer import (
     HomeMemberListSerializer,
     UpdateMemberRoleSerializer,
 )
-from app.infrastructure.db.repositories.django_home_repository import (
-    HomeMemberRepository,
+
+from app.infrastructure.db.repositories.django_home_member_repository import (
+    DjangoHomeMemberRepository,
 )
+
 User = get_user_model()
 
 
@@ -61,19 +63,18 @@ class ListHomeMembersView(APIView):
 
         home = get_object_or_404(Home, id=home_id)
 
-        membership = (
-            HomeMemberRepository.get_membership(
-                home=home,
-                user=request.user,
-            )
+        member_repo = DjangoHomeMemberRepository()
+
+        membership = member_repo.get_membership(
+            home=home,
+            user=request.user,
         )
+
         if not membership:
             raise PermissionDenied(
                 "Access denied"
         )
-        members = (
-            HomeMemberRepository.get_home_members(home)
-        )
+        members = member_repo.get_home_members(home)
 
         serializer = HomeMemberListSerializer(
             members,

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "accounts.apps.AccountsConfig",
     "homes",
+    'devices',
 ]
 AUTH_USER_MODEL = "accounts.User"
 
