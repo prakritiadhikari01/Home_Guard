@@ -3,8 +3,8 @@ from django.db import transaction
 from app.domain.value_objects.role import Role
 from app.domain.services.access_policy import AccessPolicy
 
-from app.infrastructure.db.repositories.home_member_repo import (
-    HomeMemberRepository,
+from app.infrastructure.db.repositories.django_home_member_repository import (
+    DjangoHomeMemberRepository,
 )
 from rest_framework.exceptions import (
     ValidationError,
@@ -12,6 +12,9 @@ from rest_framework.exceptions import (
 )
 
 class HomeMemberService:
+    home_member_repository = (
+        DjangoHomeMemberRepository()
+    )
     ROLE_PERMISSIONS = {
         Role.OWNER.value: {
             "can_control_devices": True,
@@ -59,7 +62,7 @@ class HomeMemberService:
     ):
 
         acting_membership = (
-            HomeMemberRepository.get_membership(
+            HomeMemberService.home_member_repository.get_membership(
                 home=home,
                 user=acting_user,
             )
@@ -71,7 +74,7 @@ class HomeMemberService:
             )
 
         existing_member = (
-            HomeMemberRepository.member_exists(
+            HomeMemberService.home_member_repository.member_exists(
                 home=home,
                 user=target_user,
             )
@@ -86,7 +89,7 @@ class HomeMemberService:
             HomeMemberService.get_role_permissions(role)
         )
 
-        return HomeMemberRepository.create_member(
+        return HomeMemberService.home_member_repository.create_member(
             home=home,
             user=target_user,
             role=role,
@@ -102,7 +105,7 @@ class HomeMemberService:
     ):
 
         acting_membership = (
-            HomeMemberRepository.get_membership(
+            HomeMemberService.home_member_repository.get_membership(
                 home=home,
                 user=acting_user,
             )
@@ -118,7 +121,7 @@ class HomeMemberService:
             )
 
         target_membership = (
-            HomeMemberRepository.get_membership(
+            HomeMemberService.home_member_repository.get_membership(
                 home=home,
                 user=target_user,
             )
@@ -127,7 +130,7 @@ class HomeMemberService:
         if not target_membership:
             raise NotFound("Member not found")
 
-        return HomeMemberRepository.remove_member(
+        return HomeMemberService.home_member_repository.remove_member(
             home=home,
             user=target_user,
         )
@@ -142,7 +145,7 @@ class HomeMemberService:
     ):
 
         acting_membership = (
-            HomeMemberRepository.get_membership(
+            HomeMemberService.home_member_repository.get_membership(
                 home=home,
                 user=acting_user,
             )
@@ -165,7 +168,7 @@ class HomeMemberService:
             )
         
         target_membership = (
-            HomeMemberRepository.get_membership(
+            HomeMemberService.home_member_repository.get_membership(
                 home=home,
                 user=target_user,
             )
@@ -181,7 +184,7 @@ class HomeMemberService:
             HomeMemberService.get_role_permissions(role)
         )
 
-        return HomeMemberRepository.update_role(
+        return HomeMemberService.home_member_repository.update_role(
             membership=target_membership,
             role=role,
             permissions=permissions,

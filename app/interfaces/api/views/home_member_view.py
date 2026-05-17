@@ -13,7 +13,7 @@ from app.interfaces.api.serializers.home_member_serializer import (
     HomeMemberListSerializer,
     UpdateMemberRoleSerializer,
 )
-from app.infrastructure.db.repositories.home_member_repo import (
+from app.infrastructure.db.repositories.django_home_repository import (
     HomeMemberRepository,
 )
 User = get_user_model()
