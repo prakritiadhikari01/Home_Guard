@@ -1,4 +1,5 @@
 from django.urls import path
+from app.interfaces.api.views.event_views import EventIngestView
 
 from app.interfaces.api.views.home_views import (
     HomeCreateView,
@@ -52,4 +53,5 @@ urlpatterns = [
         "homes/<uuid:home_id>/locks/<uuid:lock_id>/unlock/",
         UnlockDoorView.as_view(),
     ),
+     path("events/ingest/", EventIngestView.as_view()),
 ]
