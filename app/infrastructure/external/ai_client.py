@@ -37,3 +37,24 @@ class AIClient:
                 "confidence": 0.0,
                 "type": "UNKNOWN"
             }
+        
+    @staticmethod
+    def extract_embedding(image_base64):
+
+        url = f"{AIClient.BASE_URL}/extract-embedding"
+
+        try:
+            response = requests.post(
+                url,
+                json={
+                    "image": image_base64
+                }
+            )
+
+            return response.json()
+
+        except requests.RequestException:
+            return {
+                "success": False,
+                "embedding": None
+            }

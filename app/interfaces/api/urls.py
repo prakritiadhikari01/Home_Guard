@@ -20,6 +20,11 @@ from app.interfaces.api.views.smart_lock_views import (
     UnlockDoorView,
 )
 
+from app.interfaces.api.views.face_profile_views import (
+    RegisterFaceView
+)
+from app.interfaces.api.views.face_save_view import FaceSaveView
+
 urlpatterns = [
     path("homes/", HomeCreateView.as_view()),
     path("my-homes/", UserHomesView.as_view()),
@@ -53,5 +58,10 @@ urlpatterns = [
         "homes/<uuid:home_id>/locks/<uuid:lock_id>/unlock/",
         UnlockDoorView.as_view(),
     ),
-     path("events/ingest/", EventIngestView.as_view()),
+    path(
+        "faces/register/",
+        RegisterFaceView.as_view()
+    ),
+     path("events/ingest/", EventIngestView.as_view()), 
+     path("faces/save/", FaceSaveView.as_view()),
 ]
