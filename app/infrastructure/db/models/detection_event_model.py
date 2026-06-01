@@ -1,5 +1,7 @@
 import uuid
 from django.db import models
+from app.infrastructure.db.models.face_profile_model import FaceProfile
+from app.infrastructure.db.models.home_member_model import HomeMember
 from app.infrastructure.db.models.home_model import Home
 from app.infrastructure.db.models.device_model import Device
 from django.conf import settings
@@ -20,7 +22,20 @@ class DetectionEvent(models.Model):
     ]
     person_type = models.CharField(max_length=20, choices=PERSON_TYPE_CHOICES, default="UNKNOWN")
     # If recognized, link to User (optional, since face profiles not set up yet)
-    matched_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    matched_member = models.ForeignKey(
+        HomeMember,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="detection_events"
+    )
+    matched_face = models.ForeignKey(
+        FaceProfile,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="events"
+    )
     confidence_score = models.FloatField(default=0.0)
     # In Phase 4 we may skip actual image storage; placeholder field if needed later
     image_url = models.URLField(blank=True, null=True)
@@ -28,7 +43,7 @@ class DetectionEvent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        app_label = "devices"  # use existing app label (devices or homes)
+        app_label = "events"  # use existing app label (devices or homes)
     
     def __str__(self):
-        return f"Event {self.id} at {self.timestamp} in Home {self.home}"
+        return f"{self.person_type} | {self.home.name} | {self.timestamp}"

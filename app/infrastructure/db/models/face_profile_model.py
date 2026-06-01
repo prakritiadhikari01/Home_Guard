@@ -2,6 +2,7 @@ import uuid
 from django.db import models
 from django.conf import settings
 
+from app.infrastructure.db.models.home_member_model import HomeMember
 from app.infrastructure.db.models.home_model import Home
 
 
@@ -16,16 +17,12 @@ class FaceProfile(models.Model):
         editable=False
     )
 
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+    home_member = models.ForeignKey(
+        HomeMember,
         on_delete=models.CASCADE,
-        related_name="face_profiles"
-    )
-
-    home = models.ForeignKey(
-        Home,
-        on_delete=models.CASCADE,
-        related_name="face_profiles"
+        related_name="face_profiles",
+        null=True,
+        blank=True
     )
 
     label_name = models.CharField(max_length=255)
@@ -46,4 +43,7 @@ class FaceProfile(models.Model):
         app_label = "devices"
 
     def __str__(self):
-        return f"{self.label_name} ({self.user.email})"
+        if self.home_member:
+            return f"{self.label_name} ({self.home_member.user.email})"
+
+        return self.label_name

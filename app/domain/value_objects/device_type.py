@@ -5,6 +5,8 @@ class DeviceType(Enum):
 
     CAMERA = "camera"
     SMART_LOCK = "smart_lock"
+    SENSOR = "sensor"
+    ALARM = "alarm"
 
     @classmethod
     def choices(cls):

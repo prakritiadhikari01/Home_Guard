@@ -1,82 +1,52 @@
-from django.core.exceptions import PermissionDenied
+# app/application/services/smart_lock_service.py
+
+from django.utils import timezone
+
+from app.domain.services.access_policy import (
+    AccessPolicy
+)
+
+from app.infrastructure.db.models.smart_lock_model import (
+    SmartLock
+)
 
 from app.domain.value_objects.lock_status import (
-    LockStatus,
-)
-
-from app.infrastructure.db.repositories.django_home_member_repository import (
-    DjangoHomeMemberRepository,
-)
-
-from app.infrastructure.db.repositories.django_access_log_repository import (
-    DjangoAccessLogRepository,
+    LockStatus
 )
 
 
 class SmartLockService:
 
-    member_repository = DjangoHomeMemberRepository()
-
-    access_log_repository = (
-        DjangoAccessLogRepository()
-    )
-
     @staticmethod
-    def unlock_door(
-        acting_user,
-        home,
-        smart_lock,
+    def auto_unlock(
+        *,
+        member,
+        device
     ):
 
-        membership = (
-            SmartLockService.member_repository
-            .get_membership(
-                home=home,
-                user=acting_user,
-            )
+        membership = member
+
+        if not AccessPolicy.can_unlock_door(
+            membership
+        ):
+            return None
+
+        smart_lock = SmartLock.objects.get(
+            device=device
         )
-
-        if not membership:
-            raise PermissionDenied(
-                "Not home member"
-            )
-
-        if not membership.can_unlock_door:
-
-            (
-                SmartLockService.access_log_repository
-                .create_log(
-                    user=acting_user,
-                    device=smart_lock.device,
-                    action="unlock_attempt",
-                    result="failed",
-                    message="No permission",
-                )
-            )
-
-            raise PermissionDenied(
-                "No unlock permission"
-            )
 
         smart_lock.status = (
             LockStatus.UNLOCKED.value
         )
 
         smart_lock.last_unlocked_by = (
-            acting_user.email
+            membership
+        )
+
+        smart_lock.last_unlocked_at = (
+            timezone.now()
         )
 
         smart_lock.save()
-
-        (
-            SmartLockService.access_log_repository
-            .create_log(
-                user=acting_user,
-                device=smart_lock.device,
-                action="unlock_door",
-                result="success",
-                message="Door unlocked",
-            )
-        )
 
         return smart_lock

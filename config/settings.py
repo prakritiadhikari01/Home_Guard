@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "accounts.apps.AccountsConfig",
     "homes",
     'devices',
+    "events",
 ]
 AUTH_USER_MODEL = "accounts.User"
 
@@ -142,6 +143,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -149,11 +155,11 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 JAZZMIN_SETTINGS = {
-    "site_title": "HomeGuard Admin",
-    "site_header": "HomeGuard",
-    "site_brand": "HomeGuard System",
-    "welcome_sign": "Welcome to HomeGuard Dashboard",
-    "copyright": "HomeGuard",
+    "site_title": "HomeGuard Control Center",
+    "site_header": "HomeGuard AI Security",
+    "site_brand": "HomeGuard",
+    "welcome_sign": "System Online",
+    "copyright": "HomeGuard AI",
 }
 
 from datetime import timedelta

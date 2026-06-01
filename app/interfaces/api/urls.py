@@ -1,6 +1,7 @@
 from django.urls import path
-from app.interfaces.api.views.event_views import EventIngestView
+from app.interfaces.api.views.event_views import DetectionEventAPIView
 
+from app.interfaces.api.views.face_list_view import FaceListView
 from app.interfaces.api.views.home_views import (
     HomeCreateView,
     UserHomesView,
@@ -62,6 +63,11 @@ urlpatterns = [
         "faces/register/",
         RegisterFaceView.as_view()
     ),
-     path("events/ingest/", EventIngestView.as_view()), 
-     path("faces/save/", FaceSaveView.as_view()),
+    path("faces/save/", FaceSaveView.as_view()),
+    path("faces/all/", FaceListView.as_view()),
+    path(
+        "events/detect/",
+        DetectionEventAPIView.as_view(),
+        name="events-detect"
+    ),
 ]

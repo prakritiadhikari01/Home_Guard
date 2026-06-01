@@ -2,23 +2,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from django.contrib.auth import get_user_model
-
-from app.infrastructure.db.repositories.django_face_profile_repository import (
-    DjangoFaceProfileRepository
-)
-
-from app.infrastructure.db.models.home_model import Home
-
-
-User = get_user_model()
+from app.infrastructure.db.models.face_profile_model import FaceProfile
+from app.infrastructure.db.models.home_member_model import HomeMember
 
 
 class FaceSaveView(APIView):
 
     permission_classes = []
-
-    face_repo = DjangoFaceProfileRepository()
 
     def post(self, request):
 
@@ -26,7 +16,7 @@ class FaceSaveView(APIView):
 
             data = request.data
 
-            home_id = data.get("home_id")
+            home_member_id = data.get("home_member_id")
             label_name = data.get("label_name")
             embedding = data.get("embedding")
 
@@ -36,14 +26,12 @@ class FaceSaveView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            home = Home.objects.get(id=home_id)
+            member = HomeMember.objects.get(
+                id=home_member_id
+            )
 
-            # TEMP USER FOR DEVELOPMENT
-            user = User.objects.first()
-
-            face_profile = self.face_repo.create_face_profile(
-                user=user,
-                home=home,
+            face_profile = FaceProfile.objects.create(
+                home_member=member,
                 label_name=label_name,
                 embedding=embedding,
                 is_verified=True

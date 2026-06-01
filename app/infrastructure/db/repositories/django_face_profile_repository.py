@@ -9,8 +9,10 @@ class DjangoFaceProfileRepository:
 
     @staticmethod
     def get_home_profiles(home):
-        return FaceProfile.objects.filter(home=home)
+        return FaceProfile.objects.filter(
+            home_member__home=home
+        )
 
     @staticmethod
     def get_user_profiles(user):
-        return FaceProfile.objects.filter(user=user)
+        return FaceProfile.objects.filter(home_member__user=user)

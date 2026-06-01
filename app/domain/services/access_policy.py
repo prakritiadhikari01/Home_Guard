@@ -22,8 +22,12 @@ class AccessPolicy:
 
     @staticmethod
     def can_control_devices(membership):
+        if not membership:
+            return False
         return membership.can_control_devices
 
     @staticmethod
     def can_unlock_door(membership):
+        if not membership:
+            return False
         return membership.can_unlock_door

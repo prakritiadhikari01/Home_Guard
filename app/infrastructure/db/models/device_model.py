@@ -6,7 +6,6 @@ from app.infrastructure.db.models.home_model import Home
 
 from app.domain.value_objects.device_type import DeviceType
 from app.domain.value_objects.device_status import DeviceStatus
-from app.infrastructure.db.models.face_profile_model import FaceProfile
 
 class Device(models.Model):
 
