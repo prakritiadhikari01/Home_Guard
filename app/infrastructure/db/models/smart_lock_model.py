@@ -1,3 +1,4 @@
+# app/infrastructure/db/models/smart_lock_model.py
 import uuid
 
 from django.db import models

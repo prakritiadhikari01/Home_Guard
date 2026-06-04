@@ -1,3 +1,4 @@
+# app/interfaces/api/views/device_views.py
 from django.shortcuts import get_object_or_404
 
 from rest_framework.views import APIView
@@ -17,6 +18,7 @@ from app.interfaces.api.serializers.device_serializer import (
     DeviceCreateSerializer,
     DeviceListSerializer,
 )
+from app.infrastructure.external.ai_client import AIClient
 
 
 class RegisterDeviceView(APIView):

@@ -1,5 +1,6 @@
 from django.urls import path
-from app.interfaces.api.views.event_views import DetectionEventAPIView
+from app.interfaces.api.views.active_device_view import ActiveDeviceListView
+from app.interfaces.api.views.event_views import AIEventIngestView
 
 from app.interfaces.api.views.face_list_view import FaceListView
 from app.interfaces.api.views.home_views import (
@@ -65,9 +66,7 @@ urlpatterns = [
     ),
     path("faces/save/", FaceSaveView.as_view()),
     path("faces/all/", FaceListView.as_view()),
-    path(
-        "events/detect/",
-        DetectionEventAPIView.as_view(),
-        name="events-detect"
-    ),
+    path("devices/active/",ActiveDeviceListView.as_view(),),
+    path("events/ingest/", AIEventIngestView.as_view()),
+    
 ]

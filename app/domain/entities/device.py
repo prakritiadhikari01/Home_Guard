@@ -1,3 +1,4 @@
+# app/domain/entities/device.py
 class DeviceEntity:
 
     def __init__(

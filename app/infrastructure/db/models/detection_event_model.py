@@ -1,3 +1,4 @@
+#app/infrastructure/db/models/detection_event_model.py
 import uuid
 from django.db import models
 from app.infrastructure.db.models.face_profile_model import FaceProfile
@@ -35,6 +36,16 @@ class DetectionEvent(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="events"
+    )
+    snapshot_url = models.TextField(
+        null=True,
+        blank=True
+    )
+
+    camera_location = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True
     )
     confidence_score = models.FloatField(default=0.0)
     # In Phase 4 we may skip actual image storage; placeholder field if needed later

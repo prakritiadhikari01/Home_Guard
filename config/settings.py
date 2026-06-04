@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -168,3 +169,6 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 CORS_ALLOW_ALL_ORIGINS = True
+
+AI_SERVICE_URL = config("AI_SERVICE_URL")
+AI_TIMEOUT = config("AI_TIMEOUT", cast=int, default=15)

@@ -1,9 +1,11 @@
+# app/application/services/device_service.py
 from django.core.exceptions import PermissionDenied
 
 from app.domain.value_objects.device_type import (
     DeviceType,
 )
 
+from app.infrastructure.db.models.home_member_model import HomeMember
 from app.infrastructure.db.repositories.django_device_repository import (
     DjangoDeviceRepository,
 )
@@ -15,7 +17,7 @@ from app.infrastructure.db.repositories.django_home_member_repository import (
 from app.infrastructure.db.repositories.django_smart_lock_repository import (
     DjangoSmartLockRepository,
 )
-
+from app.infrastructure.external.ai_client import AIClient
 
 class DeviceService:
     def __init__(self, member_repository: AbstractHomeMemberRepository):
@@ -32,13 +34,7 @@ class DeviceService:
         validated_data,
     ):
 
-        membership = (
-            DeviceService.member_repository
-            .get_membership(
-                home=home,
-                user=acting_user,
-            )
-        )
+        membership = HomeMember.objects.filter(home=home, user=acting_user).first()
 
         if not membership:
             raise PermissionDenied(
@@ -58,17 +54,19 @@ class DeviceService:
             )
         )
 
-        if (
-            device.device_type
-            == DeviceType.SMART_LOCK.value
-        ):
-            (
-                DeviceService.smart_lock_repository
-                .create_lock(
-                    device=device,
-                )
-            )
+        # Register camera in AI engine if it's a camera
+        if device.device_type == DeviceType.CAMERA.value:
+            AIClient.register_camera({
+                "camera_id": device.id,
+                "home_id": home.id,
+                "stream_url": getattr(device, "stream_url", None),
+                "location": getattr(device, "location", None),
+            })
 
+        # Register smart lock if needed
+        if device.device_type == DeviceType.SMART_LOCK.value:
+            DeviceService.smart_lock_repository.create_lock(device=device)
+        
         return device
 
     @staticmethod

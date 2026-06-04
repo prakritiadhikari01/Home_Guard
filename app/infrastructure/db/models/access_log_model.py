@@ -1,3 +1,4 @@
+# app/infrastructure/db/models/access_log_model.py
 import uuid
 
 from django.db import models

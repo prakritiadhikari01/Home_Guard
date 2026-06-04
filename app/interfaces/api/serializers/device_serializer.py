@@ -1,3 +1,4 @@
+#app/interfaces/api/serializers/device_serializer.py
 from rest_framework import serializers
 
 from app.infrastructure.db.models.device_model import (
@@ -16,6 +17,7 @@ class DeviceCreateSerializer(serializers.ModelSerializer):
             "device_type",
             "ip_address",
             "location",
+            "stream_url",
         ]
 
 

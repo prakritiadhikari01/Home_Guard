@@ -1,3 +1,4 @@
+# app/infrastructure/db/repositories/django_device_repository.py
 from app.infrastructure.db.models.device_model import Device
 
 

@@ -1,3 +1,4 @@
+#app/infrastructure/db/models/face_profile_model.py
 import uuid
 from django.db import models
 from django.conf import settings

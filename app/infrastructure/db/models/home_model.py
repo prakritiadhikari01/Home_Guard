@@ -1,3 +1,4 @@
+#app/infrastructure/db/models/home_model.py
 import uuid
 
 from django.conf import settings

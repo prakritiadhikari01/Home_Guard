@@ -1,3 +1,4 @@
+#app/infrastructure/db/models/device_model.py
 import uuid
 
 from django.db import models
@@ -32,6 +33,10 @@ class Device(models.Model):
 
     ip_address = models.CharField(
         max_length=255,
+    )
+    stream_url = models.URLField(
+        null=True,
+        blank=True
     )
 
     location = models.CharField(

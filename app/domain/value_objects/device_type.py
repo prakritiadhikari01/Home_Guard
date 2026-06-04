@@ -1,3 +1,4 @@
+#app/domain/value_objects/device_type.py
 from enum import Enum
 
 

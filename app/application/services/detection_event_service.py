@@ -1,30 +1,12 @@
-# app/application/services/detection_event_service.py
-
 from django.utils import timezone
 
-from app.infrastructure.db.models.device_model import (
-    Device
-)
+from app.infrastructure.db.models.device_model import Device
+from app.infrastructure.db.models.home_member_model import HomeMember
+from app.infrastructure.db.models.face_profile_model import FaceProfile
+from app.infrastructure.db.models.detection_event_model import DetectionEvent
 
-from app.infrastructure.db.models.home_member_model import (
-    HomeMember
-)
-
-from app.infrastructure.db.models.face_profile_model import (
-    FaceProfile
-)
-
-from app.infrastructure.db.models.detection_event_model import (
-    DetectionEvent
-)
-
-from app.application.services.smart_lock_service import (
-    SmartLockService
-)
-
-from app.application.services.access_log_service import (
-    AccessLogService
-)
+from app.application.services.smart_lock_service import SmartLockService
+from app.application.services.access_log_service import AccessLogService
 
 
 class DetectionEventService:
@@ -36,7 +18,10 @@ class DetectionEventService:
             id=payload["device_id"]
         )
 
-        event_type = payload["event_type"]
+        person_type = payload.get(
+            "person_type",
+            "UNKNOWN"
+        )
 
         confidence_score = payload.get(
             "confidence_score",
@@ -46,45 +31,54 @@ class DetectionEventService:
         matched_member = None
         matched_face = None
 
-        if event_type == "KNOWN_FACE":
+        member_id = payload.get("member_id")
+        face_profile_id = payload.get("face_profile_id")
 
-            matched_member = (
-                HomeMember.objects.get(
-                    id=payload["member_id"]
+        if member_id:
+            try:
+                matched_member = HomeMember.objects.get(
+                    id=member_id
                 )
-            )
+            except HomeMember.DoesNotExist:
+                pass
 
-            matched_face = (
-                FaceProfile.objects.get(
-                    id=payload["face_profile_id"]
+        if face_profile_id:
+            try:
+                matched_face = FaceProfile.objects.get(
+                    id=face_profile_id
                 )
-            )
+            except FaceProfile.DoesNotExist:
+                pass
 
-        detection_event = (
-            DetectionEvent.objects.create(
-                home=device.home,
-                device=device,
-                person_type=(
-                    "KNOWN"
-                    if event_type == "KNOWN_FACE"
-                    else "UNKNOWN"
-                ),
-                matched_member=matched_member,
-                matched_face=matched_face,
-                confidence_score=confidence_score,
-                timestamp=timezone.now()
-            )
+        detection_event = DetectionEvent.objects.create(
+            home=device.home,
+            device=device,
+            person_type=person_type,
+            matched_member=matched_member,
+            matched_face=matched_face,
+            confidence_score=confidence_score,
+            image_url=payload.get("image_url"),
+            timestamp=payload.get(
+                "timestamp",
+                timezone.now()
+            ),
+            camera_location=device.location,
         )
 
         if matched_member:
+            try:
+                SmartLockService.auto_unlock(
+                    member=matched_member,
+                    device=device
+                )
+            except Exception:
+                pass
 
-            SmartLockService.auto_unlock(
-                member=matched_member,
-                device=device
+        try:
+            AccessLogService.create_ai_log(
+                detection_event=detection_event
             )
-
-        AccessLogService.create_ai_log(
-            detection_event=detection_event
-        )
+        except Exception:
+            pass
 
         return detection_event
