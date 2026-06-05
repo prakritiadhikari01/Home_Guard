@@ -53,19 +53,6 @@ class DeviceService:
                 **validated_data,
             )
         )
-
-        # Register camera in AI engine if it's a camera
-        if device.device_type == DeviceType.CAMERA.value:
-            AIClient.register_camera({
-                "camera_id": device.id,
-                "home_id": home.id,
-                "stream_url": getattr(device, "stream_url", None),
-                "location": getattr(device, "location", None),
-            })
-
-        # Register smart lock if needed
-        if device.device_type == DeviceType.SMART_LOCK.value:
-            DeviceService.smart_lock_repository.create_lock(device=device)
         
         return device
 

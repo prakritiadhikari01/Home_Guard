@@ -33,9 +33,13 @@ class ActiveDeviceListView(APIView):
                 {
                     "id": str(camera.id),
                     "name": camera.name,
-                    "home_id": str(camera.home.id),
+                    "home_id": str(
+                        camera.home.id
+                    ),
+                    "location": camera.location,
                     "stream_url": camera.stream_url,
-                    "location": camera.location
+                    "status": camera.status,
+                    "device_type": camera.device_type,
                 }
             )
 

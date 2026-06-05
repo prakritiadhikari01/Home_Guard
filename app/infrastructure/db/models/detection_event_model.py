@@ -41,7 +41,30 @@ class DetectionEvent(models.Model):
         null=True,
         blank=True
     )
+    event_type = models.CharField(
+        max_length=50,
+        default="PERSON_DETECTED"
+    )
 
+    event_summary = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    person_label = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True
+    )
+
+    duration_seconds = models.IntegerField(
+        default=0
+    )
+
+    metadata = models.JSONField(
+        default=dict,
+        blank=True
+    )
     camera_location = models.CharField(
         max_length=255,
         null=True,
