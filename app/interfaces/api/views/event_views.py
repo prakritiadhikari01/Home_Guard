@@ -1,6 +1,12 @@
+# app/interfaces/api/views/event_views.py
+
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from app.interfaces.api.serializers.event_serializers import (
+    EventIngestSerializer
+)
 
 from app.application.services.detection_event_service import (
     DetectionEventService
@@ -14,28 +20,29 @@ class AIEventIngestView(APIView):
 
     def post(self, request):
 
-        try:
+        serializer = (
+            EventIngestSerializer(
+                data=request.data
+            )
+        )
 
-            event = (
-                DetectionEventService.process_ai_detection(
-                    request.data
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        event = (
+            DetectionEventService
+            .process_ai_detection(
+                serializer.validated_data
+            )
+        )
+
+        return Response(
+            {
+                "status": "success",
+                "event_id": str(
+                    event.id
                 )
-            )
-
-            return Response(
-                {
-                    "status": "success",
-                    "event_id": str(event.id)
-                },
-                status=status.HTTP_201_CREATED
-            )
-
-        except Exception as e:
-
-            return Response(
-                {
-                    "status": "error",
-                    "message": str(e)
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            },
+            status=status.HTTP_201_CREATED
+        )

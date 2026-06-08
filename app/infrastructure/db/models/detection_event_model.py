@@ -1,28 +1,75 @@
-#app/infrastructure/db/models/detection_event_model.py
 import uuid
+
 from django.db import models
-from app.infrastructure.db.models.face_profile_model import FaceProfile
-from app.infrastructure.db.models.home_member_model import HomeMember
+
 from app.infrastructure.db.models.home_model import Home
 from app.infrastructure.db.models.device_model import Device
-from django.conf import settings
+from app.infrastructure.db.models.home_member_model import HomeMember
+from app.infrastructure.db.models.face_profile_model import FaceProfile
+
 
 class DetectionEvent(models.Model):
     """
-    Stores each camera/sensor event and AI results.
+    Stores all AI-generated events from cameras and sensors.
+    This model is designed for future timeline queries such as:
+
+    - Who appeared today?
+    - Show unknown visitors this week.
+    - When did Prakriti enter the living room?
+    - Door unlock history.
     """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    home = models.ForeignKey(Home, on_delete=models.CASCADE, related_name="events")
-    device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name="events")
-    # PersonType: KNOWN or UNKNOWN
+
     PERSON_TYPE_CHOICES = [
         ("KNOWN", "Known Person"),
         ("UNKNOWN", "Unknown Person"),
         ("INTRUDER", "Intruder"),
         ("VEHICLE", "Vehicle"),
     ]
-    person_type = models.CharField(max_length=20, choices=PERSON_TYPE_CHOICES, default="UNKNOWN")
-    # If recognized, link to User (optional, since face profiles not set up yet)
+
+    EVENT_TYPE_CHOICES = [
+        ("PERSON_DETECTED", "Person Detected"),
+        ("DOOR_UNLOCKED", "Door Unlocked"),
+        ("DOOR_LOCKED", "Door Locked"),
+        ("MOTION_DETECTED", "Motion Detected"),
+        ("VEHICLE_DETECTED", "Vehicle Detected"),
+    ]
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
+
+    home = models.ForeignKey(
+        Home,
+        on_delete=models.CASCADE,
+        related_name="events"
+    )
+
+    device = models.ForeignKey(
+        Device,
+        on_delete=models.CASCADE,
+        related_name="events"
+    )
+
+    event_type = models.CharField(
+        max_length=50,
+        choices=EVENT_TYPE_CHOICES,
+        default="PERSON_DETECTED"
+    )
+
+    person_type = models.CharField(
+        max_length=20,
+        choices=PERSON_TYPE_CHOICES,
+        default="UNKNOWN"
+    )
+
+    person_label = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True
+    )
+
     matched_member = models.ForeignKey(
         HomeMember,
         null=True,
@@ -30,6 +77,7 @@ class DetectionEvent(models.Model):
         on_delete=models.SET_NULL,
         related_name="detection_events"
     )
+
     matched_face = models.ForeignKey(
         FaceProfile,
         null=True,
@@ -37,27 +85,33 @@ class DetectionEvent(models.Model):
         on_delete=models.SET_NULL,
         related_name="events"
     )
+
+    confidence_score = models.FloatField(
+        default=0.0
+    )
+
+    camera_location = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True
+    )
+
+    image_url = models.URLField(
+        null=True,
+        blank=True
+    )
+
     snapshot_url = models.TextField(
         null=True,
         blank=True
     )
-    event_type = models.CharField(
-        max_length=50,
-        default="PERSON_DETECTED"
-    )
 
     event_summary = models.TextField(
-        blank=True,
-        null=True
+        null=True,
+        blank=True
     )
 
-    person_label = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True
-    )
-
-    duration_seconds = models.IntegerField(
+    duration_seconds = models.PositiveIntegerField(
         default=0
     )
 
@@ -65,19 +119,38 @@ class DetectionEvent(models.Model):
         default=dict,
         blank=True
     )
-    camera_location = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True
+
+    timestamp = models.DateTimeField()
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
     )
-    confidence_score = models.FloatField(default=0.0)
-    # In Phase 4 we may skip actual image storage; placeholder field if needed later
-    image_url = models.URLField(blank=True, null=True)
-    timestamp = models.DateTimeField()  # when the event occurred (from device)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        app_label = "events"  # use existing app label (devices or homes)
-    
+        app_label = "events"
+
+        ordering = [
+            "-timestamp"
+        ]
+
+        indexes = [
+            models.Index(
+                fields=["timestamp"]
+            ),
+            models.Index(
+                fields=["person_type"]
+            ),
+            models.Index(
+                fields=["event_type"]
+            ),
+            models.Index(
+                fields=["camera_location"]
+            ),
+        ]
+
     def __str__(self):
-        return f"{self.person_type} | {self.home.name} | {self.timestamp}"
+        return (
+            f"{self.event_type} | "
+            f"{self.person_type} | "
+            f"{self.timestamp}"
+        )
