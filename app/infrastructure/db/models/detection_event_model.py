@@ -95,7 +95,10 @@ class DetectionEvent(models.Model):
         null=True,
         blank=True
     )
-
+    thumbnail_url = models.URLField(
+        blank=True,
+        null=True
+    )
     image_url = models.URLField(
         null=True,
         blank=True

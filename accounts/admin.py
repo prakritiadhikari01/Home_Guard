@@ -8,7 +8,7 @@ from .models import User
 
 class CustomUserAdmin(UserAdmin):
     model = User
-
+    readonly_fields = ("created_at","last_login")
     list_display = (
         "email",
         "full_name",
