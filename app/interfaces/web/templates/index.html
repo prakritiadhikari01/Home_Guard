@@ -1,0 +1,191 @@
+#index.html
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HomeGuard – Sign In</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="bg-[#080e1a] min-h-screen flex">
+
+  <!-- LEFT PANEL -->
+  <div class="hidden lg:flex lg:w-[48%] flex-col justify-between p-10 relative overflow-hidden grid-bg">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div>
+        <div class="text-white font-bold tracking-widest text-sm">HOMEGUARD</div>
+        <div class="text-[#4a7fa5] text-[10px] tracking-widest">AI HOME SECURITY · V2.4</div>
+      </div>
+    </div>
+
+    <div class="space-y-8">
+      <div>
+        <p class="text-blue-400 text-xs tracking-widest mb-4">// SECURE ACCESS</p>
+        <h1 class="text-white text-4xl font-bold leading-tight">Intelligent surveillance,<br/>ambient protection.</h1>
+        <p class="text-slate-400 mt-4 text-sm leading-relaxed max-w-sm">Real-time AI detection across every camera. End-to-end encrypted feeds. Adaptive automations tuned to your household.</p>
+      </div>
+      <div class="flex gap-4">
+        <div class="stat-card"><div class="text-white font-bold text-lg">256-bit</div><div class="text-slate-500 text-[10px] tracking-widest mt-1">ENCRYPTION</div></div>
+        <div class="stat-card"><div class="text-white font-bold text-lg">99.98%</div><div class="text-slate-500 text-[10px] tracking-widest mt-1">UPTIME</div></div>
+        <div class="stat-card"><div class="text-white font-bold text-lg">&lt;120ms</div><div class="text-slate-500 text-[10px] tracking-widest mt-1">LIVE LATENCY</div></div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+      <span class="text-green-400 text-[10px] tracking-widest">ALL SYSTEMS OPERATIONAL</span>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="flex-1 flex items-center justify-center p-8 bg-[#0a1120]">
+    <div class="w-full max-w-sm space-y-6">
+      <div>
+        <h2 class="text-white text-3xl font-bold">Sign in</h2>
+        <p class="text-slate-400 text-sm mt-1">Access your HomeGuard control center.</p>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="text-slate-300 text-sm block mb-1">Email</label>
+          <input id="loginEmail" type="email" placeholder="you@home.com" class="auth-input"/>
+        </div>
+        <div>
+          <div class="flex justify-between mb-1">
+            <label class="text-slate-300 text-sm">Password</label>
+            <a href="#" class="text-blue-400 text-sm hover:underline">Forgot?</a>
+          </div>
+          <input id="loginPassword" type="password" placeholder="••••••••" class="auth-input"/>
+        </div>
+        <button
+            id="loginBtn"
+            onclick="completeSignIn()"
+            class="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-all duration-200 mt-2">
+            Sign in
+        </button>
+      </div>
+      <p class="text-slate-400 text-sm text-center">New here? <a href="{% url 'web:register' %}" class="text-blue-400 hover:underline">Create an account</a></p>
+    </div>
+  </div>
+  <script>
+
+// Redirect authenticated users
+window.addEventListener("DOMContentLoaded", () => {
+
+    const token = localStorage.getItem("access");
+
+    if (token) {
+        window.location.href = "{% url 'web:dashboard' %}";
+    }
+
+});
+
+async function completeSignIn() {
+
+    const btn = document.getElementById("loginBtn");
+
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+
+    // -----------------------------
+    // Validation
+    // -----------------------------
+
+    if (!email || !password) {
+        alert("Please enter your email and password.");
+        return;
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(email)) {
+        alert("Please enter a valid email address.");
+        return;
+    }
+
+    // -----------------------------
+    // Loading State
+    // -----------------------------
+
+    btn.disabled = true;
+    btn.innerText = "Signing in...";
+
+    try {
+
+        const response = await fetch("/api/auth/login/", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json",
+            },
+
+            body: JSON.stringify({
+                email,
+                password,
+            }),
+
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+
+            alert(data.error || "Invalid email or password.");
+
+            return;
+        }
+
+        // -----------------------------
+        // Save JWT
+        // -----------------------------
+
+        localStorage.setItem("access", data.access);
+        localStorage.setItem("refresh", data.refresh);
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        // -----------------------------
+        // Redirect
+        // -----------------------------
+
+        window.location.href = "{% url 'web:dashboard' %}";
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        alert("Unable to connect to the server.\nPlease try again.");
+
+    }
+
+    finally {
+
+        btn.disabled = false;
+        btn.innerText = "Sign in";
+
+    }
+
+}
+
+</script>
+<script>
+
+document.addEventListener("keypress", function(event) {
+
+    if (event.key === "Enter") {
+
+        completeSignIn();
+
+    }
+
+});
+
+</script>
+</body>
+</html>
