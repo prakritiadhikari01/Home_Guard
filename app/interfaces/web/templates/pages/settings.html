@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HomeGuard – Settings</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-content">
+    <div id="topbar"></div>
+    <div class="page-body">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+
+        <!-- Notifications -->
+        <div class="card p-6">
+          <div style="color:white;font-size:16px;font-weight:600;margin-bottom:18px;">Notifications</div>
+          <div class="toggle-wrap">
+            <div>
+              <div style="color:white;font-size:14px;">Push notifications</div>
+              <div style="color:#4a6080;font-size:12px;margin-top:2px;">Critical alerts on all devices</div>
+            </div>
+            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div>
+              <div style="color:white;font-size:14px;">Email digests</div>
+              <div style="color:#4a6080;font-size:12px;margin-top:2px;">Daily summary at 8 PM</div>
+            </div>
+            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div>
+              <div style="color:white;font-size:14px;">Family-wide notifications</div>
+              <div style="color:#4a6080;font-size:12px;margin-top:2px;">Notify all household members</div>
+            </div>
+            <label class="toggle"><input type="checkbox"/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div>
+              <div style="color:white;font-size:14px;">Emergency contacts</div>
+              <div style="color:#4a6080;font-size:12px;margin-top:2px;">Auto-dial on critical alerts</div>
+            </div>
+            <label class="toggle"><input type="checkbox"/><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+
+        <!-- AI Detection -->
+        <div class="card p-6">
+          <div style="color:white;font-size:16px;font-weight:600;margin-bottom:18px;">AI Detection</div>
+          <div class="toggle-wrap">
+            <div style="color:white;font-size:14px;">Human detection</div>
+            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div style="color:white;font-size:14px;">Animal detection</div>
+            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div style="color:white;font-size:14px;">Vehicle detection</div>
+            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div style="color:white;font-size:14px;">Motion detection</div>
+            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div style="color:white;font-size:14px;">AI summary digests</div>
+            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+
+        <!-- Automation Rules -->
+        <div class="card p-6">
+          <div style="color:white;font-size:16px;font-weight:600;margin-bottom:18px;">Automation Rules</div>
+          <div class="toggle-wrap">
+            <div style="color:white;font-size:14px;">Unknown detection → notify owner</div>
+            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div style="color:white;font-size:14px;">Repeated detection → escalate alert</div>
+            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div style="color:white;font-size:14px;">Known member entry → log only</div>
+            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div style="color:white;font-size:14px;">Animal detection → ignore</div>
+            <label class="toggle"><input type="checkbox"/><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+
+        <!-- Detection Sensitivity -->
+        <div class="card p-6">
+          <div style="color:white;font-size:16px;font-weight:600;margin-bottom:20px;">Detection Sensitivity</div>
+          <div style="margin-bottom:24px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+              <div style="color:white;font-size:14px;">Confidence threshold</div>
+              <div style="color:#3b82f6;font-size:13px;font-weight:600;" id="sensitivityVal">78%</div>
+            </div>
+            <input type="range" min="0" max="100" value="78" id="sensitivitySlider" oninput="document.getElementById('sensitivityVal').textContent=this.value+'%'"/>
+            <div style="color:#4a6080;font-size:12px;margin-top:10px;">Lower threshold = more alerts. Tune to your environment.</div>
+          </div>
+
+          <!-- Account section -->
+          <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:20px;">
+            <div style="color:white;font-size:15px;font-weight:600;margin-bottom:14px;">Account</div>
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+              <div style="width:48px;height:48px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:white;">PR</div>
+              <div>
+                <div style="color:white;font-size:14px;font-weight:600;">Alex Reyes</div>
+                <div style="color:#4a6080;font-size:12px;">alex@home.com · Owner</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;">
+              <button style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#8a9ab8;padding:9px;border-radius:8px;font-size:13px;cursor:pointer;">Edit Profile</button>
+              <button onclick="signOutUser()" style="flex:1;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;padding:9px;border-radius:8px;font-size:13px;cursor:pointer;">Sign Out</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Save Button -->
+      <div style="margin-top:20px;display:flex;justify-content:flex-end;">
+        <button onclick="saveSettings()" id="saveBtn" style="background:#3b82f6;color:white;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s;">
+          Save Settings
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/sidebar.js' %}"></script>
+<script>
+  document.getElementById('sidebar').innerHTML = renderSidebar('settings');
+  initHomeSwitcher();
+  document.getElementById('topbar').innerHTML = renderTopbar('Settings', 'Security control center & automation rules');
+
+  function signOutUser() {
+    localStorage.removeItem('hg_user_name');
+    localStorage.removeItem('hg_user_email');
+    localStorage.removeItem('hg_active_home');
+    window.location.href = '../index.html';
+  }
+
+  function saveSettings() {
+    const btn = document.getElementById('saveBtn');
+    btn.textContent = '✓ Saved';
+    btn.style.background = '#22c55e';
+    setTimeout(() => {
+      btn.textContent = 'Save Settings';
+      btn.style.background = '#3b82f6';
+    }, 2000);
+  }
+</script>
+</body>
+</html>

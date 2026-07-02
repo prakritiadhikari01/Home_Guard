@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HomeGuard – Smart Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-content">
+    <div id="topbar"></div>
+
+    <!-- Chat Area -->
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;padding:24px 28px 0;">
+
+      <!-- Messages -->
+      <div id="chatMessages" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:20px;padding-bottom:16px;">
+        <!-- Initial AI greeting -->
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <div class="chat-bubble-ai" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:4px 18px 18px 18px;padding:14px 18px;max-width:80%;">
+            Hello! I'm your HomeGuard AI assistant. Ask me anything about your home security — detected events, camera feeds, member activity, or alerts.
+          </div>
+        </div>
+      </div>
+
+      <!-- Suggestions -->
+      <div id="suggestions" style="display:flex;gap:8px;flex-wrap:wrap;padding-bottom:14px;">
+        <button class="chat-suggestion" onclick="sendSuggestion(this)">Show unknown detections</button>
+        <button class="chat-suggestion" onclick="sendSuggestion(this)">Summarize today</button>
+        <button class="chat-suggestion" onclick="sendSuggestion(this)">Any alerts overnight?</button>
+        <button class="chat-suggestion" onclick="sendSuggestion(this)">Lock all doors</button>
+        <button class="chat-suggestion" onclick="sendSuggestion(this)">Who came home today?</button>
+        <button class="chat-suggestion" onclick="sendSuggestion(this)">Show critical alerts</button>
+      </div>
+
+      <!-- Input -->
+      <div style="padding-bottom:24px;">
+        <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 14px;">
+          <input id="chatInput" type="text" placeholder="Ask HomeGuard..."
+            style="flex:1;background:transparent;border:none;outline:none;color:white;font-size:14px;"
+            onkeydown="if(event.key==='Enter')sendMessage()"/>
+          <button onclick="sendMessage()" id="sendBtn"
+            style="width:36px;height:36px;border-radius:50%;background:#3b82f6;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .15s;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/sidebar.js' %}"></script>
+<script>
+  document.getElementById('sidebar').innerHTML = renderSidebar('assistant');
+  initHomeSwitcher();
+  document.getElementById('topbar').innerHTML = renderTopbar('Smart Assistant', 'Ask anything about your home');
+
+  // Predefined smart responses for demo (no API key needed)
+  const smartResponses = {
+    "who came home today": "Three known members were detected today: <strong>Alex</strong> (15:42, Front Door), <strong>Elena</strong> (13:08, Front Door), and <strong>Marcus</strong> (yesterday evening). One unrecognized vehicle was logged at 14:22 in the driveway and classified as a likely delivery.",
+    "summarize today": "Today's summary: ✅ 3 known members recognized with high confidence. ⚠️ 1 unknown vehicle detected in the driveway at 14:22 (classified as delivery). ⚠️ Motion at the side path at 12:55 (likely animal, 64% confidence). 🔴 1 critical alert: repeated unknown presence in the backyard at 03:42 — loitering pattern, 3 cycles.",
+    "show unknown detections": "Here are today's unknown detections:\n\n🔴 <strong>03:42 – Backyard (CAM-03)</strong>: Repeated unknown presence. Loitering pattern detected across 3 cycles. Status: CRITICAL.\n\n⚠️ <strong>14:22 – Driveway (CAM-02)</strong>: Unknown vehicle. Plate captured, classified as likely delivery. Status: WARNING.",
+    "any alerts overnight": "Yes — one critical alert was triggered overnight: at <strong>03:42</strong>, CAM-03 (Backyard) detected a repeated unknown presence with a loitering pattern across 3 detection cycles. This was escalated automatically. No other alerts were recorded between midnight and 6:00 AM.",
+    "lock all doors": "✅ <strong>Main Entrance</strong> smart lock is already locked and secured. All connected locks are reporting normal status. No action required at this time.",
+    "show critical alerts": "There is currently <strong>1 active critical alert</strong>:\n\n🔴 <strong>Repeated unknown presence – Backyard</strong> (CAM-03, 03:42)\nLoitering pattern detected · 3 detection cycles within 12 minutes.\n\nWould you like to view the camera feed or resolve this alert?",
+    "default": "I've checked your HomeGuard system. Everything appears normal at this time — 4 cameras are online, all members are accounted for, and no new critical events have been detected in the last hour. Is there anything specific you'd like to know?"
+  };
+
+  function getBestResponse(query) {
+    const q = query.toLowerCase().trim();
+    for (const key of Object.keys(smartResponses)) {
+      if (key !== 'default' && q.includes(key)) return smartResponses[key];
+    }
+    // keyword matching
+    if (q.includes('who') && (q.includes('home') || q.includes('came'))) return smartResponses['who came home today'];
+    if (q.includes('summar')) return smartResponses['summarize today'];
+    if (q.includes('unknown') || q.includes('detection')) return smartResponses['show unknown detections'];
+    if (q.includes('overnight') || q.includes('night')) return smartResponses['any alerts overnight'];
+    if (q.includes('lock')) return smartResponses['lock all doors'];
+    if (q.includes('critical') || q.includes('alert')) return smartResponses['show critical alerts'];
+    return smartResponses['default'];
+  }
+
+  function appendMessage(text, isUser) {
+    const container = document.getElementById('chatMessages');
+
+    if (isUser) {
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;justify-content:flex-end;';
+      div.innerHTML = `<div class="chat-bubble-user">${text}</div>`;
+      container.appendChild(div);
+    } else {
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;align-items:flex-start;gap:12px;';
+      div.innerHTML = `
+        <div style="width:36px;height:36px;border-radius:50%;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div class="chat-bubble-ai" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:4px 18px 18px 18px;padding:14px 18px;max-width:80%;">${text.replace(/\n/g,'<br/>')}</div>`;
+      container.appendChild(div);
+    }
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function showTyping() {
+    const container = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.id = 'typingIndicator';
+    div.style.cssText = 'display:flex;align-items:flex-start;gap:12px;';
+    div.innerHTML = `
+      <div style="width:36px;height:36px;border-radius:50%;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:4px 18px 18px 18px;padding:14px 18px;display:flex;gap:5px;align-items:center;">
+        <span class="typing-dot"></span><span class="typing-dot" style="animation-delay:.2s"></span><span class="typing-dot" style="animation-delay:.4s"></span>
+      </div>`;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function removeTyping() {
+    const el = document.getElementById('typingIndicator');
+    if (el) el.remove();
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    appendMessage(text, true);
+    showTyping();
+    setTimeout(() => {
+      removeTyping();
+      appendMessage(getBestResponse(text), false);
+    }, 900 + Math.random() * 600);
+  }
+
+  function sendSuggestion(btn) {
+    const text = btn.textContent;
+    appendMessage(text, true);
+    showTyping();
+    setTimeout(() => {
+      removeTyping();
+      appendMessage(getBestResponse(text), false);
+    }, 900 + Math.random() * 600);
+  }
+</script>
+
+<style>
+.typing-dot {
+  width: 7px; height: 7px; background: #4a6080; border-radius: 50%;
+  animation: typingBounce 1s infinite;
+}
+@keyframes typingBounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: .5; }
+  40% { transform: translateY(-6px); opacity: 1; }
+}
+</style>
+</body>
+</html>

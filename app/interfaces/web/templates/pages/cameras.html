@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HomeGuard – Cameras</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-content">
+    <div id="topbar"></div>
+    <div class="page-body">
+
+      <!-- Header row -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <div style="font-size:12px;color:#4a6080;">4 DEVICES · <span style="color:#22c55e;">ALL ONLINE</span></div>
+        <button style="background:#3b82f6;color:white;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;border:none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add camera
+        </button>
+      </div>
+
+      <!-- Camera Grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" id="cameraGrid"></div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+.cam-card { border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s; }
+.cam-card:hover { transform:translateY(-2px); }
+.cam-settings-btn { background:rgba(255,255,255,0.08);border:none;border-radius:8px;padding:8px;cursor:pointer;color:#6a8aaa;transition:all .15s; }
+.cam-settings-btn:hover { background:rgba(255,255,255,0.15);color:white; }
+</style>
+
+<script src="{% static 'js/sidebar.js' %}"></script>
+<script>
+  document.getElementById('sidebar').innerHTML = renderSidebar('cameras');
+  initHomeSwitcher();
+  document.getElementById('topbar').innerHTML = renderTopbar('Cameras', 'Manage devices, locations & per-camera AI behavior');
+
+  const cameras = [
+    { id:'CAM-01', name:'Front Door', location:'EXTERIOR', label:'KNOWN PERSON · 99%', labelClass:'badge-known', scene:'door' },
+    { id:'CAM-02', name:'Driveway', location:'EXTERIOR', label:'VEHICLE · 92%', labelClass:'badge-vehicle', scene:'drive' },
+    { id:'CAM-03', name:'Backyard', location:'EXTERIOR', label:'CLEAR', labelClass:'badge-clear', scene:'back' },
+    { id:'CAM-04', name:'Living Room', location:'INTERIOR', label:'CLEAR', labelClass:'badge-clear', scene:'room' },
+  ];
+
+  const scenes = {
+    door: `<svg viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;position:absolute;inset:0;"><rect width="400" height="220" fill="#071520"/><rect x="120" y="30" width="160" height="150" rx="4" fill="#0a2535"/><rect x="150" y="50" width="60" height="110" rx="3" fill="#0d3040"/><rect x="220" y="50" width="60" height="110" rx="3" fill="#0d3040"/><rect x="155" y="55" width="48" height="98" rx="2" fill="#0f3d50"/><ellipse cx="200" cy="30" rx="30" ry="8" fill="#0c2535"/></svg>`,
+    drive: `<svg viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;position:absolute;inset:0;"><rect width="400" height="220" fill="#050e20"/><ellipse cx="280" cy="80" rx="120" ry="60" fill="#1a3a6a" opacity=".4"/><rect x="80" y="140" width="240" height="60" rx="4" fill="#0a1a35"/><ellipse cx="200" cy="158" rx="60" ry="18" fill="#1a3060"/><rect x="20" y="100" width="14" height="90" fill="#0a1a30"/><rect x="366" y="100" width="14" height="90" fill="#0a1a30"/></svg>`,
+    back: `<svg viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;position:absolute;inset:0;"><rect width="400" height="220" fill="#030c18"/><rect x="0" y="100" width="400" height="120" fill="#060e20"/><rect x="30" y="60" width="70" height="100" fill="#0a1828" rx="2"/><rect x="300" y="60" width="70" height="100" fill="#0a1828" rx="2"/><ellipse cx="200" cy="90" rx="140" ry="40" fill="#0d1e35" opacity=".8"/><circle cx="50" cy="45" r="20" fill="#1a3050" stroke="#2a4570" stroke-width="1"/><circle cx="360" cy="70" r="14" fill="#1a3050" stroke="#2a4570" stroke-width="1"/></svg>`,
+    room: `<svg viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;position:absolute;inset:0;"><rect width="400" height="220" fill="#0a1020"/><rect x="0" y="140" width="400" height="80" fill="#0d1528"/><rect x="80" y="80" width="240" height="80" rx="6" fill="#12203a"/><rect x="100" y="100" width="90" height="50" rx="3" fill="#0f1a2e"/><rect x="210" y="100" width="90" height="50" rx="3" fill="#0f1a2e"/><ellipse cx="200" cy="40" rx="60" ry="8" fill="#1a2a40" opacity=".6"/></svg>`,
+  };
+
+  document.getElementById('cameraGrid').innerHTML = cameras.map(c => `
+    <div class="card cam-card">
+      <div class="cam-feed" style="height:200px;border-radius:0;">
+        <div class="cam-feed-overlay"></div>
+        ${scenes[c.scene]}
+        <div style="position:absolute;top:12px;left:12px;display:flex;gap:4px;z-index:2;">
+          <span class="badge badge-live">● LIVE</span>
+          <span class="badge badge-cam">${c.id}</span>
+        </div>
+        <div style="position:absolute;top:12px;right:12px;z-index:2;cursor:pointer;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        </div>
+        <div class="cam-label" style="padding:12px 14px;">
+          <div>
+            <div style="color:white;font-size:14px;font-weight:600;">${c.name}</div>
+            <div style="color:#6a8aaa;font-size:11px;">11:41:08 PM</div>
+          </div>
+          <span class="badge ${c.labelClass}">${c.label}</span>
+        </div>
+      </div>
+      <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="color:white;font-size:14px;font-weight:600;">${c.name}</div>
+          <div style="color:#4a6080;font-size:11px;margin-top:2px;">${c.id} · ${c.location}</div>
+        </div>
+        <button class="cam-settings-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>

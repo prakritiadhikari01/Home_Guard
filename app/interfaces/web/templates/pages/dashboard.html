@@ -1,0 +1,269 @@
+#pages/dashboard.html
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HomeGuard – Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-content">
+    <div id="topbar"></div>
+    <div class="page-body">
+
+      <!-- AI Brief -->
+      <div class="card card-blue-border p-5 mb-5 flex items-start gap-4">
+        <div style="width:38px;height:38px;background:rgba(59,130,246,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div class="flex-1">
+          <div style="font-size:10px;letter-spacing:.1em;color:#3b82f6;margin-bottom:6px;">AI INTELLIGENCE BRIEF · <span style="color:#4a5a7a;">updated 2m ago</span></div>
+          <p style="color:#c8d8f0;font-size:14px;line-height:1.6;">All systems normal. <strong style="color:white;">3 known members</strong> entered today. One unrecognized vehicle classed as delivery at 14:22. No suspicious motion patterns in the last 6 hours.</p>
+        </div>
+        <a href="{% url 'web:assistant' %}" style="background:#3b82f6;color:white;font-size:13px;font-weight:600;padding:8px 18px;border-radius:8px;white-space:nowrap;text-decoration:none;display:flex;align-items:center;gap:6px;">Ask assistant <span>↗</span></a>
+      </div>
+
+      <!-- Security Mode -->
+      <div class="card p-5 mb-5">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <div style="color:white;font-size:15px;font-weight:600;">Security Mode</div>
+            <div style="color:#4a6080;font-size:12px;margin-top:2px;">Adjust automation intensity & alert routing</div>
+          </div>
+          <div style="font-size:10px;color:#3a4a6a;letter-spacing:.08em;">LAST CHANGE · 2D AGO</div>
+        </div>
+        <div class="flex gap-3">
+          <button class="mode-btn active" onclick="setMode(this)">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span style="font-size:13px;">Normal</span>
+          </button>
+          <button class="mode-btn" onclick="setMode(this)">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span style="font-size:13px;">Away</span>
+          </button>
+          <button class="mode-btn" onclick="setMode(this)">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span style="font-size:13px;">High</span>
+          </button>
+          <button class="mode-btn" onclick="setMode(this)">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span style="font-size:13px;">SOS</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;">
+        <div class="stat-tile"><div class="stat-tile-label">MEMBERS RECOGNIZED</div><div class="stat-tile-value">4</div><div class="stat-tile-sub">all home</div></div>
+        <div class="stat-tile"><div class="stat-tile-label">UNKNOWN DETECTIONS</div><div class="stat-tile-value">2</div><div class="stat-tile-sub">today</div></div>
+        <div class="stat-tile"><div class="stat-tile-label">ALERTS TRIGGERED</div><div class="stat-tile-value">1</div><div class="stat-tile-sub">−40% wk</div></div>
+        <div class="stat-tile"><div class="stat-tile-label">CAMERAS ONLINE</div><div class="stat-tile-value">4 / 4</div><div class="stat-tile-sub">100%</div></div>
+      </div>
+
+      <!-- Live + Timeline Row -->
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;">
+
+        <!-- Live Surveillance -->
+        <div>
+          <div class="flex justify-between items-center mb-3">
+            <div>
+              <div style="color:white;font-size:15px;font-weight:600;">Live Surveillance</div>
+              <div style="color:#4a6080;font-size:11px;margin-top:1px;">4 cameras streaming · AI overlays active</div>
+            </div>
+            <a href="{% url 'web:live' %}" style="color:#3b82f6;font-size:13px;text-decoration:none;">View all ›</a>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="cam-feed" style="min-height:160px;">
+              <div class="cam-feed-overlay"></div>
+              <!-- Camera scene: front door teal night vision look -->
+              <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 300 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="300" height="190" fill="#071520"/>
+                <rect x="80" y="30" width="140" height="120" rx="4" fill="#0a2535"/>
+                <rect x="115" y="50" width="70" height="90" rx="3" fill="#0d3040"/>
+                <rect x="125" y="55" width="24" height="50" rx="2" fill="#0f3d50"/>
+                <rect x="155" y="55" width="24" height="50" rx="2" fill="#0f3d50"/>
+                <ellipse cx="150" cy="30" rx="20" ry="6" fill="#0c2535"/>
+                <ellipse cx="120" cy="28" rx="6" ry="3" fill="#1a4a60" opacity=".8"/>
+                <ellipse cx="180" cy="28" rx="6" ry="3" fill="#1a4a60" opacity=".8"/>
+                <rect x="0" y="0" width="300" height="190" fill="rgba(0,180,220,0.03)"/>
+              </svg>
+              <div class="cam-label">
+                <div>
+                  <div style="display:flex;gap:4px;margin-bottom:4px;"><span class="badge badge-live">● LIVE</span><span class="badge badge-cam">CAM-01</span></div>
+                  <div style="color:white;font-size:12px;font-weight:600;">Front Door</div>
+                  <div style="color:#6a8aaa;font-size:10px;">11:38:03 PM</div>
+                </div>
+                <span class="badge badge-known">KNOWN PERSON · 99%</span>
+              </div>
+            </div>
+            <div class="cam-feed" style="min-height:160px;">
+              <div class="cam-feed-overlay"></div>
+              <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 300 190" preserveAspectRatio="xMidYMid slice">
+                <rect width="300" height="190" fill="#050e20"/>
+                <ellipse cx="220" cy="60" rx="60" ry="40" fill="#1a3a6a" opacity=".5"/>
+                <rect x="80" y="100" width="140" height="60" rx="4" fill="#0a1a35"/>
+                <ellipse cx="160" cy="115" rx="30" ry="12" fill="#1a3060"/>
+                <rect x="40" y="80" width="10" height="60" fill="#0a1a30"/>
+                <rect x="250" y="80" width="10" height="60" fill="#0a1a30"/>
+              </svg>
+              <div class="cam-label">
+                <div>
+                  <div style="display:flex;gap:4px;margin-bottom:4px;"><span class="badge badge-live">● LIVE</span><span class="badge badge-cam">CAM-02</span></div>
+                  <div style="color:white;font-size:12px;font-weight:600;">Driveway</div>
+                  <div style="color:#6a8aaa;font-size:10px;">11:38:03 PM</div>
+                </div>
+                <span class="badge badge-vehicle">VEHICLE · 92%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Timeline -->
+        <div>
+          <div class="flex justify-between items-center mb-3">
+            <div style="color:white;font-size:15px;font-weight:600;">Activity Timeline</div>
+            <a href="{% url 'web:timeline' %}" style="color:#3b82f6;font-size:13px;text-decoration:none;">Archive ›</a>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <div style="padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);">
+              <div class="flex justify-between mb-1"><span style="color:white;font-size:13px;font-weight:600;">Alex entered Front Door</span><span style="color:#4a5a7a;font-size:11px;">2m ago</span></div>
+              <div style="color:#6a8aaa;font-size:11px;">Facial recognition · 99.2%</div>
+              <div style="color:#3a4a6a;font-size:10px;margin-top:3px;">CAM-01</div>
+              <span style="display:inline-block;width:8px;height:8px;background:#22c55e;border-radius:50%;margin-top:4px;"></span>
+            </div>
+            <div style="padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);">
+              <div class="flex justify-between mb-1"><span style="color:white;font-size:13px;font-weight:600;">Unknown vehicle in Driveway</span><span style="color:#4a5a7a;font-size:11px;">1h ago</span></div>
+              <div style="color:#6a8aaa;font-size:11px;">Plate captured · classed as delivery</div>
+              <div style="color:#3a4a6a;font-size:10px;margin-top:3px;">CAM-02</div>
+              <span style="display:inline-block;width:8px;height:8px;background:#eab308;border-radius:50%;margin-top:4px;"></span>
+            </div>
+            <div style="padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);">
+              <div class="flex justify-between mb-1"><span style="color:white;font-size:13px;font-weight:600;">Elena exited Front Door</span><span style="color:#4a5a7a;font-size:11px;">2h ago</span></div>
+              <div style="color:#6a8aaa;font-size:11px;">Recognized member · low risk</div>
+              <div style="color:#3a4a6a;font-size:10px;margin-top:3px;">CAM-01</div>
+              <span style="display:inline-block;width:8px;height:8px;background:#22c55e;border-radius:50%;margin-top:4px;"></span>
+            </div>
+            <div style="padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);">
+              <div class="flex justify-between mb-1"><span style="color:white;font-size:13px;font-weight:600;">Motion detected · Side Path</span><span style="color:#4a5a7a;font-size:11px;">3h ago</span></div>
+              <div style="color:#6a8aaa;font-size:11px;">Likely animal · 64% confidence</div>
+              <div style="color:#3a4a6a;font-size:10px;margin-top:3px;">CAM-03</div>
+              <span style="display:inline-block;width:8px;height:8px;background:#eab308;border-radius:50%;margin-top:4px;"></span>
+            </div>
+            <div style="padding:12px;">
+              <div class="flex justify-between mb-1"><span style="color:white;font-size:13px;font-weight:600;">Repeated unknown presence · Backyard</span><span style="color:#4a5a7a;font-size:11px;">12h ago</span></div>
+              <div style="color:#6a8aaa;font-size:11px;">Loitering pattern · 3 cycles</div>
+              <div style="color:#3a4a6a;font-size:10px;margin-top:3px;">CAM-03</div>
+              <span style="display:inline-block;width:8px;height:8px;background:#ef4444;border-radius:50%;margin-top:4px;"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Devices Row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px;">
+        <div class="card p-5">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+            <div style="color:#6a8aaa;font-size:11px;letter-spacing:.06em;">Smart Lock</div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div style="color:white;font-size:15px;font-weight:600;">Main Entrance</div>
+          <div style="color:#22c55e;font-size:11px;letter-spacing:.08em;margin-top:6px;">LOCKED</div>
+        </div>
+        <div class="card p-5">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+            <div style="color:#6a8aaa;font-size:11px;letter-spacing:.06em;">Lights</div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2"><line x1="12" y1="1" x2="12" y2="3"/><path d="M5.07 5.07l1.41 1.41M1 12h2m18 0h2M17.52 6.48l1.41-1.41M19 12a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"/><line x1="12" y1="21" x2="12" y2="23"/></svg>
+          </div>
+          <div style="color:white;font-size:15px;font-weight:600;">Driveway</div>
+          <div style="color:#eab308;font-size:11px;letter-spacing:.08em;margin-top:6px;">AUTO · MOTION</div>
+        </div>
+        <div class="card p-5">
+          <div style="color:#6a8aaa;font-size:11px;letter-spacing:.06em;margin-bottom:10px;">Members Home</div>
+          <div style="display:flex;gap:-6px;margin-bottom:6px;">
+            <div style="width:32px;height:32px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;border:2px solid #0a1120;">AR</div>
+            <div style="width:32px;height:32px;border-radius:50%;background:#10b981;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;border:2px solid #0a1120;margin-left:-6px;">ER</div>
+            <div style="width:32px;height:32px;border-radius:50%;background:#8b5cf6;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;border:2px solid #0a1120;margin-left:-6px;">MK</div>
+            <div style="width:32px;height:32px;border-radius:50%;background:#ef4444;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;border:2px solid #0a1120;margin-left:-6px;">SB</div>
+          </div>
+          <div style="color:white;font-size:22px;font-weight:700;">4</div>
+        </div>
+        <div class="card p-5" style="border-style:dashed;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+          <div style="width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a6080" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <div style="color:#4a6080;font-size:11px;letter-spacing:.08em;">ADD DEVICE</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="{% static 'js/sidebar.js' %}"></script>
+<script>
+  document.getElementById('sidebar').innerHTML = renderSidebar('dashboard');
+  initHomeSwitcher();
+  async function loadUser() {
+
+    const token = localStorage.getItem("access");
+
+    if (!token) {
+        window.location.href = "{% url 'web:login' %}";
+        return;
+    }
+
+    try {
+
+        const response = await fetch("/api/auth/me/", {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            localStorage.clear();
+            window.location.href = "{% url 'web:login' %}";
+            return;
+        }
+
+        const user = await response.json();
+
+        const firstName = user.full_name.split(" ")[0];
+
+        document.getElementById("topbar").innerHTML =
+            renderTopbar(
+                "System Overview",
+                `Welcome back, ${firstName}. Everything looks secure.`
+            );
+
+    } catch (err) {
+        console.error(err);
+        window.location.href = "{% url 'web:login' %}";
+    }
+
+}
+
+document.getElementById("sidebar").innerHTML =
+renderSidebar("dashboard");
+
+initHomeSwitcher();
+
+loadUser();
+
+function setMode(el) {
+    document.querySelectorAll(".mode-btn")
+        .forEach(btn => btn.classList.remove("active"));
+
+    el.classList.add("active");
+}
+  function setMode(el) {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+</script>
+</body>
+</html>

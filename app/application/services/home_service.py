@@ -17,7 +17,7 @@ class HomeService:
 
         home = (
             HomeService.home_repository.create_home(
-                name=validated_data["name"],
+                home_name=validated_data["name"],
                 address=validated_data["address"],
                 owner=user,
             )
@@ -29,6 +29,7 @@ class HomeService:
                 home=home,
                 user=user,
                 role=Role.OWNER.value,
+                status="active",
                 can_control_devices=True,
                 can_manage_members=True,
                 can_unlock_door=True,

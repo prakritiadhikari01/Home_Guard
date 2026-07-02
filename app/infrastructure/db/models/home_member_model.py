@@ -44,7 +44,7 @@ class HomeMember(models.Model):
 
     receive_alerts = models.BooleanField(default=True)
 
-    joined_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         app_label = "homes"

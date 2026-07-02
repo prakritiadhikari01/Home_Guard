@@ -24,7 +24,7 @@ def home(request):
     return HttpResponse("HomeGuard API Running")
 
 urlpatterns = [
-    path("", home),
+    path("", include("app.interfaces.web.urls")),
     path("admin/", admin.site.urls),
     path("api/auth/", include("accounts.urls")),
     path("api/", include("app.interfaces.api.urls")),

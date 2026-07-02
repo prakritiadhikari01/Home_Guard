@@ -27,7 +27,6 @@ class HomeMemberListSerializer(serializers.Serializer):
     full_name = serializers.CharField(
         source="user.full_name"
     )
-
     role = serializers.CharField()
 
     joined_at = serializers.DateTimeField()

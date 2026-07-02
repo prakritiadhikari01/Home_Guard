@@ -1,3 +1,5 @@
+import email
+
 from django.db import IntegrityError
 from django.shortcuts import render
 
@@ -15,13 +17,22 @@ class RegisterView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
         data = request.data
+        email = data.get("email")
+        full_name = data.get("full_name")
+        password = data.get("password")
+        phone = data.get("phone")
 
+        if not email or not full_name or not password or  not phone:
+            return Response(
+                {"error": "Full name, email, password and phone number are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         try:
             user = User.objects.create_user(
-                email=data.get("email"),
-                full_name=data.get("full_name"),
-                password=data.get("password"),
-                phone=data.get("phone", None),
+                email=email,
+                full_name=full_name,
+                password=password,
+                phone=phone,
             )
         except IntegrityError:
             return Response(
@@ -45,10 +56,11 @@ class LoginView(APIView):
             return Response({"error": "Invalid credentials"}, status=400)
 
         refresh = RefreshToken.for_user(user)
-
+        serializer = UserSerializer(user)
         return Response({
             "refresh": str(refresh),
             "access": str(refresh.access_token),
+            "user": serializer.data,
         })
 
 class MeView(APIView):

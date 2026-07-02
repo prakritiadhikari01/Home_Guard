@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HomeGuard – Activity Timeline</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-content">
+    <div id="topbar"></div>
+    <div class="page-body">
+
+      <!-- Filter tabs -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="filterTabs">
+          <button class="filter-tab active" onclick="filterEvents('all',this)">All</button>
+          <button class="filter-tab" onclick="filterEvents('recognized',this)">Recognized</button>
+          <button class="filter-tab" onclick="filterEvents('unknown',this)">Unknown</button>
+          <button class="filter-tab" onclick="filterEvents('alerts',this)">Alerts</button>
+          <button class="filter-tab" onclick="filterEvents('vehicles',this)">Vehicles</button>
+          <button class="filter-tab" onclick="filterEvents('animals',this)">Animals</button>
+        </div>
+        <button style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#8a9ab8;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          Filter
+        </button>
+      </div>
+
+      <!-- Events -->
+      <div style="display:flex;flex-direction:column;gap:10px;max-width:760px;" id="eventList"></div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+.filter-tab {
+  background: transparent; border: 1px solid rgba(255,255,255,0.1);
+  color: #6a8aaa; padding: 6px 16px; border-radius: 20px; font-size: 13px; cursor: pointer; transition: all .15s;
+}
+.filter-tab.active, .filter-tab:hover {
+  background: #3b82f6; color: white; border-color: #3b82f6;
+}
+</style>
+
+<script src="{% static 'js/sidebar.js' %}"></script>
+<script>
+  document.getElementById('sidebar').innerHTML = renderSidebar('timeline');
+  initHomeSwitcher();
+  document.getElementById('topbar').innerHTML = renderTopbar('Activity Timeline', 'Chronological feed of all detected events');
+
+  const events = [
+    { type:'recognized', cam:'CAM-01', time:'15:42', title:'Alex entered Front Door', sub:'Facial recognition · 99.2%', dot:'#22c55e', badge:'RECOGNIZED', badgeClass:'badge-recognized' },
+    { type:'vehicles', cam:'CAM-02', time:'14:22', title:'Unknown vehicle in Driveway', sub:'Plate captured · classed as delivery', dot:'#eab308', badge:'WARNING', badgeClass:'badge-warning' },
+    { type:'recognized', cam:'CAM-01', time:'13:08', title:'Elena exited Front Door', sub:'Recognized member · low risk', dot:'#22c55e', badge:'RECOGNIZED', badgeClass:'badge-recognized' },
+    { type:'animals', cam:'CAM-03', time:'12:55', title:'Motion detected · Side Path', sub:'Likely animal · 64% confidence', dot:'#eab308', badge:'WARNING', badgeClass:'badge-warning' },
+    { type:'alerts', cam:'CAM-03', time:'03:42', title:'Repeated unknown presence · Backyard', sub:'Loitering pattern · 3 cycles', dot:'#ef4444', badge:'CRITICAL', badgeClass:'badge-critical' },
+    { type:'recognized', cam:'CAM-02', time:'Yesterday', title:'Marcus entered Garage', sub:'Facial recognition · 97.4%', dot:'#22c55e', badge:'RECOGNIZED', badgeClass:'badge-recognized' },
+    { type:'unknown', cam:'CAM-01', time:'Yesterday', title:'Unidentified person at Front Door', sub:'No match found · doorbell triggered', dot:'#eab308', badge:'WARNING', badgeClass:'badge-warning' },
+  ];
+
+  function renderEvents(filter) {
+    const list = document.getElementById('eventList');
+    const filtered = filter === 'all' ? events : events.filter(e => e.type === filter);
+    list.innerHTML = filtered.map(e => `
+      <div class="timeline-item">
+        <span style="width:10px;height:10px;border-radius:50%;background:${e.dot};flex-shrink:0;margin-top:4px;"></span>
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span class="badge ${e.badgeClass}">${e.badge}</span>
+            <span style="font-size:11px;color:#4a5a7a;">${e.cam}</span>
+          </div>
+          <div style="color:white;font-size:15px;font-weight:600;">${e.title}</div>
+          <div style="color:#6a8aaa;font-size:13px;margin-top:3px;">${e.sub}</div>
+        </div>
+        <div style="color:#4a5a7a;font-size:12px;white-space:nowrap;">${e.time}</div>
+      </div>
+    `).join('');
+  }
+
+  function filterEvents(type, btn) {
+    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderEvents(type);
+  }
+
+  renderEvents('all');
+</script>
+</body>
+</html>

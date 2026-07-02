@@ -13,7 +13,7 @@ class Home(models.Model):
         editable=False,
     )
 
-    name = models.CharField(max_length=255)
+    home_name = models.CharField(max_length=255)
 
     address = models.TextField()
 
