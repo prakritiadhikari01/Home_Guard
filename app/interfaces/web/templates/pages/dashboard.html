@@ -59,10 +59,10 @@
 
       <!-- Stats Row -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;">
-        <div class="stat-tile"><div class="stat-tile-label">MEMBERS RECOGNIZED</div><div class="stat-tile-value">4</div><div class="stat-tile-sub">all home</div></div>
-        <div class="stat-tile"><div class="stat-tile-label">UNKNOWN DETECTIONS</div><div class="stat-tile-value">2</div><div class="stat-tile-sub">today</div></div>
-        <div class="stat-tile"><div class="stat-tile-label">ALERTS TRIGGERED</div><div class="stat-tile-value">1</div><div class="stat-tile-sub">−40% wk</div></div>
-        <div class="stat-tile"><div class="stat-tile-label">CAMERAS ONLINE</div><div class="stat-tile-value">4 / 4</div><div class="stat-tile-sub">100%</div></div>
+        <div class="stat-tile"><div class="stat-tile-label">MEMBERS RECOGNIZED</div><div class="stat-tile-value"id="membersCount">0</div><div class="stat-tile-sub">all home</div></div>
+        <div class="stat-tile"><div class="stat-tile-label">UNKNOWN DETECTIONS</div><div class="stat-tile-value" id="unknownCount">0</div><div class="stat-tile-sub">today</div></div>
+        <div class="stat-tile"><div class="stat-tile-label">ALERTS TRIGGERED</div><div class="stat-tile-value" id="alertCount">0</div><div class="stat-tile-sub">−40% wk</div></div>
+        <div class="stat-tile"><div class="stat-tile-label">CAMERAS ONLINE</div><div class="stat-tile-value" id="deviceCount">0 / 0</div><div class="stat-tile-sub">100%</div></div>
       </div>
 
       <!-- Live + Timeline Row -->
@@ -129,75 +129,23 @@
             <div style="color:white;font-size:15px;font-weight:600;">Activity Timeline</div>
             <a href="{% url 'web:timeline' %}" style="color:#3b82f6;font-size:13px;text-decoration:none;">Archive ›</a>
           </div>
-          <div style="display:flex;flex-direction:column;gap:2px;">
-            <div style="padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);">
-              <div class="flex justify-between mb-1"><span style="color:white;font-size:13px;font-weight:600;">Alex entered Front Door</span><span style="color:#4a5a7a;font-size:11px;">2m ago</span></div>
-              <div style="color:#6a8aaa;font-size:11px;">Facial recognition · 99.2%</div>
-              <div style="color:#3a4a6a;font-size:10px;margin-top:3px;">CAM-01</div>
-              <span style="display:inline-block;width:8px;height:8px;background:#22c55e;border-radius:50%;margin-top:4px;"></span>
-            </div>
-            <div style="padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);">
-              <div class="flex justify-between mb-1"><span style="color:white;font-size:13px;font-weight:600;">Unknown vehicle in Driveway</span><span style="color:#4a5a7a;font-size:11px;">1h ago</span></div>
-              <div style="color:#6a8aaa;font-size:11px;">Plate captured · classed as delivery</div>
-              <div style="color:#3a4a6a;font-size:10px;margin-top:3px;">CAM-02</div>
-              <span style="display:inline-block;width:8px;height:8px;background:#eab308;border-radius:50%;margin-top:4px;"></span>
-            </div>
-            <div style="padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);">
-              <div class="flex justify-between mb-1"><span style="color:white;font-size:13px;font-weight:600;">Elena exited Front Door</span><span style="color:#4a5a7a;font-size:11px;">2h ago</span></div>
-              <div style="color:#6a8aaa;font-size:11px;">Recognized member · low risk</div>
-              <div style="color:#3a4a6a;font-size:10px;margin-top:3px;">CAM-01</div>
-              <span style="display:inline-block;width:8px;height:8px;background:#22c55e;border-radius:50%;margin-top:4px;"></span>
-            </div>
-            <div style="padding:12px;border-bottom:1px solid rgba(255,255,255,0.05);">
-              <div class="flex justify-between mb-1"><span style="color:white;font-size:13px;font-weight:600;">Motion detected · Side Path</span><span style="color:#4a5a7a;font-size:11px;">3h ago</span></div>
-              <div style="color:#6a8aaa;font-size:11px;">Likely animal · 64% confidence</div>
-              <div style="color:#3a4a6a;font-size:10px;margin-top:3px;">CAM-03</div>
-              <span style="display:inline-block;width:8px;height:8px;background:#eab308;border-radius:50%;margin-top:4px;"></span>
-            </div>
-            <div style="padding:12px;">
-              <div class="flex justify-between mb-1"><span style="color:white;font-size:13px;font-weight:600;">Repeated unknown presence · Backyard</span><span style="color:#4a5a7a;font-size:11px;">12h ago</span></div>
-              <div style="color:#6a8aaa;font-size:11px;">Loitering pattern · 3 cycles</div>
-              <div style="color:#3a4a6a;font-size:10px;margin-top:3px;">CAM-03</div>
-              <span style="display:inline-block;width:8px;height:8px;background:#ef4444;border-radius:50%;margin-top:4px;"></span>
+            <div
+                id="timelineContainer"
+                style="display:flex;flex-direction:column;gap:2px;">
             </div>
           </div>
         </div>
       </div>
 
       <!-- Bottom Devices Row -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px;">
-        <div class="card p-5">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-            <div style="color:#6a8aaa;font-size:11px;letter-spacing:.06em;">Smart Lock</div>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          </div>
-          <div style="color:white;font-size:15px;font-weight:600;">Main Entrance</div>
-          <div style="color:#22c55e;font-size:11px;letter-spacing:.08em;margin-top:6px;">LOCKED</div>
-        </div>
-        <div class="card p-5">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-            <div style="color:#6a8aaa;font-size:11px;letter-spacing:.06em;">Lights</div>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2"><line x1="12" y1="1" x2="12" y2="3"/><path d="M5.07 5.07l1.41 1.41M1 12h2m18 0h2M17.52 6.48l1.41-1.41M19 12a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"/><line x1="12" y1="21" x2="12" y2="23"/></svg>
-          </div>
-          <div style="color:white;font-size:15px;font-weight:600;">Driveway</div>
-          <div style="color:#eab308;font-size:11px;letter-spacing:.08em;margin-top:6px;">AUTO · MOTION</div>
-        </div>
-        <div class="card p-5">
-          <div style="color:#6a8aaa;font-size:11px;letter-spacing:.06em;margin-bottom:10px;">Members Home</div>
-          <div style="display:flex;gap:-6px;margin-bottom:6px;">
-            <div style="width:32px;height:32px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;border:2px solid #0a1120;">AR</div>
-            <div style="width:32px;height:32px;border-radius:50%;background:#10b981;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;border:2px solid #0a1120;margin-left:-6px;">ER</div>
-            <div style="width:32px;height:32px;border-radius:50%;background:#8b5cf6;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;border:2px solid #0a1120;margin-left:-6px;">MK</div>
-            <div style="width:32px;height:32px;border-radius:50%;background:#ef4444;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;border:2px solid #0a1120;margin-left:-6px;">SB</div>
-          </div>
-          <div style="color:white;font-size:22px;font-weight:700;">4</div>
-        </div>
-        <div class="card p-5" style="border-style:dashed;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
-          <div style="width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a6080" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </div>
-          <div style="color:#4a6080;font-size:11px;letter-spacing:.08em;">ADD DEVICE</div>
-        </div>
+      <div
+          id="deviceContainer"
+          style="
+              display:grid;
+              grid-template-columns:repeat(4,1fr);
+              gap:14px;
+              margin-top:20px;
+          ">
       </div>
 
     </div>
@@ -205,6 +153,181 @@
 </div>
 <script src="{% static 'js/sidebar.js' %}"></script>
 <script>
+  async function loadDashboard(){
+
+    const token = localStorage.getItem("access");
+    const homeId = localStorage.getItem("active_home");
+
+    const response = await fetch(
+        `/api/dashboard/${homeId}/`,
+        {
+            headers:{
+                Authorization:`Bearer ${token}`
+            }
+        }
+    );
+
+    if(!response.ok){
+
+        return;
+    }
+
+    const dashboard = await response.json();
+
+    populateDashboard(dashboard);
+
+}
+function populateDashboard(data){
+
+    document.getElementById("membersCount").innerText =
+        data.stats.members;
+
+    document.getElementById("unknownCount").innerText =
+        data.stats.unknown_detections;
+
+    document.getElementById("alertCount").innerText =
+        data.stats.alerts;
+
+    document.getElementById("deviceCount").innerText =
+        `${data.stats.devices_online} / ${data.stats.devices_total}`;
+
+    document.getElementById("memberTotal").innerText =
+        data.members.length;
+
+    renderTimeline(data.recent_events);
+
+    renderMembers(data.members);
+
+    renderDevices(data.devices);
+
+}
+function renderTimeline(events){
+
+    let html="";
+
+    events.forEach(event=>{
+
+        html+=`
+        <div style="padding:12px;border-bottom:1px solid rgba(255,255,255,.05);">
+
+            <div class="flex justify-between">
+
+                <span style="color:white;font-size:13px;font-weight:600;">
+
+                    ${event.person_name ?? "Unknown"}
+
+                </span>
+
+                <span style="color:#6a8aaa;font-size:11px;">
+
+                    ${new Date(event.timestamp).toLocaleString()}
+
+                </span>
+
+            </div>
+
+            <div style="color:#6a8aaa;font-size:11px;">
+
+                ${event.summary ?? event.event_type}
+
+            </div>
+
+        </div>
+        `;
+    });
+
+    document.getElementById("timelineContainer").innerHTML =
+        html;
+
+}
+function renderMembers(members){
+
+    let html="";
+
+    members.forEach(member=>{
+
+        const initials =
+            member.name
+                .split(" ")
+                .map(x=>x[0])
+                .join("");
+
+        html+=`
+        <div
+        style="
+        width:32px;
+        height:32px;
+        border-radius:50%;
+        background:#3b82f6;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        color:white;
+        font-size:11px;
+        margin-left:-6px;
+        ">
+
+        ${initials}
+
+        </div>
+        `;
+    });
+
+    document.getElementById("memberAvatars").innerHTML =
+        html;
+
+}
+function renderDevices(devices){
+
+    let html="";
+
+    devices.forEach(device=>{
+
+        html+=`
+
+        <div class="card p-5">
+
+            <div
+            style="
+            color:#6a8aaa;
+            font-size:11px;
+            ">
+
+                ${device.type}
+
+            </div>
+
+            <div
+            style="
+            color:white;
+            font-size:16px;
+            margin-top:10px;
+            ">
+
+                ${device.name}
+
+            </div>
+
+            <div
+            style="
+            color:#22c55e;
+            font-size:12px;
+            margin-top:5px;
+            ">
+
+                ${device.status}
+
+            </div>
+
+        </div>
+
+        `;
+    });
+
+    document.getElementById("deviceContainer").innerHTML =
+        html;
+
+}
   document.getElementById('sidebar').innerHTML = renderSidebar('dashboard');
   initHomeSwitcher();
   async function loadUser() {
@@ -246,20 +369,39 @@
     }
 
 }
+async function setMode(mode){
 
+    const token = localStorage.getItem("access");
+    const homeId = localStorage.getItem("active_home");
+
+    await fetch(`/api/settings/${homeId}/`,{
+
+        method:"PATCH",
+
+        headers:{
+            "Content-Type":"application/json",
+            Authorization:`Bearer ${token}`
+        },
+
+        body:JSON.stringify({
+            security_mode:mode
+        })
+
+    });
+
+    document.querySelectorAll(".mode-btn")
+        .forEach(btn=>btn.classList.remove("active"));
+
+    event.target.closest(".mode-btn").classList.add("active");
+
+}
 document.getElementById("sidebar").innerHTML =
 renderSidebar("dashboard");
 
 initHomeSwitcher();
 
 loadUser();
-
-function setMode(el) {
-    document.querySelectorAll(".mode-btn")
-        .forEach(btn => btn.classList.remove("active"));
-
-    el.classList.add("active");
-}
+loadDashboard();
   function setMode(el) {
     document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
     el.classList.add('active');

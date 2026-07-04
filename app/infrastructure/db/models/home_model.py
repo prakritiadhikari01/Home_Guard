@@ -22,6 +22,16 @@ class Home(models.Model):
         on_delete=models.CASCADE,
         related_name="owned_homes",
     )
+    security_mode = models.CharField(
+        max_length=20,
+        choices=[
+            ("NORMAL", "Normal"),
+            ("AWAY", "Away"),
+            ("HIGH", "High Alert"),
+            ("SOS", "SOS"),
+        ],
+        default="NORMAL",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -6,8 +6,8 @@ from app.infrastructure.db.models.home_model import Home
 from app.infrastructure.db.models.device_model import Device
 from app.infrastructure.db.models.home_member_model import HomeMember
 from app.infrastructure.db.models.face_profile_model import FaceProfile
-
-
+from app.domain.value_objects.person_type import PersonType
+from app.domain.value_objects.event_type import EventType
 class DetectionEvent(models.Model):
     """
     Stores all AI-generated events from cameras and sensors.
@@ -18,21 +18,6 @@ class DetectionEvent(models.Model):
     - When did Prakriti enter the living room?
     - Door unlock history.
     """
-
-    PERSON_TYPE_CHOICES = [
-        ("KNOWN", "Known Person"),
-        ("UNKNOWN", "Unknown Person"),
-        ("INTRUDER", "Intruder"),
-        ("VEHICLE", "Vehicle"),
-    ]
-
-    EVENT_TYPE_CHOICES = [
-        ("PERSON_DETECTED", "Person Detected"),
-        ("DOOR_UNLOCKED", "Door Unlocked"),
-        ("DOOR_LOCKED", "Door Locked"),
-        ("MOTION_DETECTED", "Motion Detected"),
-        ("VEHICLE_DETECTED", "Vehicle Detected"),
-    ]
 
     id = models.UUIDField(
         primary_key=True,
@@ -51,17 +36,16 @@ class DetectionEvent(models.Model):
         on_delete=models.CASCADE,
         related_name="events"
     )
-
     event_type = models.CharField(
         max_length=50,
-        choices=EVENT_TYPE_CHOICES,
-        default="PERSON_DETECTED"
+        choices=EventType.choices(),
+        default=EventType.PERSON_DETECTED.value,
     )
-
+    
     person_type = models.CharField(
         max_length=20,
-        choices=PERSON_TYPE_CHOICES,
-        default="UNKNOWN"
+        choices=PersonType.choices(),
+        default=PersonType.UNKNOWN.value,
     )
 
     person_label = models.CharField(

@@ -31,8 +31,17 @@ from app.interfaces.api.views.face_profile_views import (
     RegisterFaceView
 )
 from app.interfaces.api.views.face_save_view import FaceSaveView
-
+from app.interfaces.api.views.settings_views import SettingsView
+from app.interfaces.api.views.dashboard_views import DashboardView
 urlpatterns = [
+    #setting
+    path(
+        "settings/",
+        SettingsView.as_view(),
+        name="settings",
+    ),
+
+    #Invitations
     path(
     "home-invitations/",
     PendingInvitationsView.as_view(),
@@ -47,8 +56,11 @@ urlpatterns = [
         "home-invitations/<uuid:invitation_id>/reject/",
         RejectInvitationView.as_view(),
     ),
+
+    #Homes
     path("homes/", HomeCreateView.as_view()),
     path("my-homes/", UserHomesView.as_view()),
+
     path(
         "<uuid:home_id>/members/",
         ListHomeMembersView.as_view(),
@@ -87,5 +99,11 @@ urlpatterns = [
     path("faces/all/", FaceListView.as_view()),
     path("devices/active/",ActiveDeviceListView.as_view(),),
     path("events/ingest/", AIEventIngestView.as_view()),
+
+    path(
+        "dashboard/<uuid:home_id>/",
+        DashboardView.as_view(),
+        name="dashboard",
+    ),
     
 ]
