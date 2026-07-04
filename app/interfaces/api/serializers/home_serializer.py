@@ -1,3 +1,4 @@
+#app/interfaces/api/serializers/home_serializer.py
 from rest_framework import serializers
 
 from app.infrastructure.db.models.home_model import Home

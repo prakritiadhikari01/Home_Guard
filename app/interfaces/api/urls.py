@@ -8,6 +8,11 @@ from app.interfaces.api.views.home_views import (
     UserHomesView,
 )
 from app.interfaces.api.views.home_member_view import (
+    PendingInvitationsView,
+    AcceptInvitationView,
+    RejectInvitationView,
+)
+from app.interfaces.api.views.home_member_view import (
     AddHomeMemberView,
     ListHomeMembersView,
     RemoveHomeMemberView,
@@ -28,6 +33,20 @@ from app.interfaces.api.views.face_profile_views import (
 from app.interfaces.api.views.face_save_view import FaceSaveView
 
 urlpatterns = [
+    path(
+    "home-invitations/",
+    PendingInvitationsView.as_view(),
+    ),
+
+    path(
+        "home-invitations/<uuid:invitation_id>/accept/",
+        AcceptInvitationView.as_view(),
+    ),
+
+    path(
+        "home-invitations/<uuid:invitation_id>/reject/",
+        RejectInvitationView.as_view(),
+    ),
     path("homes/", HomeCreateView.as_view()),
     path("my-homes/", UserHomesView.as_view()),
     path(

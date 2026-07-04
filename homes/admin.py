@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from app.infrastructure.db.models.home_invitation_model import HomeInvitation
 from app.infrastructure.db.models.home_model import Home
 from app.infrastructure.db.models.home_member_model import HomeMember
 
@@ -30,6 +31,35 @@ class HomeAdmin(admin.ModelAdmin):
     ordering = ("-created_at",)
 
     readonly_fields = ("id", "created_at")
+
+@admin.register(HomeInvitation)
+class HomeInvitationAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "id",
+        "home",
+        "email",
+        "invited_by",
+        "status",
+        "created_at",
+    )
+
+    search_fields = (
+        "email",
+        "home__name",
+    )
+
+    list_filter = (
+        "status",
+        "created_at",
+    )
+
+    readonly_fields = (
+        "id",
+        "created_at",
+    )
+
+    ordering = ("-created_at",)
 
 
 # -------------------------

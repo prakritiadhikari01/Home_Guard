@@ -18,9 +18,14 @@ from app.interfaces.api.serializers.home_member_serializer import (
 from app.infrastructure.db.repositories.django_home_member_repository import (
     DjangoHomeMemberRepository,
 )
+from app.infrastructure.db.models.home_invitation_model import HomeInvitation
+from app.interfaces.api.serializers.home_member_serializer import (
+    PendingInvitationSerializer,
+)
+from django.core.mail import send_mail
+from django.conf import settings
 
 User = get_user_model()
-
 
 class AddHomeMemberView(APIView):
 
@@ -28,33 +33,43 @@ class AddHomeMemberView(APIView):
 
     def post(self, request, home_id):
 
-        serializer = AddHomeMemberSerializer(data=request.data)
+        serializer = AddHomeMemberSerializer(
+            data=request.data
+        )
 
         serializer.is_valid(raise_exception=True)
 
-        home = get_object_or_404(Home, id=home_id)
-
-        target_user = get_object_or_404(
-            User,
-            id=serializer.validated_data["user_id"]
+        home = get_object_or_404(
+            Home,
+            id=home_id
         )
 
-        member = HomeMemberService.add_member(
+        invitation = HomeMemberService.add_member(
             acting_user=request.user,
             home=home,
-            target_user=target_user,
+            email=serializer.validated_data["email"],
             role=serializer.validated_data["role"],
+        )
+
+        send_mail(
+            subject="HomeGuard Invitation",
+            message=(
+                f"You have been invited to join '{home.name}'.\n\n"
+                f"Login to HomeGuard and accept the invitation."
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[invitation.email],
+            fail_silently=False,
         )
 
         return Response(
             {
-                "message": "Member added successfully",
-                "user": target_user.email,
-                "role": member.role,
+                "message": "Invitation sent successfully.",
+                "email": invitation.email,
+                "status": invitation.status,
             },
             status=status.HTTP_201_CREATED,
         )
-
 
 class ListHomeMembersView(APIView):
 
@@ -141,3 +156,73 @@ class UpdateMemberRoleView(APIView):
             "message": "Role updated",
             "role": member.role,
         })
+    
+class PendingInvitationsView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        invitations = (
+            HomeMemberService.get_pending_invitations(
+                request.user
+            )
+        )
+
+        serializer = PendingInvitationSerializer(
+            invitations,
+            many=True,
+        )
+
+        return Response(serializer.data)
+    
+class AcceptInvitationView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, invitation_id):
+
+        invitation = get_object_or_404(
+            HomeInvitation,
+            id=invitation_id,
+            email=request.user.email,
+            status="pending",
+        )
+
+        membership = (
+            HomeMemberService.accept_invitation(
+                invitation,
+                request.user,
+            )
+        )
+
+        return Response(
+            {
+                "message": "Invitation accepted",
+                "next": "/scan-face/",
+                "home_member_id": membership.id,
+            }
+        )
+
+class RejectInvitationView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, invitation_id):
+
+        invitation = get_object_or_404(
+            HomeInvitation,
+            id=invitation_id,
+            email=request.user.email,
+            status="pending",
+        )
+
+        HomeMemberService.reject_invitation(
+            invitation
+        )
+
+        return Response(
+            {
+                "message": "Invitation rejected"
+            }
+        )

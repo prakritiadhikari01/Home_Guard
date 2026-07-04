@@ -79,7 +79,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const token = localStorage.getItem("access");
 
     if (token) {
-        window.location.href = "{% url 'web:dashboard' %}";
+        window.location.href = "{% url 'web:home_setup' %}";
     }
 
 });
@@ -152,7 +152,7 @@ async function completeSignIn() {
         // Redirect
         // -----------------------------
 
-        window.location.href = "{% url 'web:dashboard' %}";
+        window.location.href = "{% url 'web:home_setup' %}";
 
     }
 

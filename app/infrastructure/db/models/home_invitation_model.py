@@ -1,3 +1,4 @@
+#app/infrastructure/db/models/home_invitation_model.py
 import uuid
 
 from django.db import models
@@ -23,13 +24,14 @@ class HomeInvitation(models.Model):
         related_name="invitations"
     )
 
-    invited_email = models.EmailField()
+    email = models.EmailField()
 
-    invited_user = models.ForeignKey(
+    invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="sent_home_invitations",
     )
 
     role = models.CharField(
@@ -38,11 +40,7 @@ class HomeInvitation(models.Model):
         default=Role.MEMBER.value,
     )
 
-    token = models.UUIDField(
-        default=uuid.uuid4,
-        unique=True,
-        editable=False,
-    )
+    permissions = models.JSONField(default=dict)
 
     status = models.CharField(
         max_length=20,
@@ -54,7 +52,6 @@ class HomeInvitation(models.Model):
         default="pending"
     )
 
-    expires_at = models.DateTimeField()
 
     created_at = models.DateTimeField(
         auto_now_add=True
@@ -63,5 +60,13 @@ class HomeInvitation(models.Model):
     class Meta:
         app_label = "homes"
 
+        constraints = [
+            models.UniqueConstraint(
+                fields=["home", "email"],
+                condition=models.Q(status="pending"),
+                name="unique_pending_home_invitation",
+            )
+        ]
+        
     def __str__(self):
-        return f"{self.invited_email} -> {self.home.name}"
+        return f"{self.email} -> {self.home.name}"

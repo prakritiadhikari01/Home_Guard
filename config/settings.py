@@ -12,9 +12,12 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 from decouple import config
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+env = environ.Env()
+environ.Env.read_env(BASE_DIR / ".env")
 
 
 # Quick-start development settings - unsuitable for production
@@ -40,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
+    "django_extensions",
     "corsheaders",
     "django.contrib.sessions",
     "django.contrib.messages",
@@ -174,3 +178,50 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 AI_SERVICE_URL = config("AI_SERVICE_URL")
 AI_TIMEOUT = config("AI_TIMEOUT", cast=int, default=15)
+
+
+# Email Configuration
+
+EMAIL_BACKEND = env(
+    "DJANGO_EMAIL_BACKEND",
+    default="django.core.mail.backends.smtp.EmailBackend",
+)
+
+EMAIL_HOST = env(
+    "DJANGO_EMAIL_HOST",
+    default="smtp.gmail.com",
+)
+
+EMAIL_PORT = env.int(
+    "DJANGO_EMAIL_PORT",
+    default=587,
+)
+
+EMAIL_HOST_USER = env(
+    "DJANGO_EMAIL_HOST_USER",
+    default="",
+)
+
+EMAIL_HOST_PASSWORD = env(
+    "DJANGO_EMAIL_HOST_PASSWORD",
+    default="",
+)
+
+EMAIL_USE_TLS = env.bool(
+    "DJANGO_EMAIL_USE_TLS",
+    default=True,
+)
+
+DEFAULT_FROM_EMAIL = env(
+    "DJANGO_DEFAULT_FROM_EMAIL",
+    default=EMAIL_HOST_USER,
+)
+
+SERVER_EMAIL = env(
+    "DJANGO_SERVER_EMAIL",
+    default=EMAIL_HOST_USER,
+)
+
+print("EMAIL_HOST_USER:", repr(EMAIL_HOST_USER))
+print("DEFAULT_FROM_EMAIL:", repr(DEFAULT_FROM_EMAIL))
+print("SERVER_EMAIL:", repr(SERVER_EMAIL))

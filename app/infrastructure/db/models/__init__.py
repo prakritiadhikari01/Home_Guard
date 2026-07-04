@@ -1,1 +1,1 @@
-from .face_profile_model import FaceProfile
+from .home_invitation_model import HomeInvitation

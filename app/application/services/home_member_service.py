@@ -1,3 +1,7 @@
+#app/application/services/home_member_service.py
+from datetime import timedelta
+from django.utils import timezone
+
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from app.domain.value_objects.role import Role
@@ -9,6 +13,9 @@ from app.infrastructure.db.repositories.django_home_member_repository import (
 from rest_framework.exceptions import (
     ValidationError,
     NotFound,
+)
+from app.infrastructure.db.models.home_invitation_model import (
+    HomeInvitation,
 )
 
 class HomeMemberService:
@@ -52,12 +59,12 @@ class HomeMemberService:
         },
     }
 
-    @transaction.atomic
     @staticmethod
+    @transaction.atomic
     def add_member(
         acting_user,
         home,
-        target_user,
+        email,
         role=Role.MEMBER.value,
     ):
 
@@ -67,37 +74,59 @@ class HomeMemberService:
                 user=acting_user,
             )
         )
-
+        if acting_user.email == email:
+            raise ValidationError(
+                "You cannot invite yourself."
+            )
         if not AccessPolicy.is_owner(acting_membership):
             raise PermissionDenied(
                 "Only OWNER can add members"
-            )
-
-        existing_member = (
-            HomeMemberService.home_member_repository.member_exists(
-                home=home,
-                user=target_user,
-            )
-        )
-
-        if existing_member:
-            raise ValidationError(
-                "User already exists in home"
             )
 
         permissions = (
             HomeMemberService.get_role_permissions(role)
         )
 
-        return HomeMemberService.home_member_repository.create_member(
-            home=home,
-            user=target_user,
-            role=role,
-            **permissions
+        existing_pending = (
+            HomeMemberService.home_member_repository
+            .get_pending_invitation(home, email)
         )
 
-    @transaction.atomic
+        if existing_pending:
+            raise ValidationError(
+                "Invitation already pending."
+            )
+        existing_user = (
+            HomeMemberService.home_member_repository
+            .get_user_by_email(email)
+        )
+
+        if existing_user:
+            existing_member = (
+                HomeMemberService.home_member_repository
+                .get_membership(
+                    home=home,
+                    user=existing_user,
+                )
+            )
+            if existing_member:
+                raise ValidationError(
+                    "User is already a member of this home."
+                )
+        invitation = (
+            HomeMemberService.home_member_repository.create_invitation(
+                home=home,
+                email=email,
+                invited_by=acting_user,
+                role=role,
+                permissions=permissions,
+            )
+        )
+
+        return invitation
+    
     @staticmethod
+    @transaction.atomic
     def remove_member(
         acting_user,
         home,
@@ -135,8 +164,8 @@ class HomeMemberService:
             user=target_user,
         )
 
-    @transaction.atomic
     @staticmethod
+    @transaction.atomic
     def update_member_role(
         acting_user,
         home,
@@ -190,6 +219,62 @@ class HomeMemberService:
             permissions=permissions,
         )
 
+    @staticmethod
+    @transaction.atomic
+    def accept_invitation(invitation, user):
+
+        invitation.status = "accepted"
+        invitation.save()
+
+        permissions = invitation.permissions
+
+        membership = (
+            HomeMemberService.home_member_repository.create_member(
+                home=invitation.home,
+                user=user,
+                role=invitation.role,
+                can_view_dashboard=True,
+                can_control_devices=permissions["can_control_devices"],
+                can_manage_members=permissions["can_manage_members"],
+                can_unlock_door=permissions["can_unlock_door"],
+                receive_alerts=permissions["receive_alerts"],
+            )
+        )
+        HomeInvitation.objects.filter(
+            home=invitation.home,
+            email=user.email,
+            status="pending",
+        ).exclude(
+            id=invitation.id,
+        ).delete()
+        return membership
+
+
+    @staticmethod
+    @transaction.atomic
+    def reject_invitation(invitation):
+
+        invitation.status = "rejected"
+        invitation.save()
+
+        return invitation
+
+  
+    @staticmethod
+    def get_pending_invitations(user):
+
+        from app.infrastructure.db.models.home_invitation_model import (
+            HomeInvitation,
+        )
+
+        return HomeInvitation.objects.filter(
+            email=user.email,
+            status="pending",
+        ).select_related(
+            "home",
+            "invited_by",
+        )
+    
     @staticmethod
     def get_role_permissions(role):
         permissions = (

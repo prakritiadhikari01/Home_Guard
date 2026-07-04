@@ -10,7 +10,7 @@ from django.contrib.auth import authenticate
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
-from .serializers import UserSerializer
+from .serializers import ChangePasswordSerializer, LogoutSerializer, UserSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 class RegisterView(APIView):
@@ -74,3 +74,81 @@ class MeView(APIView):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
     
+
+class ChangePasswordView(APIView):
+
+    permission_classes = [
+        IsAuthenticated
+    ]
+
+    def post(self, request):
+
+        serializer = (
+            ChangePasswordSerializer(
+                data=request.data,
+                context={
+                    "user": request.user
+                },
+            )
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        serializer.save()
+
+        return Response(
+            {
+                "message":
+                "Password changed successfully"
+            }
+        )
+
+
+class LogoutView(APIView):
+
+    permission_classes = [
+        IsAuthenticated
+    ]
+
+    def post(self, request):
+
+        serializer = LogoutSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(
+            raise_exception=True
+        )
+
+        refresh_token = (
+            serializer.validated_data[
+                "refresh"
+            ]
+        )
+
+        try:
+
+            token = RefreshToken(
+                refresh_token
+            )
+
+            token.blacklist()
+
+        except Exception:
+
+            return Response(
+                {
+                    "error":
+                    "Invalid refresh token"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "message":
+                "Logout successful"
+            }
+        )
