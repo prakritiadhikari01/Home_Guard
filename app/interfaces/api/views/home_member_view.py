@@ -6,6 +6,7 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 
+from app.application.services.home_invitation_service import HomeInvitationService
 from app.infrastructure.db.models.home_model import Home
 from app.application.services.home_member_service import HomeMemberService
 
@@ -18,10 +19,7 @@ from app.interfaces.api.serializers.home_member_serializer import (
 from app.infrastructure.db.repositories.django_home_member_repository import (
     DjangoHomeMemberRepository,
 )
-from app.infrastructure.db.models.home_invitation_model import HomeInvitation
-from app.interfaces.api.serializers.home_member_serializer import (
-    PendingInvitationSerializer,
-)
+
 from django.core.mail import send_mail
 from django.conf import settings
 
@@ -44,11 +42,16 @@ class AddHomeMemberView(APIView):
             id=home_id
         )
 
-        invitation = HomeMemberService.add_member(
+        permissions = HomeMemberService.get_role_permissions(
+            serializer.validated_data["role"]
+        )
+        print("VIEW PERMISSIONS:", permissions)
+        invitation = HomeInvitationService.send_invitation(
             acting_user=request.user,
             home=home,
             email=serializer.validated_data["email"],
             role=serializer.validated_data["role"],
+            permissions=permissions,
         )
 
         send_mail(
@@ -157,72 +160,3 @@ class UpdateMemberRoleView(APIView):
             "role": member.role,
         })
     
-class PendingInvitationsView(APIView):
-
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-
-        invitations = (
-            HomeMemberService.get_pending_invitations(
-                request.user
-            )
-        )
-
-        serializer = PendingInvitationSerializer(
-            invitations,
-            many=True,
-        )
-
-        return Response(serializer.data)
-    
-class AcceptInvitationView(APIView):
-
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, invitation_id):
-
-        invitation = get_object_or_404(
-            HomeInvitation,
-            id=invitation_id,
-            email=request.user.email,
-            status="pending",
-        )
-
-        membership = (
-            HomeMemberService.accept_invitation(
-                invitation,
-                request.user,
-            )
-        )
-
-        return Response(
-            {
-                "message": "Invitation accepted",
-                "next": "/scan-face/",
-                "home_member_id": membership.id,
-            }
-        )
-
-class RejectInvitationView(APIView):
-
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, invitation_id):
-
-        invitation = get_object_or_404(
-            HomeInvitation,
-            id=invitation_id,
-            email=request.user.email,
-            status="pending",
-        )
-
-        HomeMemberService.reject_invitation(
-            invitation
-        )
-
-        return Response(
-            {
-                "message": "Invitation rejected"
-            }
-        )

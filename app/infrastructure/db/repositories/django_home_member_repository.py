@@ -4,30 +4,11 @@ from app.domain.repositories.home_member_repository import (
 )
 
 from app.infrastructure.db.models.home_member_model import HomeMember
-from app.infrastructure.db.models.home_invitation_model import (
-    HomeInvitation,
-)
-from django.contrib.auth import get_user_model
-User = get_user_model()
+
 class DjangoHomeMemberRepository(
     AbstractHomeMemberRepository
 ):
-    def create_invitation(
-        self,
-        home,
-        email,
-        invited_by,
-        role,
-        permissions,
-    ):
 
-        return HomeInvitation.objects.create(
-            home=home,
-            email=email,
-            invited_by=invited_by,
-            role=role,
-            permissions=permissions,
-        )
     def get_membership(self, home, user):
         return HomeMember.objects.filter(
             home=home,
@@ -96,17 +77,3 @@ class DjangoHomeMemberRepository(
 
         return membership
     
-    #Invitations related methods 
-    
-
-    def get_pending_invitation(self, home, email):
-        return HomeInvitation.objects.filter(
-            home=home,
-            email=email,
-            status="pending",
-        ).first()
-
-    def get_user_by_email(self, email):
-        return User.objects.filter(
-            email=email
-        ).first()

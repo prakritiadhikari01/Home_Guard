@@ -3,15 +3,12 @@ from app.interfaces.api.views.active_device_view import ActiveDeviceListView
 from app.interfaces.api.views.event_views import AIEventIngestView
 
 from app.interfaces.api.views.face_list_view import FaceListView
+from app.interfaces.api.views.home_invitation_view import AcceptInvitationView, PendingInvitationsView, RejectInvitationView
 from app.interfaces.api.views.home_views import (
     HomeCreateView,
     UserHomesView,
 )
-from app.interfaces.api.views.home_member_view import (
-    PendingInvitationsView,
-    AcceptInvitationView,
-    RejectInvitationView,
-)
+
 from app.interfaces.api.views.home_member_view import (
     AddHomeMemberView,
     ListHomeMembersView,
