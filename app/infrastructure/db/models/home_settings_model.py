@@ -3,7 +3,7 @@ from django.db import models
 
 class HomeSettings(models.Model):
     home = models.OneToOneField(
-        "Home",
+        "homes.Home",
         on_delete=models.CASCADE,
         related_name="settings",
     )

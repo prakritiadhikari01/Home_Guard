@@ -3,7 +3,7 @@ from django.db import models
 
 class DeviceSettings(models.Model):
     device = models.OneToOneField(
-        "Device",
+        "devices.Device",
         on_delete=models.CASCADE,
         related_name="settings",
     )
@@ -27,6 +27,7 @@ class DeviceSettings(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        app_label = "devices"
         constraints = [
             models.CheckConstraint(
                 check=models.Q(confidence_threshold__gte=0)
