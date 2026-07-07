@@ -1,59 +1,28 @@
-import uuid
-
 from django.db import models
 
-from app.domain.value_objects.security_mode import SecurityMode
-from app.infrastructure.db.models.home_model import Home
-from app.domain.value_objects.security_mode import SecurityMode
 
 class HomeSettings(models.Model):
-
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
-
     home = models.OneToOneField(
-        Home,
+        "Home",
         on_delete=models.CASCADE,
         related_name="settings",
     )
 
-    security_mode = models.CharField(
-        max_length=20,
-        choices=SecurityMode.choices(),
-        default=SecurityMode.NORMAL.value,
-    )
+    # Household Notifications
+    notify_family_members = models.BooleanField(default=False)
+    emergency_contact_enabled = models.BooleanField(default=False)
 
-    confidence_threshold = models.PositiveIntegerField(
-        default=80,
-    )
-
-    human_detection = models.BooleanField(default=True)
-
-    animal_detection = models.BooleanField(default=True)
-
-    vehicle_detection = models.BooleanField(default=True)
-
-    motion_detection = models.BooleanField(default=True)
-
-    ai_summary_digest = models.BooleanField(default=True)
-
-    unknown_notify_owner = models.BooleanField(default=True)
-
-    repeated_detection_alert = models.BooleanField(default=True)
-
-    known_member_log_only = models.BooleanField(default=True)
-
+    # Automation Rules
+    notify_unknown_person = models.BooleanField(default=True)
+    escalate_repeated_detection = models.BooleanField(default=True)
+    log_known_member_entry = models.BooleanField(default=True)
     ignore_animals = models.BooleanField(default=False)
 
-    updated_at = models.DateTimeField(
-        auto_now=True,
-    )
+    # AI
+    ai_summary_enabled = models.BooleanField(default=True)
 
-    class Meta:
-        app_label = "homes"
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Settings - {self.home.name}"
+        return f"{self.home.name} Settings"

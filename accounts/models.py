@@ -1,6 +1,5 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db import models
-from app.infrastructure.db.models.user_settings_model import UserSettings
 
 class UserStatus(models.TextChoices):
     ACTIVE = "active", "Active"
