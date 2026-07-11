@@ -16,6 +16,7 @@ urlpatterns = [
     path("cameras/", views.cameras_page, name="cameras"),
     path("assistant/", views.assistant_page, name="assistant"),
     path("settings/", views.settings_page, name="settings"),
-    path("home-setup/",views.home_setup_page,name="home_setup",
-),
+    path("home-setup/",views.home_setup_page,name="home_setup"),
+    path("scan-face/",views.scan_page,name="scan-page",)
+
 ]

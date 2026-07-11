@@ -42,3 +42,6 @@ def settings_page(request):
 
 def home_setup_page(request):
     return render(request, "pages/home-setup.html")
+
+def scan_page(request):
+    return render(request, "pages/scan.html")

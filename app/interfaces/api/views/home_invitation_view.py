@@ -43,6 +43,7 @@ class AcceptInvitationView(APIView):
         request,
         invitation_id,
     ):
+
         invitation = get_object_or_404(
             HomeInvitation,
             id=invitation_id,
@@ -50,7 +51,7 @@ class AcceptInvitationView(APIView):
             status="pending",
         )
 
-        membership = (
+        session = (
             HomeInvitationService.accept_invitation(
                 invitation,
                 request.user,
@@ -59,12 +60,12 @@ class AcceptInvitationView(APIView):
 
         return Response(
             {
-                "message": "Invitation accepted",
-                "next": "/scan-face/",
-                "home_member_id": membership.id,
+                "message": "Enrollment required before joining home.",
+                "session_id": session.id,
+                "status": session.status,
+                "scan_url": f"/scan-face/?session={session.id}",
             }
         )
-
 
 class RejectInvitationView(APIView):
 

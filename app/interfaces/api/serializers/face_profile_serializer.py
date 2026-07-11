@@ -2,17 +2,21 @@ from rest_framework import serializers
 
 from app.infrastructure.db.models.face_profile_model import FaceProfile
 
+
 class FaceProfileSerializer(serializers.ModelSerializer):
 
     member_id = serializers.UUIDField(
-        source="home_member.id"
+        source="home_member.id",
+        read_only=True,
     )
 
     user_email = serializers.CharField(
-        source="home_member.user.email"
+        source="home_member.user.email",
+        read_only=True,
     )
 
     class Meta:
+
         model = FaceProfile
 
         fields = [
@@ -20,16 +24,17 @@ class FaceProfileSerializer(serializers.ModelSerializer):
             "member_id",
             "user_email",
             "label_name",
-            "embedding",
+            "embeddings",
             "image_url",
             "is_verified",
-            "created_at"
+            "created_at",
         ]
-        
+
+
 class FaceRegistrationSerializer(serializers.Serializer):
 
-    home_id = serializers.UUIDField()
+    home_member_id = serializers.UUIDField()
 
     label_name = serializers.CharField()
 
-    image = serializers.CharField()
+    embeddings = serializers.DictField()

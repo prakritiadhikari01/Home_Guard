@@ -1,0 +1,1052 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        HomeGuard • Face Enrollment
+    </title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link
+        rel="stylesheet"
+        href="{% static 'css/style.css' %}"
+    >
+
+</head>
+
+<body class="bg-[#080e1a] min-h-screen flex">
+
+<!-- ===================================================== -->
+<!-- LEFT PANEL -->
+<!-- ===================================================== -->
+
+<div
+    class="hidden lg:flex lg:w-[46%] flex-col justify-between p-10 relative overflow-hidden grid-bg"
+>
+
+    <div class="flex items-center gap-3">
+
+        <div
+            class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center"
+        >
+
+            <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                stroke-width="2"
+            >
+                <path
+                    d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+                />
+            </svg>
+
+        </div>
+
+        <div>
+
+            <div
+                class="text-white font-bold tracking-widest text-sm"
+            >
+                HOMEGUARD
+            </div>
+
+            <div
+                class="text-[#4a7fa5] text-[10px] tracking-widest"
+            >
+                AI FACE ENROLLMENT
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="space-y-8">
+
+        <div>
+
+            <p
+                class="text-blue-400 text-xs tracking-widest mb-4"
+            >
+                // MEMBER VERIFICATION
+            </p>
+
+            <h1
+                class="text-white text-4xl font-bold leading-tight"
+            >
+                Scan your face<br>
+                to join the home.
+            </h1>
+
+            <p
+                class="text-slate-400 mt-5 text-sm leading-relaxed max-w-sm"
+            >
+                HomeGuard securely creates your encrypted facial
+                profile. Your face never leaves your trusted
+                AI Engine except for mathematical embeddings.
+            </p>
+
+        </div>
+
+        <!-- Steps -->
+
+        <div class="space-y-4">
+
+            <div
+                class="flex items-center gap-3"
+            >
+                <div
+                    id="step1Circle"
+                    class="w-7 h-7 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center"
+                >
+                    ✓
+                </div>
+
+                <div>
+
+                    <div class="text-white text-sm">
+                        Invitation Accepted
+                    </div>
+
+                    <div class="text-slate-500 text-xs">
+                        Identity confirmed
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div
+                class="flex items-center gap-3"
+            >
+                <div
+                    id="step2Circle"
+                    class="w-7 h-7 rounded-full bg-slate-700 text-slate-300 text-xs flex items-center justify-center"
+                >
+                    2
+                </div>
+
+                <div>
+
+                    <div class="text-white text-sm">
+                        Face Enrollment
+                    </div>
+
+                    <div class="text-slate-500 text-xs">
+                        Capture multiple angles
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div
+                class="flex items-center gap-3"
+            >
+                <div
+                    id="step3Circle"
+                    class="w-7 h-7 rounded-full bg-slate-700 text-slate-300 text-xs flex items-center justify-center"
+                >
+                    3
+                </div>
+
+                <div>
+
+                    <div class="text-white text-sm">
+                        Home Access
+                    </div>
+
+                    <div class="text-slate-500 text-xs">
+                        Dashboard unlocked
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Stats -->
+
+        <div class="flex gap-4">
+
+            <div class="stat-card">
+
+                <div
+                    class="text-white text-lg font-bold"
+                >
+                    512D
+                </div>
+
+                <div
+                    class="text-slate-500 text-[10px] tracking-widest mt-1"
+                >
+                    FACE EMBEDDING
+                </div>
+
+            </div>
+
+            <div class="stat-card">
+
+                <div
+                    class="text-white text-lg font-bold"
+                >
+                    AES-256
+                </div>
+
+                <div
+                    class="text-slate-500 text-[10px] tracking-widest mt-1"
+                >
+                    ENCRYPTED
+                </div>
+
+            </div>
+
+            <div class="stat-card">
+
+                <div
+                    class="text-white text-lg font-bold"
+                >
+                    AI
+                </div>
+
+                <div
+                    class="text-slate-500 text-[10px] tracking-widest mt-1"
+                >
+                    VERIFIED
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div
+        class="flex items-center gap-2"
+    >
+
+        <span
+            id="engineDot"
+            class="w-2 h-2 rounded-full bg-slate-500"
+        ></span>
+
+        <span
+            id="engineStatusText"
+            class="text-slate-400 text-[10px] tracking-widest"
+        >
+            AI ENGINE CONNECTING...
+        </span>
+
+    </div>
+
+</div>
+
+<!-- ===================================================== -->
+<!-- RIGHT PANEL -->
+<!-- ===================================================== -->
+
+<div
+    class="flex-1 flex items-center justify-center p-8 bg-[#0a1120]"
+>
+
+<div class="w-full max-w-xl">
+
+<div class="card p-8">
+
+    <div class="mb-8">
+
+        <h2
+            class="text-white text-3xl font-bold"
+        >
+            Face Enrollment
+        </h2>
+
+        <p
+            class="text-slate-400 mt-2 text-sm"
+        >
+            Follow the instructions below.
+            Keep your face inside the frame.
+        </p>
+
+    </div>
+
+    <!-- Camera -->
+
+    <div
+        class="relative rounded-xl overflow-hidden border border-slate-700"
+    >
+
+        <video
+
+            id="camera"
+
+            autoplay
+
+            muted
+
+            playsinline
+
+            class="w-full aspect-video bg-black object-cover"
+
+        ></video>
+
+        <canvas
+            id="captureCanvas"
+            class="hidden"
+        ></canvas>
+
+        <!-- Overlay -->
+
+        <div
+            class="absolute inset-0 flex items-center justify-center pointer-events-none"
+        >
+
+            <div
+                id="faceRing"
+                class="w-72 h-72 rounded-full border-4 border-blue-500 opacity-70 transition-colors duration-300"
+            ></div>
+
+        </div>
+
+        <!-- Scanning -->
+
+        <div
+            id="scanLine"
+            class="absolute left-0 right-0 h-1 bg-cyan-400 opacity-70 hidden"
+        ></div>
+
+    </div>
+
+    <!-- Pose -->
+
+    <div class="mt-6">
+
+        <div
+            class="flex justify-between mb-2"
+        >
+
+            <span
+                class="text-slate-300 text-sm"
+            >
+                Current Pose
+            </span>
+
+            <span
+                id="poseLabel"
+                class="text-blue-400 font-semibold"
+            >
+                CENTER
+            </span>
+
+        </div>
+
+        <div
+            class="w-full bg-slate-800 rounded-full h-2"
+        >
+
+            <div
+
+                id="progressBar"
+
+                class="bg-blue-500 h-2 rounded-full transition-all duration-300"
+
+                style="width:0%"
+
+            ></div>
+
+        </div>
+
+        <div
+            class="flex justify-between mt-2"
+        >
+
+            <span
+                id="stepProgressText"
+                class="text-slate-500 text-xs"
+            >
+            </span>
+
+            <span
+                id="overallProgressText"
+                class="text-slate-500 text-xs"
+            >
+                0%
+            </span>
+
+        </div>
+
+    </div>
+
+    <!-- Instructions -->
+
+    <div
+        class="mt-6 rounded-lg bg-slate-900 border border-slate-700 p-5"
+    >
+
+        <div
+            class="text-blue-400 font-semibold text-sm mb-2"
+        >
+            Instructions
+        </div>
+
+        <p
+            id="instructionText"
+            class="text-slate-300 text-sm leading-6"
+        >
+            Position your face inside the circle and
+            click Start Scan.
+        </p>
+
+    </div>
+
+    <!-- Status -->
+
+    <div
+        id="statusBox"
+        class="hidden mt-6 rounded-lg bg-blue-500/10 border border-blue-500/30 p-4"
+    >
+
+        <div
+            id="statusMessage"
+            class="text-blue-300 text-sm"
+        >
+            Initializing...
+        </div>
+
+    </div>
+
+    <!-- Error -->
+
+    <div
+        id="errorBox"
+        class="hidden mt-6 rounded-lg bg-red-500/10 border border-red-500/30 p-4"
+    >
+
+        <div
+            id="errorMessage"
+            class="text-red-400 text-sm"
+        >
+        </div>
+
+    </div>
+
+    <!-- Buttons -->
+
+    <div class="mt-8 flex gap-4">
+
+        <button
+
+            id="startBtn"
+
+            class="flex-1 bg-blue-500 hover:bg-blue-600 transition rounded-lg py-3 text-white font-semibold"
+
+        >
+
+            Start Scan
+
+        </button>
+
+        <button
+
+            id="retryBtn"
+
+            class="hidden flex-1 bg-slate-700 hover:bg-slate-600 transition rounded-lg py-3 text-white"
+
+        >
+
+            Retry
+
+        </button>
+
+        <button
+
+            id="cancelBtn"
+
+            class="hidden px-6 bg-slate-800 hover:bg-slate-700 transition rounded-lg py-3 text-slate-300"
+
+        >
+
+            Cancel
+
+        </button>
+
+    </div>
+
+</div>
+
+</div>
+
+</div>
+
+</body>
+
+</html>
+
+<script>
+
+const accessToken = localStorage.getItem("access");
+
+if (!accessToken) {
+    window.location.href = "{% url 'web:login' %}";
+}
+
+// ===================================================
+// CONFIG — EDIT THESE FOR YOUR SETUP
+// ===================================================
+
+// The AI Engine is a separate device/server running
+// app/api/enrollment_api.py (FastAPI). Point this at it.
+const AI_ENGINE_URL = "http://192.168.1.3:8001";
+
+const params = new URLSearchParams(window.location.search);
+
+const enrollmentSessionId = params.get("session");
+
+if (!enrollmentSessionId) {
+
+    alert("Enrollment session not found.");
+
+    history.back();
+
+}
+// Must match FaceEnrollmentService.STEPS / FRAMES_PER_STEP exactly
+const STEPS = [
+    "LOOK_CENTER",
+    "LOOK_LEFT",
+    "LOOK_RIGHT",
+    "LOOK_UP",
+    "LOOK_DOWN",
+];
+
+const FRAMES_PER_STEP = 10;
+
+const STEP_LABELS = {
+    LOOK_CENTER: "CENTER",
+    LOOK_LEFT: "LEFT",
+    LOOK_RIGHT: "RIGHT",
+    LOOK_UP: "UP",
+    LOOK_DOWN: "DOWN",
+};
+
+const STEP_INSTRUCTIONS = {
+    LOOK_CENTER: "Look directly into the camera.",
+    LOOK_LEFT: "Slowly turn your head to the LEFT.",
+    LOOK_RIGHT: "Slowly turn your head to the RIGHT.",
+    LOOK_UP: "Tilt your head slightly UP.",
+    LOOK_DOWN: "Tilt your head slightly DOWN.",
+};
+
+// How often we send a frame to the AI Engine while scanning
+const CAPTURE_INTERVAL_MS = 250;
+
+// ===================================================
+// STATE
+// ===================================================
+
+let stream = null;
+
+// Django session id
+const sessionId = enrollmentSessionId;
+
+// AI Engine session id
+let aiSessionId = null;
+
+let scanning = false;
+let captureTimer = null;
+let sending = false; // guards against overlapping requests
+
+// ===================================================
+// ELEMENTS
+// ===================================================
+
+const video = document.getElementById("camera");
+const canvas = document.getElementById("captureCanvas");
+
+const startBtn = document.getElementById("startBtn");
+const retryBtn = document.getElementById("retryBtn");
+const cancelBtn = document.getElementById("cancelBtn");
+
+const poseLabel = document.getElementById("poseLabel");
+const progressBar = document.getElementById("progressBar");
+const stepProgressText = document.getElementById("stepProgressText");
+const overallProgressText = document.getElementById("overallProgressText");
+
+const instructionText = document.getElementById("instructionText");
+
+const statusBox = document.getElementById("statusBox");
+const statusMessage = document.getElementById("statusMessage");
+
+const errorBox = document.getElementById("errorBox");
+const errorMessage = document.getElementById("errorMessage");
+
+const scanLine = document.getElementById("scanLine");
+const faceRing = document.getElementById("faceRing");
+
+const engineDot = document.getElementById("engineDot");
+const engineStatusText = document.getElementById("engineStatusText");
+
+// ===================================================
+// CAMERA
+// ===================================================
+
+async function initializeCamera() {
+
+    try {
+
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: "user",
+                width: 1280,
+                height: 720,
+            },
+        });
+
+        video.srcObject = stream;
+
+    } catch (e) {
+
+        showError("Unable to access camera. Please allow camera permission.");
+        startBtn.disabled = true;
+
+    }
+
+}
+
+// ===================================================
+// UI HELPERS
+// ===================================================
+
+function showStatus(message) {
+    statusBox.classList.remove("hidden");
+    statusMessage.innerText = message;
+}
+
+function hideStatus() {
+    statusBox.classList.add("hidden");
+}
+
+function showError(message) {
+    errorBox.classList.remove("hidden");
+    errorMessage.innerText = message;
+}
+
+function hideError() {
+    errorBox.classList.add("hidden");
+}
+
+function setFaceRing(color) {
+    // color: "blue" (idle/ok), "red" (no face / low confidence), "green" (pose captured)
+    faceRing.classList.remove(
+        "border-blue-500",
+        "border-red-500",
+        "border-green-500"
+    );
+    faceRing.classList.add(`border-${color}-500`);
+}
+
+function markEngineConnected(connected) {
+
+    if (connected) {
+
+        engineDot.classList.remove("bg-slate-500", "bg-red-500");
+        engineDot.classList.add("bg-green-400", "animate-pulse");
+        engineStatusText.innerText = "AI ENGINE CONNECTED";
+        engineStatusText.classList.remove("text-slate-400");
+        engineStatusText.classList.add("text-green-400");
+
+    } else {
+
+        engineDot.classList.remove("bg-green-400", "animate-pulse");
+        engineDot.classList.add("bg-red-500");
+        engineStatusText.innerText = "AI ENGINE UNREACHABLE";
+        engineStatusText.classList.remove("text-slate-400", "text-green-400");
+        engineStatusText.classList.add("text-red-400");
+
+    }
+
+}
+
+function updateUIFromResult(result, stepIndex) {
+
+    const stepName = STEPS[stepIndex] || null;
+
+    if (stepName) {
+        poseLabel.innerText = STEP_LABELS[stepName];
+        instructionText.innerText = STEP_INSTRUCTIONS[stepName];
+    }
+
+    const framesRequired = result.frames_required || FRAMES_PER_STEP;
+    const stepProgress = result.step_progress || 0;
+
+    stepProgressText.innerText = stepName
+        ? `${stepProgress}/${framesRequired} frames`
+        : "";
+
+    // Smooth overall progress: completed steps + progress within current step
+    const overallPercent = Math.min(
+        100,
+        Math.round(
+            ((stepIndex * FRAMES_PER_STEP + stepProgress) /
+                (STEPS.length * FRAMES_PER_STEP)) * 100
+        )
+    );
+
+    progressBar.style.width = overallPercent + "%";
+    overallProgressText.innerText = overallPercent + "%";
+
+}
+
+function stepIndexFromName(name) {
+    const idx = STEPS.indexOf(name);
+    return idx === -1 ? STEPS.length : idx;
+}
+
+// ===================================================
+// IMAGE CAPTURE
+// ===================================================
+
+function captureFrameBlob() {
+
+    return new Promise((resolve) => {
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0);
+
+        canvas.toBlob(
+            (blob) => resolve(blob),
+            "image/jpeg",
+            0.9
+        );
+
+    });
+
+}
+
+// ===================================================
+// AI ENGINE CALLS
+// ===================================================
+
+async function startEnrollmentSession() {
+
+    const form = new FormData();
+
+    form.append(
+        "session_id",
+        sessionId
+    );
+    console.log("Django session:", sessionId);
+    console.log("Calling:", `${AI_ENGINE_URL}/enrollment/start`);
+
+    const response = await fetch(
+
+        `${AI_ENGINE_URL}/enrollment/start`,
+
+        {
+            method: "POST",
+            body: form,
+        }
+
+    );
+    console.log("Status:", response.status);
+    if (!response.ok) {
+
+        throw new Error(
+            "Could not start enrollment."
+        );
+
+    }
+
+    return await response.json();
+
+}
+
+async function sendFrame(blob) {
+    console.log("Uploading frame...");
+    console.log("Session ID:", aiSessionId);
+    const form = new FormData();
+    form.append("session_id", aiSessionId);
+    form.append("image", blob, "frame.jpg");
+
+    const response = await fetch(
+        `${AI_ENGINE_URL}/enrollment/process-frame`,
+        {
+            method: "POST",
+            body: form,
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error("Frame processing failed.");
+    }
+
+    return await response.json();
+
+}
+
+async function cancelSession() {
+
+    if (!aiSessionId) return;
+
+    try {
+
+        const form = new FormData();
+        form.append("session_id", aiSessionId);
+
+        await fetch(`${AI_ENGINE_URL}/enrollment/cancel`, {
+            method: "POST",
+            body: form,
+        });
+
+    } catch (e) {
+        // best-effort cleanup, ignore errors
+    }
+
+}
+
+// ===================================================
+// SCAN LOOP
+// ===================================================
+
+async function captureTick() {
+    console.log("captureTick()");
+    if (!scanning || sending) return;
+
+    sending = true;
+
+    try {
+
+        const blob = await captureFrameBlob();
+        const result = await sendFrame(blob);
+
+        if (!result.success) {
+
+            // Face not detected / confidence too low — keep trying, no penalty
+            setFaceRing("red");
+            showStatus(result.message);
+
+            const stepIndex = stepIndexFromName(result.current_step);
+            updateUIFromResult(result, stepIndex);
+
+        } else {
+
+            setFaceRing("green");
+            hideStatus();
+
+            if (result.finished) {
+
+                stopScanning();
+                await handleFinished(result);
+                return;
+
+            }
+
+            const stepIndex = stepIndexFromName(result.current_step);
+            updateUIFromResult(result, stepIndex);
+
+            if (result.completed_step) {
+                showStatus(`${STEP_LABELS[result.completed_step]} pose captured!`);
+                setTimeout(() => { if (scanning) hideStatus(); }, 700);
+            }
+
+        }
+
+    } catch (e) {
+
+        console.error(e);
+        stopScanning();
+        markEngineConnected(false);
+        showError("Lost connection to the AI Engine. Please retry.");
+        retryBtn.classList.remove("hidden");
+        cancelBtn.classList.add("hidden");
+
+    } finally {
+
+        sending = false;
+
+    }
+
+}
+
+function startScanning() {
+    console.log("startScanning() called");
+    scanning = true;
+    scanLine.classList.remove("hidden");
+    captureTimer = setInterval(captureTick, CAPTURE_INTERVAL_MS);
+
+}
+
+function stopScanning() {
+
+    scanning = false;
+    scanLine.classList.add("hidden");
+
+    if (captureTimer) {
+        clearInterval(captureTimer);
+        captureTimer = null;
+    }
+
+}
+
+// ===================================================
+// FINISH — AI Engine already saved the profile to Django
+// (see EnrollmentController.finish_enrollment), so we just
+// react to the result here.
+// ===================================================
+
+async function handleFinished(result) {
+
+    setFaceRing("green");
+    progressBar.style.width = "100%";
+    overallProgressText.innerText = "100%";
+    stepProgressText.innerText = "";
+    poseLabel.innerText = "DONE";
+    instructionText.innerText = "Enrollment complete.";
+
+    if (!result.django_response) {
+
+        showError("Enrollment finished but saving the profile failed. Please retry.");
+        retryBtn.classList.remove("hidden");
+        cancelBtn.classList.add("hidden");
+        return;
+
+    }
+
+    document.getElementById("step2Circle").className =
+        "w-7 h-7 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center";
+    document.getElementById("step2Circle").innerHTML = "✓";
+
+    document.getElementById("step3Circle").className =
+        "w-7 h-7 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center";
+    document.getElementById("step3Circle").innerHTML = "✓";
+
+    showStatus("Enrollment complete. Redirecting...");
+    cancelBtn.classList.add("hidden");
+    startBtn.classList.add("hidden");
+
+    setTimeout(() => {
+        window.location.href = "{% url 'web:home_setup' %}";
+    }, 1500);
+
+}
+
+// ===================================================
+// MAIN FLOW
+// ===================================================
+
+async function beginEnrollment() {
+
+    hideError();
+    hideStatus();
+
+    startBtn.disabled = true;
+    startBtn.innerText = "Starting...";
+
+    try {
+
+        const startData = await startEnrollmentSession();
+        aiSessionId = startData.session_id;
+        console.log("AI Session ID:", aiSessionId);
+        console.log("Calling startScanning()");
+        markEngineConnected(true);
+
+        startBtn.classList.add("hidden");
+        retryBtn.classList.add("hidden");
+        cancelBtn.classList.remove("hidden");
+
+        updateUIFromResult(
+            {
+                step_progress: 0,
+                frames_required: FRAMES_PER_STEP,
+                current_step: startData.current_step,
+            },
+            stepIndexFromName(startData.current_step)
+        );
+
+        startScanning();
+
+    } catch (e) {
+
+        console.error(e);
+        markEngineConnected(false);
+        showError(e.message || "Could not reach the AI Engine.");
+        retryBtn.classList.remove("hidden");
+        startBtn.disabled = false;
+        startBtn.innerText = "Start Scan";
+
+    }
+
+}
+
+// ===================================================
+// BUTTON HANDLERS
+// ===================================================
+
+startBtn.onclick = beginEnrollment;
+
+retryBtn.onclick = function () {
+    retryBtn.classList.add("hidden");
+    setFaceRing("blue");
+    beginEnrollment();
+};
+
+cancelBtn.onclick = async function () {
+
+    stopScanning();
+    await cancelSession();
+
+    aiSessionId = null;
+
+    cancelBtn.classList.add("hidden");
+    startBtn.classList.remove("hidden");
+    startBtn.disabled = false;
+    startBtn.innerText = "Start Scan";
+
+    poseLabel.innerText = "CENTER";
+    instructionText.innerText = "Position your face inside the circle and click Start Scan.";
+    progressBar.style.width = "0%";
+    overallProgressText.innerText = "0%";
+    stepProgressText.innerText = "";
+    setFaceRing("blue");
+    hideStatus();
+    hideError();
+
+};
+
+window.addEventListener("beforeunload", () => {
+    if (sessionId && scanning) {
+        // best-effort cleanup; not guaranteed to complete
+        navigator.sendBeacon &&
+            navigator.sendBeacon(
+                `${AI_ENGINE_URL}/enrollment/cancel`,
+                new Blob(
+                    [`session_id=${encodeURIComponent(sessionId)}`],
+                    { type: "application/x-www-form-urlencoded" }
+                )
+            );
+    }
+});
+
+// ===================================================
+// START
+// ===================================================
+
+setFaceRing("blue");
+initializeCamera();
+
+</script>

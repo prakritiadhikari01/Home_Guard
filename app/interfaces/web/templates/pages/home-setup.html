@@ -301,8 +301,11 @@ async function acceptInvite(invitationId) {
         return;
     }
 
-    await loadData();
+    const data = await response.json();
 
+    console.log(data);
+
+    window.location.href = data.scan_url;
 }
 
 async function rejectInvite(invitationId) {

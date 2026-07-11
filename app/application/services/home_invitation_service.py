@@ -1,8 +1,10 @@
+#app/application/services/home_invitation_service.py
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 
 from rest_framework.exceptions import ValidationError
 
+from app.application.services.enrollment_service import EnrollmentService
 from app.domain.services.access_policy import AccessPolicy
 
 from app.infrastructure.db.repositories.django_home_member_repository import (
@@ -100,37 +102,19 @@ class HomeInvitationService:
         user,
     ):
 
-        invitation = (
-            HomeInvitationService.invitation_repository.accept(
+        if invitation.email != user.email:
+            raise PermissionDenied(
+                "This invitation does not belong to you."
+            )
+
+        session = (
+            EnrollmentService.start_enrollment(
                 invitation
             )
         )
 
-        permissions = invitation.permissions
+        return session
 
-        membership = (
-            HomeInvitationService.member_repository.create_member(
-                home=invitation.home,
-                user=user,
-                role=invitation.role,
-                can_view_dashboard=True,
-                can_control_devices=permissions["can_control_devices"],
-                can_manage_members=permissions["can_manage_members"],
-                can_unlock_door=permissions["can_unlock_door"],
-                receive_alerts=permissions["receive_alerts"],
-            )
-        )
-
-        (
-            HomeInvitationService.invitation_repository
-            .delete_other_pending(
-                home=invitation.home,
-                email=user.email,
-                invitation_id=invitation.id,
-            )
-        )
-
-        return membership
 
     @staticmethod
     @transaction.atomic

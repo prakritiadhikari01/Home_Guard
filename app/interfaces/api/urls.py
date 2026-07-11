@@ -15,6 +15,11 @@ from app.interfaces.api.views.home_member_view import (
     RemoveHomeMemberView,
     UpdateMemberRoleView,
 )
+from app.interfaces.api.views.enrollment_views import (
+    EnrollmentStatusView,
+    CompleteEnrollmentView,
+    FailEnrollmentView,
+)
 from app.interfaces.api.views.device_views import (
     RegisterDeviceView,
     HomeDevicesView,
@@ -22,10 +27,6 @@ from app.interfaces.api.views.device_views import (
 
 from app.interfaces.api.views.smart_lock_views import (
     UnlockDoorView,
-)
-
-from app.interfaces.api.views.face_profile_views import (
-    RegisterFaceView
 )
 from app.interfaces.api.views.face_save_view import FaceSaveView
 from app.interfaces.api.views.settings_views import SettingsView
@@ -88,10 +89,26 @@ urlpatterns = [
         "homes/<uuid:home_id>/locks/<uuid:lock_id>/unlock/",
         UnlockDoorView.as_view(),
     ),
+    #enrollments
+
     path(
-        "faces/register/",
-        RegisterFaceView.as_view()
+        "enrollment/status/<uuid:session_id>/",
+        EnrollmentStatusView.as_view(),
+        name="enrollment-status",
     ),
+
+    path(
+        "enrollment/complete/",
+        CompleteEnrollmentView.as_view(),
+        name="complete-enrollment",
+    ),
+
+    path(
+        "enrollment/fail/<uuid:session_id>/",
+        FailEnrollmentView.as_view(),
+        name="fail-enrollment",
+    ),
+
     path("faces/save/", FaceSaveView.as_view()),
     path("faces/all/", FaceListView.as_view()),
     path("devices/active/",ActiveDeviceListView.as_view(),),
@@ -103,4 +120,7 @@ urlpatterns = [
         name="dashboard",
     ),
     
+
+
+
 ]

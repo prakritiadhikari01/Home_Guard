@@ -1,10 +1,10 @@
-# app/interfaces/api/views/face_save_view.py
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from app.infrastructure.db.models.face_profile_model import FaceProfile
-from app.infrastructure.db.models.home_member_model import HomeMember
+from app.application.services.enrollment_service import (
+    EnrollmentService,
+)
 
 
 class FaceSaveView(APIView):
@@ -13,37 +13,48 @@ class FaceSaveView(APIView):
 
     def post(self, request):
 
-        try:
+        session_id = request.data.get("session_id")
+        embeddings = request.data.get("embeddings")
 
-            data = request.data
-
-            home_member_id = data.get("home_member_id")
-            label_name = data.get("label_name")
-            embedding = data.get("embedding")
-
-            if not embedding:
-                return Response(
-                    {"error": "No embedding provided"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            member = HomeMember.objects.get(
-                id=home_member_id
+        if not session_id:
+            return Response(
+                {
+                    "error": "session_id is required."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-            face_profile = FaceProfile.objects.create(
-                home_member=member,
-                label_name=label_name,
-                embedding=embedding,
-                is_verified=True
+        if not embeddings:
+            return Response(
+                {
+                    "error": "embeddings are required."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+
+            result = (
+                EnrollmentService.complete_enrollment(
+                    session_id=session_id,
+                    embeddings=embeddings,
+                )
             )
 
             return Response(
                 {
-                    "message": "Face saved successfully",
-                    "face_profile_id": str(face_profile.id)
+                    "message": "Enrollment completed successfully.",
+                    "session_id": str(
+                        result["session"].id
+                    ),
+                    "home_member_id": str(
+                        result["member"].id
+                    ),
+                    "face_profile_id": str(
+                        result["face_profile"].id
+                    ),
                 },
-                status=status.HTTP_201_CREATED
+                status=status.HTTP_201_CREATED,
             )
 
         except Exception as e:
@@ -52,5 +63,5 @@ class FaceSaveView(APIView):
                 {
                     "error": str(e)
                 },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
