@@ -28,6 +28,11 @@ def alerts_page(request):
 def members_page(request):
     return render(request, "pages/members.html")
 
+def devices_page(request):
+    return render(request, "pages/devices.html")
+
+def devices_detail_page(request):
+    return render(request, "pages/device_detail.html")
 
 def cameras_page(request):
     return render(request, "pages/cameras.html")

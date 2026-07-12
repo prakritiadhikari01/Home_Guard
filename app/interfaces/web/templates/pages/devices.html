@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HomeGuard – Devices</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-content">
+    <div id="topbar"></div>
+    <div class="page-body">
+
+      <!-- Stats + Add Device row -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;">
+        <div style="display:flex;gap:12px;" id="statRow"></div>
+        <button class="btn-primary" id="openAddDevice">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Device
+        </button>
+      </div>
+
+      <!-- Device Grid -->
+      <div class="device-grid" id="deviceGrid"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Add Device Modal -->
+<div class="modal-overlay" id="addDeviceModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div style="color:white;font-size:16px;font-weight:600;">Add device</div>
+      <button class="modal-close" id="closeAddDevice">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <label class="field-label">Device name</label>
+      <input class="field-input" id="fName" type="text" placeholder="e.g. Front Door Camera">
+
+      <label class="field-label">Device type</label>
+      <select class="field-input" id="fType">
+        <option value="camera">Camera</option>
+        <option value="smart_lock">Smart Lock</option>
+      </select>
+
+      <label class="field-label">Location</label>
+      <input class="field-input" id="fLocation" type="text" placeholder="e.g. Front Entrance">
+
+      <label class="field-label">IP address</label>
+      <input class="field-input" id="fIp" type="text" placeholder="192.168.1.15">
+
+      <label class="field-label">Stream URL <span style="color:#4a6080;">(optional)</span></label>
+      <input class="field-input" id="fStream" type="text" placeholder="http://phone-ip:8080/video">
+
+      <label class="field-label">Description <span style="color:#4a6080;">(optional)</span></label>
+      <textarea class="field-input" id="fDescription" rows="2" placeholder="Notes about this device"></textarea>
+
+      <div id="formError" style="color:#f87171;font-size:12px;margin-top:6px;display:none;"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" id="cancelAddDevice">Cancel</button>
+      <button class="btn-primary" id="submitAddDevice">Register device</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.btn-primary {
+  background:#3b82f6;color:white;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;gap:6px;border:none;
+}
+.btn-primary:hover { background:#2f6fd9; }
+.btn-ghost {
+  background:rgba(255,255,255,0.06);color:#9ab0cc;padding:10px 18px;border-radius:10px;
+  font-size:13px;font-weight:600;cursor:pointer;border:none;
+}
+.btn-ghost:hover { background:rgba(255,255,255,0.1);color:white; }
+
+.stat-pill {
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;
+  padding:10px 18px;min-width:120px;
+}
+.stat-pill .label { font-size:11px;color:#4a6080;letter-spacing:.04em;margin-bottom:4px; }
+.stat-pill .value { font-size:20px;font-weight:700;color:white; }
+
+.device-grid {
+  display:grid;grid-template-columns:repeat(3, 1fr);gap:16px;
+}
+@media (max-width: 1100px){ .device-grid{ grid-template-columns:repeat(2,1fr); } }
+@media (max-width: 680px){ .device-grid{ grid-template-columns:1fr; } }
+
+.device-card {
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;
+  padding:18px;cursor:pointer;transition:transform .15s, border-color .15s;
+}
+.device-card:hover { transform:translateY(-2px);border-color:rgba(59,130,246,0.4); }
+.device-card.is-future { cursor:default;opacity:.45; }
+.device-card.is-future:hover { transform:none;border-color:rgba(255,255,255,0.06); }
+
+.device-icon {
+  width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  background:rgba(59,130,246,0.12);color:#3b82f6;margin-bottom:14px;
+}
+.device-icon.lock { background:rgba(168,85,247,0.12);color:#a855f7; }
+.device-icon.future { background:rgba(255,255,255,0.05);color:#4a6080; }
+
+.device-name { color:white;font-size:15px;font-weight:600;margin-bottom:2px; }
+.device-type { color:#4a6080;font-size:11px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:12px; }
+
+.device-status-row { display:flex;align-items:center;gap:6px;font-size:12px;color:#9ab0cc;margin-bottom:4px; }
+.status-dot { width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block; }
+.status-dot.offline { background:#64748b; }
+.status-dot.locked { background:#a855f7; }
+
+.device-meta { color:#4a6080;font-size:11px;margin-bottom:14px; }
+
+.device-footer { display:flex;justify-content:space-between;align-items:center; }
+.device-open { color:#3b82f6;font-size:12px;font-weight:600; }
+.future-badge {
+  font-size:10px;font-weight:600;letter-spacing:.04em;color:#6a8aaa;background:rgba(255,255,255,0.05);
+  padding:3px 8px;border-radius:6px;
+}
+
+/* Modal */
+.modal-overlay {
+  display:none;position:fixed;inset:0;background:rgba(2,8,20,0.7);backdrop-filter:blur(2px);
+  align-items:center;justify-content:center;z-index:50;
+}
+.modal-overlay.open { display:flex; }
+.modal-card {
+  background:#0a1424;border:1px solid rgba(255,255,255,0.08);border-radius:16px;width:420px;max-width:92vw;
+  max-height:88vh;overflow-y:auto;
+}
+.modal-header {
+  display:flex;justify-content:space-between;align-items:center;padding:18px 20px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.modal-close { background:none;border:none;color:#6a8aaa;cursor:pointer;padding:4px; }
+.modal-close:hover { color:white; }
+.modal-body { padding:18px 20px;display:flex;flex-direction:column; }
+.field-label { color:#9ab0cc;font-size:12px;font-weight:600;margin:12px 0 6px; }
+.field-label:first-child { margin-top:0; }
+.field-input {
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+  padding:9px 12px;color:white;font-size:13px;outline:none;width:100%;font-family:inherit;
+}
+.field-input:focus { border-color:#3b82f6; }
+.field-input::placeholder { color:#3d5170; }
+.modal-footer {
+  display:flex;justify-content:flex-end;gap:10px;padding:16px 20px;
+  border-top:1px solid rgba(255,255,255,0.06);
+}
+</style>
+
+<script src="{% static 'js/sidebar.js' %}"></script>
+<script>
+  // Injected by the Django view context — pass home_id when rendering this template.
+  const HOME_ID = "{{ home_id }}";
+
+  document.getElementById('sidebar').innerHTML = renderSidebar('devices');
+  initHomeSwitcher();
+  document.getElementById('topbar').innerHTML = renderTopbar('Devices', 'Register devices, monitor health & manage connectivity');
+
+  function getCsrfToken() {
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    return match ? match[1] : '';
+  }
+
+  function timeAgo(isoString) {
+    if (!isoString) return 'Never';
+    const diffMs = Date.now() - new Date(isoString).getTime();
+    const sec = Math.floor(diffMs / 1000);
+    if (sec < 10) return 'Just now';
+    if (sec < 60) return `${sec} sec ago`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min} min${min > 1 ? 's' : ''} ago`;
+    const hr = Math.floor(min / 60);
+    return `${hr} hour${hr > 1 ? 's' : ''} ago`;
+  }
+
+  let devices = [];
+
+  async function loadDevices() {
+    try {
+      const res = await fetch(`/homes/${HOME_ID}/devices/`, {
+        headers: { 'Accept': 'application/json' },
+      });
+      if (!res.ok) throw new Error('Failed to load devices');
+      const data = await res.json();
+
+      devices = data.map(d => ({
+        id: d.id,
+        name: d.name,
+        type: d.device_type,
+        location: d.location,
+        status: d.status,
+        lastActive: timeAgo(d.last_active),
+        // Smart lock live state/battery come from the dedicated lock-detail
+        // endpoint on device_detail.html; the list endpoint only returns
+        // core device fields, so we show generic status here instead.
+        lockState: undefined,
+        battery: undefined,
+      }));
+
+      renderStats();
+      renderGrid();
+    } catch (err) {
+      console.error(err);
+      // Fallback demo data so the page still renders if the API isn't reachable yet.
+      devices = [
+        { id:'CAM-01', name:'Front Door Camera', type:'camera', location:'Front Entrance', status:'online', lastActive:'Just now' },
+        { id:'CAM-02', name:'Backyard Camera', type:'camera', location:'Backyard', status:'online', lastActive:'2 sec ago' },
+        { id:'LOCK-01', name:'Main Door Smart Lock', type:'smart_lock', location:'Front Entrance', status:'online', lockState:'Locked', battery:91 },
+      ];
+      renderStats();
+      renderGrid();
+    }
+  }
+
+  const futureDevices = [
+    { name:'Smart Doorbell', type:'doorbell' },
+    { name:'Motion Sensor', type:'motion' },
+    { name:'Alarm Siren', type:'siren' },
+    { name:'Smoke Detector', type:'smoke' },
+  ];
+
+  const icons = {
+    camera: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
+    smart_lock: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+    doorbell: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+    motion: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12a10 10 0 0 1 20 0"/><path d="M6 12a6 6 0 0 1 12 0"/><circle cx="12" cy="12" r="2"/></svg>`,
+    siren: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6M10 4a2 2 0 0 1 4 0v1h-4z"/><path d="M4 14a8 8 0 0 1 16 0v4H4z"/></svg>`,
+    smoke: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>`,
+  };
+
+  function renderStats(){
+    const total = devices.length;
+    const online = devices.filter(d => d.status === 'online').length;
+    const offline = total - online;
+    document.getElementById('statRow').innerHTML = `
+      <div class="stat-pill"><div class="label">REGISTERED</div><div class="value">${total}</div></div>
+      <div class="stat-pill"><div class="label">ONLINE</div><div class="value" style="color:#22c55e;">${online}</div></div>
+      <div class="stat-pill"><div class="label">OFFLINE</div><div class="value" style="color:#64748b;">${offline}</div></div>
+    `;
+  }
+
+  function deviceCard(d){
+    const isLock = d.type === 'smart_lock';
+    const statusLine = isLock
+      ? `<div class="device-status-row"><span class="status-dot locked"></span>${d.lockState || 'Locked'}</div>
+         <div class="device-meta">${d.battery != null ? `Battery ${d.battery}%` : `Last active ${d.lastActive}`}</div>`
+      : `<div class="device-status-row"><span class="status-dot ${d.status === 'online' ? '' : 'offline'}"></span>${d.status === 'online' ? 'Online' : 'Offline'}</div>
+         <div class="device-meta">Last active ${d.lastActive}</div>`;
+
+    return `
+      <div class="device-card" data-id="${d.id}">
+        <div class="device-icon ${isLock ? 'lock' : ''}">${icons[d.type]}</div>
+        <div class="device-name">${d.name}</div>
+        <div class="device-type">${isLock ? 'Smart Lock' : 'Camera'}</div>
+        ${statusLine}
+        <div class="device-footer" style="margin-top:10px;">
+          <span style="color:#4a6080;font-size:11px;">${d.location}</span>
+          <span class="device-open">Open →</span>
+        </div>
+      </div>`;
+  }
+
+  function futureCard(d){
+    return `
+      <div class="device-card is-future">
+        <div class="device-icon future">${icons[d.type]}</div>
+        <div class="device-name">${d.name}</div>
+        <div class="device-type">Coming soon</div>
+        <div class="device-footer" style="margin-top:10px;">
+          <span class="future-badge">NOT YET ADDED</span>
+        </div>
+      </div>`;
+  }
+
+  function renderGrid(){
+    const grid = document.getElementById('deviceGrid');
+    grid.innerHTML = devices.map(deviceCard).join('') + futureDevices.map(futureCard).join('');
+
+    grid.querySelectorAll('.device-card[data-id]').forEach(card => {
+      card.addEventListener('click', () => {
+        window.location.href = `device_detail.html?id=${card.dataset.id}`;
+      });
+    });
+  }
+
+  loadDevices();
+
+  // --- Add Device modal ---
+  const modal = document.getElementById('addDeviceModal');
+  const openBtn = document.getElementById('openAddDevice');
+  const closeBtn = document.getElementById('closeAddDevice');
+  const cancelBtn = document.getElementById('cancelAddDevice');
+  const submitBtn = document.getElementById('submitAddDevice');
+  const errorBox = document.getElementById('formError');
+
+  function openModal(){ modal.classList.add('open'); }
+  function closeModal(){
+    modal.classList.remove('open');
+    errorBox.style.display = 'none';
+    ['fName','fLocation','fIp','fStream','fDescription'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fType').value = 'camera';
+  }
+
+  openBtn.addEventListener('click', openModal);
+  closeBtn.addEventListener('click', closeModal);
+  cancelBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  submitBtn.addEventListener('click', async () => {
+    const name = document.getElementById('fName').value.trim();
+    const type = document.getElementById('fType').value;
+    const location = document.getElementById('fLocation').value.trim();
+    const ip = document.getElementById('fIp').value.trim();
+    const streamUrl = document.getElementById('fStream').value.trim();
+    const description = document.getElementById('fDescription').value.trim();
+
+    if (!name || !location || !ip) {
+      errorBox.textContent = 'Device name, location and IP address are required.';
+      errorBox.style.display = 'block';
+      return;
+    }
+
+    const payload = {
+      name,
+      device_type: type,
+      location,
+      ip_address: ip,
+      stream_url: streamUrl || null,
+      description: description || null,
+    };
+
+    try {
+      const res = await fetch(`/homes/${HOME_ID}/devices/register/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken(),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error('Request failed');
+      const created = await res.json();
+
+      devices.push({
+        id: created.id,
+        name: created.name,
+        type: created.device_type,
+        location: created.location,
+        status: 'online',
+        lastActive: 'Just now',
+        lockState: created.device_type === 'smart_lock' ? 'Locked' : undefined,
+        battery: created.device_type === 'smart_lock' ? 100 : undefined,
+      });
+
+      renderStats();
+      renderGrid();
+      closeModal();
+    } catch (err) {
+      errorBox.textContent = 'Could not register device. Please try again.';
+      errorBox.style.display = 'block';
+    }
+  });
+</script>
+</body>
+</html>

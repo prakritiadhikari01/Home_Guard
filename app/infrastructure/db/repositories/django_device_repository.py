@@ -1,19 +1,25 @@
 # app/infrastructure/db/repositories/django_device_repository.py
+# app/infrastructure/db/repositories/django_device_repository.py
+from app.domain.repositories.device_repository import AbstractDeviceRepository
 from app.infrastructure.db.models.device_model import Device
 
 
-class DjangoDeviceRepository:
+class DjangoDeviceRepository(AbstractDeviceRepository):
 
-    @staticmethod
-    def create_device(**kwargs):
-        return Device.objects.create(**kwargs)
+    def create_device(self, home, **kwargs):
+        return Device.objects.create(home=home, **kwargs)
 
-    @staticmethod
-    def get_home_devices(home):
-        return Device.objects.filter(home=home)
+    def get_home_devices(self, home):
+        return Device.objects.filter(home=home).order_by("-created_at")
 
-    @staticmethod
-    def get_device_by_id(device_id):
-        return Device.objects.filter(
-            id=device_id
-        ).first()
+    def get_device_by_id(self, device_id):
+        return Device.objects.select_related("home").filter(id=device_id).first()
+
+    def update_device(self, device, data):
+        for field, value in data.items():
+            setattr(device, field, value)
+        device.save()
+        return device
+
+    def delete_device(self, device):
+        device.delete()

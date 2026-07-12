@@ -1,3 +1,4 @@
+##app/interfaces/api/serializers/setting_serializer.py
 from rest_framework import serializers
 
 from app.infrastructure.db.models.home_settings_model import HomeSettings

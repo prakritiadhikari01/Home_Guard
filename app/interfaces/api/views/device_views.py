@@ -2,74 +2,147 @@
 from django.shortcuts import get_object_or_404
 
 from rest_framework.views import APIView
-from rest_framework.permissions import (
-    IsAuthenticated,
-)
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
+from app.application.services.settings_service import SettingsService
+from app.infrastructure.db.models.device_settings_model import DeviceSettings
 from app.infrastructure.db.models.home_model import Home
 
-from app.application.services.device_service import (
-    DeviceService,
-)
+from app.application.services.device_service import DeviceEventQueryService, DeviceHealthService, DeviceService
 
 from app.interfaces.api.serializers.device_serializer import (
     DeviceCreateSerializer,
+    DeviceEventSerializer,
+    DeviceHealthSerializer,
     DeviceListSerializer,
+    DeviceDetailSerializer,
+    DeviceSettingsDetailSerializer,
+    DeviceUpdateSerializer,
 )
-from app.infrastructure.external.ai_client import AIClient
 
 
 class RegisterDeviceView(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request, home_id):
-
-        serializer = DeviceCreateSerializer(
-            data=request.data
-        )
-
+        serializer = DeviceCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        home = get_object_or_404(
-            Home,
-            id=home_id,
+        home = get_object_or_404(Home, id=home_id)
+
+        device = DeviceService.register_device(
+            acting_user=request.user,
+            home=home,
+            validated_data=serializer.validated_data,
         )
 
-        device = (
-            DeviceService.register_device(
-                acting_user=request.user,
-                home=home,
-                validated_data=serializer.validated_data,
-            )
-        )
-
-        return Response(
-            DeviceCreateSerializer(device).data,
-            status=status.HTTP_201_CREATED,
-        )
+        return Response(DeviceCreateSerializer(device).data, status=status.HTTP_201_CREATED)
 
 
 class HomeDevicesView(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request, home_id):
+        home = get_object_or_404(Home, id=home_id)
+        devices = DeviceService.get_home_devices(home)
+        return Response(DeviceListSerializer(devices, many=True).data)
 
-        home = get_object_or_404(
-            Home,
-            id=home_id,
-        )
 
-        devices = (
-            DeviceService.get_home_devices(home)
-        )
+class DeviceDetailView(APIView):
+    permission_classes = [IsAuthenticated]
 
-        serializer = DeviceListSerializer(
-            devices,
-            many=True,
-        )
+    def get(self, request, home_id, device_id):
+        home = get_object_or_404(Home, id=home_id)
+        device = DeviceService.get_device(home, device_id)
+        if not device:
+            return Response({"detail": "Device not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(DeviceDetailSerializer(device).data)
 
-        return Response(serializer.data)
+    def patch(self, request, home_id, device_id):
+        home = get_object_or_404(Home, id=home_id)
+        device = DeviceService.get_device(home, device_id)
+        if not device:
+            return Response({"detail": "Device not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = DeviceUpdateSerializer(device, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        updated = DeviceService.update_device(request.user, home, device, serializer.validated_data)
+        return Response(DeviceDetailSerializer(updated).data)
+
+    def delete(self, request, home_id, device_id):
+        home = get_object_or_404(Home, id=home_id)
+        device = DeviceService.get_device(home, device_id)
+        if not device:
+            return Response({"detail": "Device not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        DeviceService.delete_device(request.user, home, device)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class DeviceHealthView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, home_id, device_id):
+        home = get_object_or_404(Home, id=home_id)
+        device = DeviceService.get_device(home, device_id)
+        if not device:
+            return Response({"detail": "Device not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        health = DeviceHealthService.get_health(device)
+        return Response(DeviceHealthSerializer(health).data)
+
+
+class DeviceEventsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, home_id, device_id):
+        home = get_object_or_404(Home, id=home_id)
+        device = DeviceService.get_device(home, device_id)
+        if not device:
+            return Response({"detail": "Device not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        events = DeviceEventQueryService.get_recent_events(device)
+        return Response(DeviceEventSerializer(events, many=True).data)
+
+
+class DeviceRestartView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, home_id, device_id):
+        home = get_object_or_404(Home, id=home_id)
+        device = DeviceService.get_device(home, device_id)
+        if not device:
+            return Response({"detail": "Device not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        DeviceService.restart_device(request.user, home, device)
+        return Response({"message": "Restart requested"})
+    
+
+
+class DeviceSettingsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, home_id, device_id):
+        home = get_object_or_404(Home, id=home_id)
+        device = DeviceService.get_device(home, device_id)
+        if not device:
+            return Response({"detail": "Device not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        settings_obj = get_object_or_404(DeviceSettings, device=device)
+        return Response(DeviceSettingsDetailSerializer(settings_obj).data)
+
+    def patch(self, request, home_id, device_id):
+        home = get_object_or_404(Home, id=home_id)
+        device = DeviceService.get_device(home, device_id)
+        if not device:
+            return Response({"detail": "Device not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        settings_obj = get_object_or_404(DeviceSettings, device=device)
+        serializer = DeviceSettingsDetailSerializer(settings_obj, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        updated = SettingsService.update_device_settings(settings_obj, serializer.validated_data)
+        return Response(DeviceSettingsDetailSerializer(updated).data)

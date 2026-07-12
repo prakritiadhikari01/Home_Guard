@@ -21,16 +21,30 @@ from app.interfaces.api.views.enrollment_views import (
     FailEnrollmentView,
 )
 from app.interfaces.api.views.device_views import (
+    DeviceSettingsView,
     RegisterDeviceView,
     HomeDevicesView,
 )
 
 from app.interfaces.api.views.smart_lock_views import (
+    LockDoorView,
+    SmartLockDetailView,
     UnlockDoorView,
 )
 from app.interfaces.api.views.face_save_view import FaceSaveView
 from app.interfaces.api.views.settings_views import SettingsView
 from app.interfaces.api.views.dashboard_views import DashboardView
+
+
+from app.interfaces.api.views.device_views import (
+    RegisterDeviceView,
+    HomeDevicesView,
+    DeviceDetailView,
+    DeviceHealthView,
+    DeviceEventsView,
+    DeviceRestartView,
+)
+
 urlpatterns = [
     #setting
     path(
@@ -75,15 +89,6 @@ urlpatterns = [
         "<uuid:home_id>/members/<int:user_id>/role/",
         UpdateMemberRoleView.as_view(),
     ),
-    path(
-        "homes/<uuid:home_id>/devices/",
-        HomeDevicesView.as_view(),
-    ),
-
-    path(
-        "homes/<uuid:home_id>/devices/register/",
-        RegisterDeviceView.as_view(),
-    ),
 
     path(
         "homes/<uuid:home_id>/locks/<uuid:lock_id>/unlock/",
@@ -120,6 +125,17 @@ urlpatterns = [
         name="dashboard",
     ),
     
+
+    #devices
+    path("homes/<uuid:home_id>/devices/",HomeDevicesView.as_view()),
+    path("homes/<uuid:home_id>/devices/register/",RegisterDeviceView.as_view()),
+    path("homes/<uuid:home_id>/devices/<uuid:device_id>/", DeviceDetailView.as_view()),
+    path("homes/<uuid:home_id>/devices/<uuid:device_id>/settings/", DeviceSettingsView.as_view()),
+    path("homes/<uuid:home_id>/devices/<uuid:device_id>/health/", DeviceHealthView.as_view()),
+    path("homes/<uuid:home_id>/devices/<uuid:device_id>/events/", DeviceEventsView.as_view()),
+    path("homes/<uuid:home_id>/devices/<uuid:device_id>/restart/", DeviceRestartView.as_view()),
+    path("homes/<uuid:home_id>/locks/<uuid:lock_id>/lock/", LockDoorView.as_view()),
+    path("homes/<uuid:home_id>/locks/<uuid:lock_id>/", SmartLockDetailView.as_view()),
 
 
 

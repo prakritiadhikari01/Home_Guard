@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HomeGuard – Device Detail</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-content">
+    <div id="topbar"></div>
+    <div class="page-body">
+
+      <div id="loadingState" style="color:#6a8aaa;font-size:13px;">Loading device…</div>
+      <div id="errorState" style="color:#f87171;font-size:13px;display:none;"></div>
+
+      <div id="deviceDetailRoot" style="display:none;">
+
+        <!-- Header -->
+        <div class="detail-header">
+          <div class="detail-header-left">
+            <div class="device-icon" id="headerIcon"></div>
+            <div>
+              <div class="detail-name" id="detailName"></div>
+              <div class="detail-sub">
+                <span id="detailType"></span> · <span id="detailLocation"></span>
+              </div>
+            </div>
+          </div>
+          <div class="detail-header-right">
+            <span class="status-badge" id="statusBadge"></span>
+            <button class="btn-ghost" id="editBtn">Edit</button>
+            <button class="btn-ghost" id="settingsBtn">Settings</button>
+            <button class="btn-danger" id="deleteBtn">Delete</button>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+
+          <!-- Main column -->
+          <div class="detail-col-main">
+
+            <div class="panel">
+              <div class="panel-title">Live Feed</div>
+              <div class="live-feed-frame" id="liveFeedFrame"></div>
+            </div>
+
+            <!-- Smart lock only -->
+            <div class="panel" id="lockPanel" style="display:none;">
+              <div class="panel-title">Door Status</div>
+              <div class="lock-status-row">
+                <div>
+                  <div class="lock-state" id="lockStateLabel">Locked</div>
+                  <div class="device-meta" id="lockUpdatedAt"></div>
+                </div>
+                <div style="display:flex;gap:10px;">
+                  <button class="btn-ghost" id="lockBtn">Lock</button>
+                  <button class="btn-primary" id="unlockBtn">Unlock</button>
+                </div>
+              </div>
+              <div class="info-grid" style="margin-top:16px;">
+                <div class="info-item"><div class="info-label">Last opened by</div><div class="info-value" id="lastOpenedBy">—</div></div>
+                <div class="info-item"><div class="info-label">Face recognized</div><div class="info-value" id="faceRecognized">—</div></div>
+                <div class="info-item"><div class="info-label">Battery</div><div class="info-value" id="lockBattery">—</div></div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-title">Recent Events</div>
+              <div id="eventList"></div>
+            </div>
+
+          </div>
+
+          <!-- Side column -->
+          <div class="detail-col-side">
+
+            <div class="panel">
+              <div class="panel-title">Device Information</div>
+              <div class="info-grid" id="infoGrid"></div>
+            </div>
+
+            <div class="panel" id="aiStatusPanel">
+              <div class="panel-title">AI Status</div>
+              <div class="ai-grid" id="aiGrid"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-title">Device Health</div>
+              <div class="health-grid" id="healthGrid"></div>
+              <button class="btn-ghost" id="restartBtn" style="margin-top:14px;width:100%;justify-content:center;">Restart Device</button>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Edit Device Modal -->
+<div class="modal-overlay" id="editDeviceModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div style="color:white;font-size:16px;font-weight:600;">Edit device</div>
+      <button class="modal-close" id="closeEditDevice">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">Device name</label>
+      <input class="field-input" id="eName" type="text">
+
+      <label class="field-label">Location</label>
+      <input class="field-input" id="eLocation" type="text">
+
+      <label class="field-label">IP address</label>
+      <input class="field-input" id="eIp" type="text">
+
+      <label class="field-label">Stream URL <span style="color:#4a6080;">(optional)</span></label>
+      <input class="field-input" id="eStream" type="text">
+
+      <div id="editError" style="color:#f87171;font-size:12px;margin-top:6px;display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" id="cancelEditDevice">Cancel</button>
+      <button class="btn-primary" id="submitEditDevice">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteDeviceModal">
+  <div class="modal-card" style="width:380px;">
+    <div class="modal-header">
+      <div style="color:white;font-size:16px;font-weight:600;">Delete device</div>
+      <button class="modal-close" id="closeDeleteDevice">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div style="color:#9ab0cc;font-size:13px;line-height:1.5;">
+        This permanently removes <span id="deleteDeviceName" style="color:white;font-weight:600;"></span> and stops the AI engine from monitoring it. This cannot be undone.
+      </div>
+      <div id="deleteError" style="color:#f87171;font-size:12px;margin-top:10px;display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" id="cancelDeleteDevice">Cancel</button>
+      <button class="btn-danger" id="confirmDeleteDevice">Delete device</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.btn-primary {
+  background:#3b82f6;color:white;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;gap:6px;border:none;
+}
+.btn-primary:hover { background:#2f6fd9; }
+.btn-ghost {
+  background:rgba(255,255,255,0.06);color:#9ab0cc;padding:10px 18px;border-radius:10px;
+  font-size:13px;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:6px;
+}
+.btn-ghost:hover { background:rgba(255,255,255,0.1);color:white; }
+.btn-danger {
+  background:rgba(248,113,113,0.12);color:#f87171;padding:10px 18px;border-radius:10px;
+  font-size:13px;font-weight:600;cursor:pointer;border:none;
+}
+.btn-danger:hover { background:rgba(248,113,113,0.2); }
+
+.detail-header {
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;
+}
+.detail-header-left { display:flex;align-items:center;gap:14px; }
+.detail-header-right { display:flex;align-items:center;gap:10px; }
+.detail-name { color:white;font-size:20px;font-weight:700; }
+.detail-sub { color:#4a6080;font-size:12px;margin-top:2px;text-transform:uppercase;letter-spacing:.03em; }
+
+.device-icon {
+  width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  background:rgba(59,130,246,0.12);color:#3b82f6;flex-shrink:0;
+}
+.device-icon.lock { background:rgba(168,85,247,0.12);color:#a855f7; }
+
+.status-badge {
+  font-size:11px;font-weight:700;letter-spacing:.04em;padding:6px 12px;border-radius:20px;
+  background:rgba(34,197,94,0.12);color:#22c55e;
+}
+.status-badge.offline { background:rgba(100,116,139,0.15);color:#64748b; }
+
+.detail-grid {
+  display:grid;grid-template-columns:1.4fr 1fr;gap:18px;align-items:start;
+}
+@media (max-width: 980px){ .detail-grid{ grid-template-columns:1fr; } }
+
+.panel {
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;
+  padding:18px;margin-bottom:18px;
+}
+.panel-title { color:white;font-size:13px;font-weight:700;margin-bottom:14px; }
+
+.live-feed-frame {
+  width:100%;aspect-ratio:16/9;border-radius:10px;background:#050e20;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;color:#3d5170;font-size:13px;position:relative;
+}
+.live-feed-frame img { width:100%;height:100%;object-fit:cover; }
+
+.info-grid, .ai-grid, .health-grid {
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;
+}
+.info-item, .ai-item, .health-item { }
+.info-label, .ai-label, .health-label { color:#4a6080;font-size:11px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px; }
+.info-value, .health-value { color:white;font-size:13px;font-weight:600; }
+.ai-value { font-size:13px;font-weight:600; }
+.ai-value.on { color:#22c55e; }
+.ai-value.off { color:#64748b; }
+
+.lock-status-row { display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px; }
+.lock-state { color:white;font-size:22px;font-weight:700; }
+
+.event-row {
+  display:flex;justify-content:space-between;align-items:center;padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.event-row:last-child { border-bottom:none; }
+.event-label { color:white;font-size:13px;font-weight:600; }
+.event-sub { color:#4a6080;font-size:11px;margin-top:2px; }
+.event-time { color:#6a8aaa;font-size:11px; }
+.event-alert { color:#f87171;font-size:11px;font-weight:600;margin-top:2px; }
+
+/* Modal (shared pattern) */
+.modal-overlay {
+  display:none;position:fixed;inset:0;background:rgba(2,8,20,0.7);backdrop-filter:blur(2px);
+  align-items:center;justify-content:center;z-index:50;
+}
+.modal-overlay.open { display:flex; }
+.modal-card {
+  background:#0a1424;border:1px solid rgba(255,255,255,0.08);border-radius:16px;width:420px;max-width:92vw;
+  max-height:88vh;overflow-y:auto;
+}
+.modal-header {
+  display:flex;justify-content:space-between;align-items:center;padding:18px 20px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.modal-close { background:none;border:none;color:#6a8aaa;cursor:pointer;padding:4px; }
+.modal-close:hover { color:white; }
+.modal-body { padding:18px 20px;display:flex;flex-direction:column; }
+.field-label { color:#9ab0cc;font-size:12px;font-weight:600;margin:12px 0 6px; }
+.field-label:first-child { margin-top:0; }
+.field-input {
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+  padding:9px 12px;color:white;font-size:13px;outline:none;width:100%;font-family:inherit;
+}
+.field-input:focus { border-color:#3b82f6; }
+.modal-footer {
+  display:flex;justify-content:flex-end;gap:10px;padding:16px 20px;
+  border-top:1px solid rgba(255,255,255,0.06);
+}
+</style>
+
+<script src="{% static 'js/sidebar.js' %}"></script>
+<script>
+  // Injected by the Django view context.
+  const HOME_ID = "{{ home_id }}";
+  const DEVICE_ID = new URLSearchParams(window.location.search).get('id');
+
+  document.getElementById('sidebar').innerHTML = renderSidebar('devices');
+  initHomeSwitcher();
+
+  function getCsrfToken() {
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    return match ? match[1] : '';
+  }
+
+  function timeAgo(isoString) {
+    if (!isoString) return 'Never';
+    const diffMs = Date.now() - new Date(isoString).getTime();
+    const sec = Math.floor(diffMs / 1000);
+    if (sec < 10) return 'Just now';
+    if (sec < 60) return `${sec} sec ago`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min} min${min > 1 ? 's' : ''} ago`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr} hour${hr > 1 ? 's' : ''} ago`;
+    const day = Math.floor(hr / 24);
+    return `${day} day${day > 1 ? 's' : ''} ago`;
+  }
+
+  const icons = {
+    camera: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
+    smart_lock: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+  };
+
+  let device = null;
+
+  async function loadAll() {
+    if (!DEVICE_ID) {
+      showError('No device id in URL.');
+      return;
+    }
+    try {
+      const res = await fetch(`/homes/${HOME_ID}/devices/${DEVICE_ID}/`, { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) throw new Error('Device not found');
+      device = await res.json();
+
+      document.getElementById('topbar').innerHTML = renderTopbar(device.name, `${device.location} · Device details`);
+      renderHeader();
+      renderInfo();
+      renderLiveFeed();
+
+      const isLock = device.device_type === 'smart_lock';
+      document.getElementById('lockPanel').style.display = isLock ? 'block' : 'none';
+      document.getElementById('aiStatusPanel').style.display = isLock ? 'none' : 'block';
+
+      if (isLock) {
+        loadLockDetail();
+      } else {
+        loadAiStatus();
+      }
+
+      loadHealth();
+      loadEvents();
+
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('deviceDetailRoot').style.display = 'block';
+    } catch (err) {
+      console.error(err);
+      showError('Could not load this device. It may have been removed, or the backend is unreachable.');
+    }
+  }
+
+  function showError(msg) {
+    document.getElementById('loadingState').style.display = 'none';
+    const el = document.getElementById('errorState');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function renderHeader() {
+    const isLock = device.device_type === 'smart_lock';
+    document.getElementById('headerIcon').className = `device-icon ${isLock ? 'lock' : ''}`;
+    document.getElementById('headerIcon').innerHTML = icons[device.device_type] || icons.camera;
+    document.getElementById('detailName').textContent = device.name;
+    document.getElementById('detailType').textContent = isLock ? 'Smart Lock' : 'Camera';
+    document.getElementById('detailLocation').textContent = device.location;
+
+    const badge = document.getElementById('statusBadge');
+    const online = device.status === 'online';
+    badge.textContent = online ? '● Online' : '● Offline';
+    badge.className = `status-badge ${online ? '' : 'offline'}`;
+  }
+
+  function renderInfo() {
+    document.getElementById('infoGrid').innerHTML = `
+      <div class="info-item"><div class="info-label">Device ID</div><div class="info-value" style="font-size:11px;word-break:break-all;">${device.id}</div></div>
+      <div class="info-item"><div class="info-label">Device Type</div><div class="info-value">${device.device_type}</div></div>
+      <div class="info-item"><div class="info-label">IP Address</div><div class="info-value">${device.ip_address}</div></div>
+      <div class="info-item"><div class="info-label">Location</div><div class="info-value">${device.location}</div></div>
+      <div class="info-item"><div class="info-label">Registered</div><div class="info-value">${timeAgo(device.created_at)}</div></div>
+      <div class="info-item"><div class="info-label">Last Active</div><div class="info-value">${timeAgo(device.last_active)}</div></div>
+    `;
+  }
+
+  function renderLiveFeed() {
+    const frame = document.getElementById('liveFeedFrame');
+    if (device.stream_url) {
+      // TODO: swap for RTSP/WebRTC player later; this works for phone-camera MJPEG streams.
+      frame.innerHTML = `<img src="${device.stream_url}" alt="Live feed for ${device.name}">`;
+    } else {
+      frame.innerHTML = `No stream URL configured for this device.`;
+    }
+  }
+
+  async function loadAiStatus() {
+    const grid = document.getElementById('aiGrid');
+    try {
+      const res = await fetch(`/homes/${HOME_ID}/devices/${DEVICE_ID}/settings/`, { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) throw new Error('Settings not found');
+      const s = await res.json();
+
+      const row = (label, on) => `
+        <div class="ai-item">
+          <div class="ai-label">${label}</div>
+          <div class="ai-value ${on ? 'on' : 'off'}">${on ? 'Enabled' : 'Disabled'}</div>
+        </div>`;
+
+      grid.innerHTML =
+        row('Human Detection', s.human_detection) +
+        row('Vehicle Detection', s.vehicle_detection) +
+        row('Animal Detection', s.animal_detection) +
+        row('Motion Detection', s.motion_detection) +
+        row('Recording', s.recording_enabled) +
+        `<div class="ai-item"><div class="ai-label">Confidence Threshold</div><div class="ai-value" style="color:white;">${s.confidence_threshold}%</div></div>`;
+    } catch (err) {
+      grid.innerHTML = `<div style="color:#4a6080;font-size:12px;">Settings unavailable.</div>`;
+    }
+  }
+
+  async function loadHealth() {
+    const grid = document.getElementById('healthGrid');
+    try {
+      const res = await fetch(`/homes/${HOME_ID}/devices/${DEVICE_ID}/health/`, { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) throw new Error('Health not found');
+      const h = await res.json();
+
+      grid.innerHTML = `
+        <div class="health-item"><div class="health-label">Status</div><div class="health-value">${h.status === 'online' ? 'Online' : 'Offline'}</div></div>
+        <div class="health-item"><div class="health-label">Latency</div><div class="health-value">${h.latency_ms != null ? h.latency_ms + ' ms' : '—'}</div></div>
+        <div class="health-item"><div class="health-label">FPS</div><div class="health-value">${h.fps ?? '—'}</div></div>
+        <div class="health-item"><div class="health-label">AI Running</div><div class="health-value">${h.ai_running ? 'Yes' : 'No'}</div></div>
+        <div class="health-item"><div class="health-label">Engine Connected</div><div class="health-value">${h.engine_connected ? 'Yes' : 'No'}</div></div>
+      `;
+    } catch (err) {
+      grid.innerHTML = `<div style="color:#4a6080;font-size:12px;">Health data unavailable.</div>`;
+    }
+  }
+
+  async function loadEvents() {
+    const list = document.getElementById('eventList');
+    try {
+      const res = await fetch(`/homes/${HOME_ID}/devices/${DEVICE_ID}/events/`, { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) throw new Error('Events not found');
+      const events = await res.json();
+
+      if (!events.length) {
+        list.innerHTML = `<div style="color:#4a6080;font-size:12px;">No recent events.</div>`;
+        return;
+      }
+
+      list.innerHTML = events.map(e => `
+        <div class="event-row">
+          <div>
+            <div class="event-label">${e.label || e.event_type}</div>
+            <div class="event-sub">${e.event_type}${e.confidence != null ? ' · ' + e.confidence + '%' : ''}</div>
+            ${e.alert_generated ? `<div class="event-alert">Alert generated</div>` : ''}
+          </div>
+          <div class="event-time">${timeAgo(e.created_at)}</div>
+        </div>
+      `).join('');
+    } catch (err) {
+      list.innerHTML = `<div style="color:#4a6080;font-size:12px;">Could not load events.</div>`;
+    }
+  }
+
+  async function loadLockDetail() {
+    try {
+      const res = await fetch(`/homes/${HOME_ID}/locks/${DEVICE_ID}/`, { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) throw new Error('Lock detail not found');
+      const lock = await res.json();
+
+      const locked = lock.status === 'locked';
+      document.getElementById('lockStateLabel').textContent = locked ? 'Locked' : 'Unlocked';
+      document.getElementById('lockUpdatedAt').textContent = `Updated ${timeAgo(lock.last_unlocked_at)}`;
+      document.getElementById('lastOpenedBy').textContent = lock.last_unlocked_by_name || '—';
+      document.getElementById('faceRecognized').textContent = lock.last_unlocked_by_name || '—';
+      document.getElementById('lockBattery').textContent = lock.battery_level != null ? `${lock.battery_level}%` : '—';
+    } catch (err) {
+      document.getElementById('lockStateLabel').textContent = 'Unknown';
+    }
+  }
+
+  // --- Lock / Unlock actions ---
+  document.getElementById('unlockBtn').addEventListener('click', async () => {
+    try {
+      const res = await fetch(`/homes/${HOME_ID}/locks/${DEVICE_ID}/unlock/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrfToken() },
+      });
+      if (!res.ok) throw new Error('Unlock failed');
+      loadLockDetail();
+    } catch (err) {
+      alert('Could not unlock the door. Please try again.');
+    }
+  });
+
+  document.getElementById('lockBtn').addEventListener('click', async () => {
+    try {
+      const res = await fetch(`/homes/${HOME_ID}/locks/${DEVICE_ID}/lock/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrfToken() },
+      });
+      if (!res.ok) throw new Error('Lock failed');
+      loadLockDetail();
+    } catch (err) {
+      alert('Could not lock the door. Please try again.');
+    }
+  });
+
+  // --- Restart ---
+  document.getElementById('restartBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('restartBtn');
+    btn.textContent = 'Restarting…';
+    try {
+      const res = await fetch(`/homes/${HOME_ID}/devices/${DEVICE_ID}/restart/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrfToken() },
+      });
+      if (!res.ok) throw new Error('Restart failed');
+      loadHealth();
+    } catch (err) {
+      alert('Could not restart the device.');
+    } finally {
+      btn.textContent = 'Restart Device';
+    }
+  });
+
+  // --- Edit modal ---
+  const editModal = document.getElementById('editDeviceModal');
+  document.getElementById('editBtn').addEventListener('click', () => {
+    document.getElementById('eName').value = device.name;
+    document.getElementById('eLocation').value = device.location;
+    document.getElementById('eIp').value = device.ip_address;
+    document.getElementById('eStream').value = device.stream_url || '';
+    editModal.classList.add('open');
+  });
+  document.getElementById('closeEditDevice').addEventListener('click', () => editModal.classList.remove('open'));
+  document.getElementById('cancelEditDevice').addEventListener('click', () => editModal.classList.remove('open'));
+  editModal.addEventListener('click', e => { if (e.target === editModal) editModal.classList.remove('open'); });
+
+  document.getElementById('submitEditDevice').addEventListener('click', async () => {
+    const errorBox = document.getElementById('editError');
+    const payload = {
+      name: document.getElementById('eName').value.trim(),
+      location: document.getElementById('eLocation').value.trim(),
+      ip_address: document.getElementById('eIp').value.trim(),
+      stream_url: document.getElementById('eStream').value.trim() || null,
+    };
+
+    try {
+      const res = await fetch(`/homes/${HOME_ID}/devices/${DEVICE_ID}/`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Update failed');
+      device = await res.json();
+      renderHeader();
+      renderInfo();
+      renderLiveFeed();
+      editModal.classList.remove('open');
+    } catch (err) {
+      errorBox.textContent = 'Could not save changes. Please try again.';
+      errorBox.style.display = 'block';
+    }
+  });
+
+  // --- Settings shortcut ---
+  document.getElementById('settingsBtn').addEventListener('click', () => {
+    window.location.href = `device_settings.html?id=${DEVICE_ID}`;
+  });
+
+  // --- Delete modal ---
+  const deleteModal = document.getElementById('deleteDeviceModal');
+  document.getElementById('deleteBtn').addEventListener('click', () => {
+    document.getElementById('deleteDeviceName').textContent = device.name;
+    deleteModal.classList.add('open');
+  });
+  document.getElementById('closeDeleteDevice').addEventListener('click', () => deleteModal.classList.remove('open'));
+  document.getElementById('cancelDeleteDevice').addEventListener('click', () => deleteModal.classList.remove('open'));
+  deleteModal.addEventListener('click', e => { if (e.target === deleteModal) deleteModal.classList.remove('open'); });
+
+  document.getElementById('confirmDeleteDevice').addEventListener('click', async () => {
+    const errorBox = document.getElementById('deleteError');
+    try {
+      const res = await fetch(`/homes/${HOME_ID}/devices/${DEVICE_ID}/`, {
+        method: 'DELETE',
+        headers: { 'X-CSRFToken': getCsrfToken() },
+      });
+      if (!res.ok) throw new Error('Delete failed');
+      window.location.href = 'device.html';
+    } catch (err) {
+      errorBox.textContent = 'Could not delete this device. Please try again.';
+      errorBox.style.display = 'block';
+    }
+  });
+
+  loadAll();
+</script>
+</body>
+</html>

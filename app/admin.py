@@ -15,6 +15,7 @@ from app.infrastructure.db.models.enrollment_session_model import (
 from app.infrastructure.db.models.face_profile_model import (
     FaceProfile,
 )
+print("APP ADMIN LOADED")
 
 @admin.register(UserSettings)
 class UserSettingsAdmin(admin.ModelAdmin):

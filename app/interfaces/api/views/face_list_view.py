@@ -14,7 +14,7 @@ class FaceListView(APIView):
 
     def get(self, request):
         faces = FaceProfile.objects.all().order_by("-created_at")
-        faces = faces.exclude(embedding__isnull=True)
+        faces = faces.exclude(embeddings__isnull=True)
 
         serializer = FaceProfileSerializer(faces, many=True)
 

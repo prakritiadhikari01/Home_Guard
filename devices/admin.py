@@ -4,6 +4,7 @@ from app.infrastructure.db.models.device_model import (
     Device,
 )
 
+from app.infrastructure.db.models.device_settings_model import DeviceSettings
 from app.infrastructure.db.models.smart_lock_model import (
     SmartLock,
 )
@@ -16,3 +17,4 @@ from app.infrastructure.db.models.access_log_model import (
 admin.site.register(Device)
 admin.site.register(SmartLock)
 admin.site.register(AccessLog)
+admin.site.register(DeviceSettings)

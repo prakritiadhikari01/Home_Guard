@@ -1,3 +1,4 @@
+#app/infrastructure/db/models/device_settings_model.py
 from django.db import models
 
 
@@ -35,6 +36,8 @@ class DeviceSettings(models.Model):
                 name="device_confidence_threshold_valid",
             )
         ]
+    class Meta:
+        app_label = "devices"
 
     def __str__(self):
         return f"{self.device.name} Settings"
