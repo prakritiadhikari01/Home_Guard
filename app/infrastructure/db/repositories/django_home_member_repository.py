@@ -74,6 +74,15 @@ class DjangoHomeMemberRepository(
         )
 
         membership.save()
+        membership.refresh_from_db()
 
+        print("========== DATABASE ==========")
+        print(membership.id)
+        print(membership.role)
+        print(membership.can_control_devices)
+        print(membership.can_manage_members)
+        print(membership.can_unlock_door)
+        print(membership.receive_alerts)
+        print("==============================")
         return membership
     

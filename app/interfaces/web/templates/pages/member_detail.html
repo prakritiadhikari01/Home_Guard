@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HomeGuard – Member Detail</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-content">
+    <div id="topbar"></div>
+    <div class="page-body">
+
+      <div id="loadingState" style="color:#6a8aaa;font-size:13px;">Loading member…</div>
+      <div id="errorState" style="color:#f87171;font-size:13px;display:none;"></div>
+
+      <div id="memberDetailRoot" style="display:none;">
+
+        <div class="detail-header">
+          <div class="detail-header-left">
+            <div class="avatar-circle" id="avatarInitial"></div>
+            <div>
+              <div class="detail-name" id="detailName"></div>
+              <div class="detail-sub" id="detailEmail"></div>
+            </div>
+          </div>
+          <div class="detail-header-right">
+            <span class="role-badge" id="roleBadge"></span>
+            <button class="btn-ghost" id="editBtn">Edit</button>
+            <button class="btn-danger" id="removeBtn">Remove</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Permissions</div>
+          <div class="perm-grid" id="permGrid"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Membership Info</div>
+          <div class="info-grid" id="infoGrid"></div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Edit Member Modal -->
+<div class="modal-overlay" id="editMemberModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div style="color:white;font-size:16px;font-weight:600;">Edit member</div>
+      <button class="modal-close" id="closeEditMember">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">Role</label>
+      <select class="field-input" id="eRole">
+        <option value="ADMIN">Admin</option>
+        <option value="MEMBER">Member</option>
+        <option value="GUEST">Guest</option>
+        <option value="SECURITY">Security</option>
+      </select>
+
+      <label class="field-label" style="margin-top:16px;">Permission overrides</label>
+      <div class="toggle-row">
+        <span>Control devices</span>
+        <input type="checkbox" id="eCanControl">
+      </div>
+      <div class="toggle-row">
+        <span>Manage members</span>
+        <input type="checkbox" id="eCanManage">
+      </div>
+      <div class="toggle-row">
+        <span>Unlock door</span>
+        <input type="checkbox" id="eCanUnlock">
+      </div>
+      <div class="toggle-row">
+        <span>Receive alerts</span>
+        <input type="checkbox" id="eReceiveAlerts">
+      </div>
+
+      <div id="editError" style="color:#f87171;font-size:12px;margin-top:10px;display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" id="cancelEditMember">Cancel</button>
+      <button class="btn-primary" id="submitEditMember">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Remove Confirmation Modal -->
+<div class="modal-overlay" id="removeMemberModal">
+  <div class="modal-card" style="width:380px;">
+    <div class="modal-header">
+      <div style="color:white;font-size:16px;font-weight:600;">Remove member</div>
+      <button class="modal-close" id="closeRemoveMember">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div style="color:#9ab0cc;font-size:13px;line-height:1.5;">
+        This removes <span id="removeMemberName" style="color:white;font-weight:600;"></span> from this home. They will lose all access immediately.
+      </div>
+      <div id="removeError" style="color:#f87171;font-size:12px;margin-top:10px;display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" id="cancelRemoveMember">Cancel</button>
+      <button class="btn-danger" id="confirmRemoveMember">Remove member</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.btn-primary {
+  background:#3b82f6;color:white;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;gap:6px;border:none;
+}
+.btn-primary:hover { background:#2f6fd9; }
+.btn-primary:disabled { opacity:.6;cursor:default; }
+.btn-ghost {
+  background:rgba(255,255,255,0.06);color:#9ab0cc;padding:10px 18px;border-radius:10px;
+  font-size:13px;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:6px;
+}
+.btn-ghost:hover { background:rgba(255,255,255,0.1);color:white; }
+.btn-danger {
+  background:rgba(248,113,113,0.12);color:#f87171;padding:10px 18px;border-radius:10px;
+  font-size:13px;font-weight:600;cursor:pointer;border:none;
+}
+.btn-danger:hover { background:rgba(248,113,113,0.2); }
+.btn-danger:disabled { opacity:.6;cursor:default; }
+
+.detail-header {
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;
+}
+.detail-header-left { display:flex;align-items:center;gap:14px; }
+.detail-header-right { display:flex;align-items:center;gap:10px; }
+.detail-name { color:white;font-size:20px;font-weight:700; }
+.detail-sub { color:#4a6080;font-size:12px;margin-top:2px; }
+
+.avatar-circle {
+  width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:rgba(59,130,246,0.12);color:#3b82f6;font-size:16px;font-weight:700;flex-shrink:0;
+}
+
+.role-badge {
+  font-size:11px;font-weight:700;letter-spacing:.04em;padding:6px 12px;border-radius:20px;
+  background:rgba(59,130,246,0.12);color:#3b82f6;text-transform:uppercase;
+}
+.role-badge.owner, .role-badge.admin { background:rgba(168,85,247,0.12);color:#a855f7; }
+.role-badge.guest { background:rgba(100,116,139,0.15);color:#64748b; }
+
+.panel {
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;
+  padding:18px;margin-bottom:18px;
+}
+.panel-title { color:white;font-size:13px;font-weight:700;margin-bottom:14px; }
+
+.perm-grid, .info-grid { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+.perm-item, .info-item { }
+.perm-label, .info-label { color:#4a6080;font-size:11px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px; }
+.perm-value, .info-value { font-size:13px;font-weight:600; }
+.perm-value.on { color:#22c55e; }
+.perm-value.off { color:#64748b; }
+.info-value { color:white; }
+
+.toggle-row {
+  display:flex;justify-content:space-between;align-items:center;padding:8px 0;
+  color:#9ab0cc;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.toggle-row:last-child { border-bottom:none; }
+
+/* Modal (shared pattern) */
+.modal-overlay {
+  display:none;position:fixed;inset:0;background:rgba(2,8,20,0.7);backdrop-filter:blur(2px);
+  align-items:center;justify-content:center;z-index:50;
+}
+.modal-overlay.open { display:flex; }
+.modal-card {
+  background:#0a1424;border:1px solid rgba(255,255,255,0.08);border-radius:16px;width:420px;max-width:92vw;
+  max-height:88vh;overflow-y:auto;
+}
+.modal-header {
+  display:flex;justify-content:space-between;align-items:center;padding:18px 20px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.modal-close { background:none;border:none;color:#6a8aaa;cursor:pointer;padding:4px; }
+.modal-close:hover { color:white; }
+.modal-body { padding:18px 20px;display:flex;flex-direction:column; }
+.field-label { color:#9ab0cc;font-size:12px;font-weight:600;margin:12px 0 6px; }
+.field-label:first-child { margin-top:0; }
+.field-input {
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;
+  padding:9px 12px;color:white;font-size:13px;outline:none;width:100%;font-family:inherit;
+}
+.field-input:focus { border-color:#3b82f6; }
+.modal-footer {
+  display:flex;justify-content:flex-end;gap:10px;padding:16px 20px;
+  border-top:1px solid rgba(255,255,255,0.06);
+}
+</style>
+
+<script src="{% static 'js/sidebar.js' %}"></script>
+<script>
+  const API_BASE = "/api";
+  const TOKEN = localStorage.getItem("access");
+  const HOME_ID = localStorage.getItem("active_home");
+  const MEMBER_ID = "{{ member_id }}"; // HomeMember's own UUID — set by members_detail_page in web/urls.py
+
+  if (!TOKEN) {
+    window.location.href = "{% url 'web:login' %}";
+  }
+
+  function authHeaders(extra = {}) {
+    return { Authorization: `Bearer ${TOKEN}`, ...extra };
+  }
+
+  function handleAuthFailure(res) {
+    if (res.status === 401) {
+      localStorage.clear();
+      window.location.href = "{% url 'web:login' %}";
+      return true;
+    }
+    return false;
+  }
+
+  // Members routes do NOT sit under /homes/ (confirmed against urls.py).
+  // NOTE: remove/role are keyed on <int:user_id> (the auth user's PK), not
+  // this page's MEMBER_ID (the HomeMember's UUID) — so these two can only
+  // be built after the member is loaded and we know member.user_id.
+  const LIST_MEMBERS_URL = `${API_BASE}/${HOME_ID}/members/`;
+  function removeMemberUrl() { return `${API_BASE}/${HOME_ID}/members/${member.user_id}/remove/`; }
+  function updateRoleUrl() { return `${API_BASE}/${HOME_ID}/members/${member.user_id}/role/`; }
+
+  document.getElementById('sidebar').innerHTML = renderSidebar('members');
+  initHomeSwitcher();
+  document.getElementById('topbar').innerHTML = renderTopbar('Member', 'View and manage this member');
+
+  // Matches the actual HomeMemberListSerializer: id (HomeMember UUID —
+  // used for this page's URL), user_id (int — used only for the
+  // remove/role API calls), email, full_name, role, joined_at.
+  function extractName(m) {
+    return m.full_name || m.email || 'Unnamed member';
+  }
+  function extractEmail(m) {
+    return m.email || '';
+  }
+  function extractPhone(m) {
+    return m.phone || 'Not provided';
+  }
+  function extractMemberId(m) {
+    return String(m.id);
+  }
+  function extractUserId(m) {
+    return String(m.user_id);
+  }
+
+  let member = null;
+
+  async function loadMember() {
+    if (!MEMBER_ID) {
+      showError('No member id in URL.');
+      return;
+    }
+    try {
+      // There is no single-member GET endpoint, so we fetch the full list
+      // and find the matching member client-side. If your backend later
+      // adds GET /api/{home_id}/members/{member_id}/, switch to that for a
+      // lighter request.
+      const res = await fetch(LIST_MEMBERS_URL, { headers: authHeaders({ 'Accept': 'application/json' }) });
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) throw new Error('Failed to load members');
+      const members = await res.json();
+
+      member = members.find(m => extractMemberId(m) === String(MEMBER_ID));
+      if (!member) {
+        showError('This member could not be found. They may have been removed.');
+        return;
+      }
+
+      renderHeader();
+      renderPermissions();
+      renderInfo();
+
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('memberDetailRoot').style.display = 'block';
+    } catch (err) {
+      console.error(err);
+      showError('Could not load this member. Please check your connection.');
+    }
+  }
+
+  function showError(msg) {
+    document.getElementById('loadingState').style.display = 'none';
+    const el = document.getElementById('errorState');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function renderHeader() {
+    const name = extractName(member);
+    document.getElementById('avatarInitial').textContent = name.charAt(0).toUpperCase();
+    document.getElementById('detailName').textContent = name;
+    document.getElementById('detailEmail').textContent = extractEmail(member);
+
+    const role = (member.role || '').toLowerCase();
+    const badge = document.getElementById('roleBadge');
+    badge.textContent = member.role;
+    badge.className = `role-badge ${role}`;
+
+    const isOwner = role === 'owner';
+    document.getElementById('editBtn').style.display = isOwner ? 'none' : 'flex';
+    document.getElementById('removeBtn').style.display = isOwner ? 'none' : 'flex';
+  }
+
+  function renderPermissions() {
+    const row = (label, on) => `
+      <div class="perm-item">
+        <div class="perm-label">${label}</div>
+        <div class="perm-value ${on ? 'on' : 'off'}">${on ? 'Allowed' : 'Not allowed'}</div>
+      </div>`;
+
+    document.getElementById('permGrid').innerHTML =
+      row('Control devices', member.can_control_devices) +
+      row('Manage members', member.can_manage_members) +
+      row('Unlock door', member.can_unlock_door) +
+      row('Receive alerts', member.receive_alerts) +
+      row('View dashboard', member.can_view_dashboard ?? true);
+  }
+
+  function renderInfo() {
+    document.getElementById('infoGrid').innerHTML = `
+      <div class="info-item"><div class="info-label">Member ID</div><div class="info-value" style="font-size:11px;word-break:break-all;">${extractMemberId(member)}</div></div>
+      <div class="info-item"><div class="info-label">User ID</div><div class="info-value" style="font-size:11px;word-break:break-all;">${extractUserId(member)}</div></div>
+      <div class="info-item"><div class="info-label">Phone</div><div class="info-value">${extractPhone(member)}</div></div>
+      <div class="info-item"><div class="info-label">Joined</div><div class="info-value">${member.joined_at ? new Date(member.joined_at).toLocaleDateString() : '—'}</div></div>
+    `;
+  }
+
+  loadMember();
+
+  // --- Edit modal ---
+  const editModal = document.getElementById('editMemberModal');
+  document.getElementById('editBtn').addEventListener('click', () => {
+    document.getElementById('eRole').value = member.role;
+    document.getElementById('eCanControl').checked = !!member.can_control_devices;
+    document.getElementById('eCanManage').checked = !!member.can_manage_members;
+    document.getElementById('eCanUnlock').checked = !!member.can_unlock_door;
+    document.getElementById('eReceiveAlerts').checked = !!member.receive_alerts;
+    editModal.classList.add('open');
+  });
+  document.getElementById('closeEditMember').addEventListener('click', () => editModal.classList.remove('open'));
+  document.getElementById('cancelEditMember').addEventListener('click', () => editModal.classList.remove('open'));
+  editModal.addEventListener('click', e => { if (e.target === editModal) editModal.classList.remove('open'); });
+
+  document.getElementById('submitEditMember').addEventListener('click', async () => {
+    const errorBox = document.getElementById('editError');
+    const submitBtn = document.getElementById('submitEditMember');
+
+    const payload = {
+      role: document.getElementById('eRole').value,
+      can_control_devices: document.getElementById('eCanControl').checked,
+      can_manage_members: document.getElementById('eCanManage').checked,
+      can_unlock_door: document.getElementById('eCanUnlock').checked,
+      receive_alerts: document.getElementById('eReceiveAlerts').checked,
+    };
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving…';
+    errorBox.style.display = 'none';
+
+    try {
+      const res = await fetch(updateRoleUrl(), {
+        method: 'PATCH',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(payload),
+      });
+
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || Object.values(data)[0] || 'Update failed');
+      }
+
+      const updated = await res.json();
+      // UpdateMemberRoleView returns { message, role, can_control_devices, ... }
+      member.role = updated.role ?? payload.role;
+      member.can_control_devices = updated.can_control_devices ?? payload.can_control_devices;
+      member.can_manage_members = updated.can_manage_members ?? payload.can_manage_members;
+      member.can_unlock_door = updated.can_unlock_door ?? payload.can_unlock_door;
+      member.receive_alerts = updated.receive_alerts ?? payload.receive_alerts;
+
+      renderHeader();
+      renderPermissions();
+      editModal.classList.remove('open');
+    } catch (err) {
+      errorBox.textContent = typeof err.message === 'string' ? err.message : 'Could not save changes. Please try again.';
+      errorBox.style.display = 'block';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Save changes';
+    }
+  });
+
+  // --- Remove modal ---
+  const removeModal = document.getElementById('removeMemberModal');
+  document.getElementById('removeBtn').addEventListener('click', () => {
+    document.getElementById('removeMemberName').textContent = extractName(member);
+    removeModal.classList.add('open');
+  });
+  document.getElementById('closeRemoveMember').addEventListener('click', () => removeModal.classList.remove('open'));
+  document.getElementById('cancelRemoveMember').addEventListener('click', () => removeModal.classList.remove('open'));
+  removeModal.addEventListener('click', e => { if (e.target === removeModal) removeModal.classList.remove('open'); });
+
+  document.getElementById('confirmRemoveMember').addEventListener('click', async () => {
+    const errorBox = document.getElementById('removeError');
+    const confirmBtn = document.getElementById('confirmRemoveMember');
+
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Removing…';
+    errorBox.style.display = 'none';
+
+    try {
+      const res = await fetch(removeMemberUrl(), {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
+
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || Object.values(data)[0] || 'Could not remove this member.');
+      }
+
+      window.location.href = '/members/';
+    } catch (err) {
+      errorBox.textContent = typeof err.message === 'string' ? err.message : 'Could not remove this member. Please try again.';
+      errorBox.style.display = 'block';
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Remove member';
+    }
+  });
+</script>
+</body>
+</html>

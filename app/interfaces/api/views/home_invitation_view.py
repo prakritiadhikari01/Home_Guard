@@ -1,3 +1,4 @@
+#app/interfaces/api/views/home_invitation_view.py
 from django.shortcuts import get_object_or_404
 
 from rest_framework.permissions import IsAuthenticated

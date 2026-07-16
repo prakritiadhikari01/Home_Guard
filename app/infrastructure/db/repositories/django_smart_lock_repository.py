@@ -1,3 +1,4 @@
+#app/infrastructure/db/repositories/django_smart_lock_repository.py
 from app.infrastructure.db.models.smart_lock_model import (
     SmartLock,
 )

@@ -63,10 +63,21 @@ class DeviceHealthSerializer(serializers.Serializer):
 
 
 class DeviceEventSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = DetectionEvent
-        # NOTE: adjust field names to match your real DetectionEvent model.
-        fields = ["id", "event_type", "label", "confidence", "alert_generated", "created_at"]
+        fields = [
+            "id",
+            "event_type",
+            "person_type",
+            "person_label",
+            "confidence_score",
+            "camera_location",
+            "event_summary",
+            "timestamp",
+            "image_url",
+            "snapshot_url",
+        ]
 
 class DeviceSettingsDetailSerializer(serializers.ModelSerializer):
     class Meta:

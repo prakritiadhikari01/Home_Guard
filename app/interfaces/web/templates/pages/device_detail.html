@@ -15,8 +15,16 @@
     <div id="topbar"></div>
     <div class="page-body">
 
+      <a href="/devices/" class="back-link" id="backLink">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back to Devices
+      </a>
+
       <div id="loadingState" style="color:#6a8aaa;font-size:13px;">Loading device…</div>
       <div id="errorState" style="color:#f87171;font-size:13px;display:none;"></div>
+      <div id="noAccessState" style="display:none;">
+        <div class="empty-state">You don't have access to this device. Ask the home owner or admin to check your role.</div>
+      </div>
 
       <div id="deviceDetailRoot" style="display:none;">
 
@@ -33,9 +41,8 @@
           </div>
           <div class="detail-header-right">
             <span class="status-badge" id="statusBadge"></span>
-            <button class="btn-ghost" id="editBtn">Edit</button>
-            <button class="btn-ghost" id="settingsBtn">Settings</button>
-            <button class="btn-danger" id="deleteBtn">Delete</button>
+            <button class="btn-ghost" id="editBtn" style="display:none;">Edit</button>
+            <button class="btn-danger" id="deleteBtn" style="display:none;">Delete</button>
           </div>
         </div>
 
@@ -57,7 +64,7 @@
                   <div class="lock-state" id="lockStateLabel">Locked</div>
                   <div class="device-meta" id="lockUpdatedAt"></div>
                 </div>
-                <div style="display:flex;gap:10px;">
+                <div style="display:flex;gap:10px;" id="lockActions">
                   <button class="btn-ghost" id="lockBtn">Lock</button>
                   <button class="btn-primary" id="unlockBtn">Unlock</button>
                 </div>
@@ -85,14 +92,18 @@
             </div>
 
             <div class="panel" id="aiStatusPanel">
-              <div class="panel-title">AI Status</div>
+              <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;">
+                <span>AI Settings</span>
+                <button class="btn-ghost" id="saveSettingsBtn" style="display:none;padding:6px 12px;font-size:11px;">Save</button>
+              </div>
               <div class="ai-grid" id="aiGrid"></div>
+              <div id="settingsError" style="color:#f87171;font-size:12px;margin-top:10px;display:none;"></div>
             </div>
 
             <div class="panel">
               <div class="panel-title">Device Health</div>
               <div class="health-grid" id="healthGrid"></div>
-              <button class="btn-ghost" id="restartBtn" style="margin-top:14px;width:100%;justify-content:center;">Restart Device</button>
+              <button class="btn-ghost" id="restartBtn" style="margin-top:14px;width:100%;justify-content:center;display:none;">Restart Device</button>
             </div>
 
           </div>
@@ -158,16 +169,23 @@
 </div>
 
 <style>
+.back-link {
+  display:inline-flex;align-items:center;gap:6px;color:#6a8aaa;font-size:13px;font-weight:600;
+  text-decoration:none;margin-bottom:16px;
+}
+.back-link:hover { color:#3b82f6; }
 .btn-primary {
   background:#3b82f6;color:white;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;
   cursor:pointer;display:flex;align-items:center;gap:6px;border:none;
 }
 .btn-primary:hover { background:#2f6fd9; }
+.btn-primary:disabled { opacity:.5;cursor:not-allowed; }
 .btn-ghost {
   background:rgba(255,255,255,0.06);color:#9ab0cc;padding:10px 18px;border-radius:10px;
   font-size:13px;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:6px;
 }
 .btn-ghost:hover { background:rgba(255,255,255,0.1);color:white; }
+.btn-ghost:disabled { opacity:.5;cursor:not-allowed; }
 .btn-danger {
   background:rgba(248,113,113,0.12);color:#f87171;padding:10px 18px;border-radius:10px;
   font-size:13px;font-weight:600;cursor:pointer;border:none;
@@ -211,30 +229,54 @@
 }
 .live-feed-frame img { width:100%;height:100%;object-fit:cover; }
 
-.info-grid, .ai-grid, .health-grid {
+.info-grid, .health-grid {
   display:grid;grid-template-columns:1fr 1fr;gap:14px;
 }
-.info-item, .ai-item, .health-item { }
-.info-label, .ai-label, .health-label { color:#4a6080;font-size:11px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px; }
+.ai-grid { display:flex;flex-direction:column;gap:12px; }
+.ai-row { display:flex;justify-content:space-between;align-items:center;gap:10px; }
+.ai-row .ai-label { color:#9ab0cc;font-size:12px;font-weight:600; }
+.info-label, .health-label { color:#4a6080;font-size:11px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px; }
 .info-value, .health-value { color:white;font-size:13px;font-weight:600; }
 .ai-value { font-size:13px;font-weight:600; }
 .ai-value.on { color:#22c55e; }
 .ai-value.off { color:#64748b; }
 
+.toggle { position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0; }
+.toggle input { opacity:0;width:0;height:0; }
+.toggle .slider {
+  position:absolute;cursor:pointer;inset:0;background:rgba(255,255,255,0.12);border-radius:20px;transition:.15s;
+}
+.toggle .slider:before {
+  content:"";position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.15s;
+}
+.toggle input:checked + .slider { background:#3b82f6; }
+.toggle input:checked + .slider:before { transform:translateX(16px); }
+.toggle input:disabled + .slider { opacity:.4;cursor:not-allowed; }
+
+.confidence-input {
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:6px;
+  padding:4px 8px;color:white;font-size:12px;width:60px;text-align:right;
+}
+.confidence-input:disabled { opacity:.5; }
+
 .lock-status-row { display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px; }
 .lock-state { color:white;font-size:22px;font-weight:700; }
 
 .event-row {
-  display:flex;justify-content:space-between;align-items:center;padding:10px 0;
+  display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px 0;
   border-bottom:1px solid rgba(255,255,255,0.05);
 }
 .event-row:last-child { border-bottom:none; }
+.event-thumb { width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#050e20; }
 .event-label { color:white;font-size:13px;font-weight:600; }
 .event-sub { color:#4a6080;font-size:11px;margin-top:2px; }
-.event-time { color:#6a8aaa;font-size:11px; }
-.event-alert { color:#f87171;font-size:11px;font-weight:600;margin-top:2px; }
+.event-time { color:#6a8aaa;font-size:11px;white-space:nowrap; }
 
-/* Modal (shared pattern) */
+.empty-state {
+  color:#4a6080; font-size:13px; text-align:center; padding:60px 20px;
+  border:1px dashed rgba(255,255,255,0.08); border-radius:14px; margin-top:40px;
+}
+
 .modal-overlay {
   display:none;position:fixed;inset:0;background:rgba(2,8,20,0.7);backdrop-filter:blur(2px);
   align-items:center;justify-content:center;z-index:50;
@@ -266,17 +308,32 @@
 
 <script src="{% static 'js/sidebar.js' %}"></script>
 <script>
-  // Injected by the Django view context.
-  const HOME_ID = "{{ home_id }}";
-  const DEVICE_ID = new URLSearchParams(window.location.search).get('id');
+  const API_BASE = "/api";
+  const TOKEN = localStorage.getItem("access");
+  const HOME_ID = localStorage.getItem("active_home");
+  // devices_detail_page already passes device_id into context correctly —
+  // unlike home_id, this one is safe to read from the template.
+  const DEVICE_ID = "{{ device_id }}";
+
+  if (!TOKEN) {
+    window.location.href = "{% url 'web:login' %}";
+  }
+
+  function authHeaders(extra = {}) {
+    return { Authorization: `Bearer ${TOKEN}`, ...extra };
+  }
+
+  function handleAuthFailure(res) {
+    if (res.status === 401) {
+      localStorage.clear();
+      window.location.href = "{% url 'web:login' %}";
+      return true;
+    }
+    return false;
+  }
 
   document.getElementById('sidebar').innerHTML = renderSidebar('devices');
   initHomeSwitcher();
-
-  function getCsrfToken() {
-    const match = document.cookie.match(/csrftoken=([^;]+)/);
-    return match ? match[1] : '';
-  }
 
   function timeAgo(isoString) {
     if (!isoString) return 'Never';
@@ -298,14 +355,46 @@
   };
 
   let device = null;
+  let CAN_CONTROL = false;
+
+  function showNoAccess() {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('noAccessState').style.display = 'block';
+  }
+
+  function showError(msg) {
+    document.getElementById('loadingState').style.display = 'none';
+    const el = document.getElementById('errorState');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  async function loadPermissions() {
+    try {
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/members/me/`, { headers: authHeaders({ 'Accept': 'application/json' }) });
+      if (handleAuthFailure(res)) return false;
+      if (res.status === 403 || res.status === 404) return false;
+      if (!res.ok) throw new Error('permissions fetch failed');
+      const data = await res.json();
+      CAN_CONTROL = !!(data.permissions && data.permissions.can_control_devices);
+      return true;
+    } catch (err) {
+      console.error('Could not load permissions, defaulting to read-only', err);
+      CAN_CONTROL = false;
+      return true;
+    }
+  }
 
   async function loadAll() {
-    if (!DEVICE_ID) {
-      showError('No device id in URL.');
-      return;
-    }
+    if (!DEVICE_ID) { showError('No device id.'); return; }
+
+    const hasAccess = await loadPermissions();
+    if (!hasAccess) { showNoAccess(); return; }
+
     try {
-      const res = await fetch(`/homes/${HOME_ID}/devices/${DEVICE_ID}/`, { headers: { 'Accept': 'application/json' } });
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/devices/${DEVICE_ID}/`, { headers: authHeaders({ 'Accept': 'application/json' }) });
+      if (handleAuthFailure(res)) return;
+      if (res.status === 403) { showNoAccess(); return; }
       if (!res.ok) throw new Error('Device not found');
       device = await res.json();
 
@@ -314,9 +403,15 @@
       renderInfo();
       renderLiveFeed();
 
+      document.getElementById('editBtn').style.display = CAN_CONTROL ? 'flex' : 'none';
+      document.getElementById('deleteBtn').style.display = CAN_CONTROL ? 'inline-flex' : 'none';
+      document.getElementById('restartBtn').style.display = CAN_CONTROL ? 'flex' : 'none';
+      document.getElementById('saveSettingsBtn').style.display = CAN_CONTROL ? 'inline-flex' : 'none';
+
       const isLock = device.device_type === 'smart_lock';
       document.getElementById('lockPanel').style.display = isLock ? 'block' : 'none';
       document.getElementById('aiStatusPanel').style.display = isLock ? 'none' : 'block';
+      document.getElementById('lockActions').style.display = CAN_CONTROL ? 'flex' : 'none';
 
       if (isLock) {
         loadLockDetail();
@@ -333,13 +428,6 @@
       console.error(err);
       showError('Could not load this device. It may have been removed, or the backend is unreachable.');
     }
-  }
-
-  function showError(msg) {
-    document.getElementById('loadingState').style.display = 'none';
-    const el = document.getElementById('errorState');
-    el.textContent = msg;
-    el.style.display = 'block';
   }
 
   function renderHeader() {
@@ -370,51 +458,106 @@
   function renderLiveFeed() {
     const frame = document.getElementById('liveFeedFrame');
     if (device.stream_url) {
-      // TODO: swap for RTSP/WebRTC player later; this works for phone-camera MJPEG streams.
       frame.innerHTML = `<img src="${device.stream_url}" alt="Live feed for ${device.name}">`;
     } else {
       frame.innerHTML = `No stream URL configured for this device.`;
     }
   }
 
+  let currentSettings = null;
+
   async function loadAiStatus() {
     const grid = document.getElementById('aiGrid');
     try {
-      const res = await fetch(`/homes/${HOME_ID}/devices/${DEVICE_ID}/settings/`, { headers: { 'Accept': 'application/json' } });
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/devices/${DEVICE_ID}/settings/`, { headers: authHeaders({ 'Accept': 'application/json' }) });
       if (!res.ok) throw new Error('Settings not found');
-      const s = await res.json();
-
-      const row = (label, on) => `
-        <div class="ai-item">
-          <div class="ai-label">${label}</div>
-          <div class="ai-value ${on ? 'on' : 'off'}">${on ? 'Enabled' : 'Disabled'}</div>
-        </div>`;
-
-      grid.innerHTML =
-        row('Human Detection', s.human_detection) +
-        row('Vehicle Detection', s.vehicle_detection) +
-        row('Animal Detection', s.animal_detection) +
-        row('Motion Detection', s.motion_detection) +
-        row('Recording', s.recording_enabled) +
-        `<div class="ai-item"><div class="ai-label">Confidence Threshold</div><div class="ai-value" style="color:white;">${s.confidence_threshold}%</div></div>`;
+      currentSettings = await res.json();
+      renderAiGrid();
     } catch (err) {
       grid.innerHTML = `<div style="color:#4a6080;font-size:12px;">Settings unavailable.</div>`;
     }
   }
 
+  function toggleRow(key, label) {
+    const checked = currentSettings[key] ? 'checked' : '';
+    const disabled = CAN_CONTROL ? '' : 'disabled';
+    return `
+      <div class="ai-row">
+        <span class="ai-label">${label}</span>
+        <label class="toggle">
+          <input type="checkbox" data-key="${key}" ${checked} ${disabled}>
+          <span class="slider"></span>
+        </label>
+      </div>`;
+  }
+
+  function renderAiGrid() {
+    const grid = document.getElementById('aiGrid');
+    const disabled = CAN_CONTROL ? '' : 'disabled';
+    grid.innerHTML =
+      toggleRow('human_detection', 'Human Detection') +
+      toggleRow('vehicle_detection', 'Vehicle Detection') +
+      toggleRow('animal_detection', 'Animal Detection') +
+      toggleRow('motion_detection', 'Motion Detection') +
+      toggleRow('recording_enabled', 'Recording') +
+      toggleRow('enabled', 'AI Engine Enabled') +
+      `<div class="ai-row">
+         <span class="ai-label">Confidence Threshold</span>
+         <span>
+           <input type="number" min="0" max="100" class="confidence-input" id="confidenceInput" value="${currentSettings.confidence_threshold}" ${disabled}>%
+         </span>
+       </div>`;
+  }
+
+  document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+    if (!CAN_CONTROL) return;
+    const errorBox = document.getElementById('settingsError');
+    errorBox.style.display = 'none';
+
+    const payload = {};
+    document.querySelectorAll('#aiGrid input[type="checkbox"]').forEach(el => {
+      payload[el.dataset.key] = el.checked;
+    });
+    const confInput = document.getElementById('confidenceInput');
+    if (confInput) payload.confidence_threshold = Number(confInput.value);
+
+    const btn = document.getElementById('saveSettingsBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    try {
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/devices/${DEVICE_ID}/settings/`, {
+        method: 'PATCH',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(payload),
+      });
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) throw new Error('Update failed');
+      currentSettings = await res.json();
+      renderAiGrid();
+    } catch (err) {
+      errorBox.textContent = 'Could not save settings. Please try again.';
+      errorBox.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save';
+    }
+  });
+
   async function loadHealth() {
     const grid = document.getElementById('healthGrid');
     try {
-      const res = await fetch(`/homes/${HOME_ID}/devices/${DEVICE_ID}/health/`, { headers: { 'Accept': 'application/json' } });
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/devices/${DEVICE_ID}/health/`, { headers: authHeaders({ 'Accept': 'application/json' }) });
       if (!res.ok) throw new Error('Health not found');
       const h = await res.json();
 
       grid.innerHTML = `
-        <div class="health-item"><div class="health-label">Status</div><div class="health-value">${h.status === 'online' ? 'Online' : 'Offline'}</div></div>
-        <div class="health-item"><div class="health-label">Latency</div><div class="health-value">${h.latency_ms != null ? h.latency_ms + ' ms' : '—'}</div></div>
-        <div class="health-item"><div class="health-label">FPS</div><div class="health-value">${h.fps ?? '—'}</div></div>
-        <div class="health-item"><div class="health-label">AI Running</div><div class="health-value">${h.ai_running ? 'Yes' : 'No'}</div></div>
-        <div class="health-item"><div class="health-label">Engine Connected</div><div class="health-value">${h.engine_connected ? 'Yes' : 'No'}</div></div>
+        <div class="info-item"><div class="info-label">Status</div><div class="health-value">${h.status === 'online' ? 'Online' : 'Offline'}</div></div>
+        <div class="info-item"><div class="info-label">Latency</div><div class="health-value">${h.latency_ms != null ? h.latency_ms + ' ms' : '—'}</div></div>
+        <div class="info-item"><div class="info-label">FPS</div><div class="health-value">${h.fps ?? '—'}</div></div>
+        <div class="info-item"><div class="info-label">AI Running</div><div class="health-value">${h.ai_running ? 'Yes' : 'No'}</div></div>
+        <div class="info-item"><div class="info-label">Engine Connected</div><div class="health-value">${h.engine_connected ? 'Yes' : 'No'}</div></div>
+        <div class="info-item"><div class="info-label">Last Active</div><div class="health-value">${timeAgo(h.last_active)}</div></div>
       `;
     } catch (err) {
       grid.innerHTML = `<div style="color:#4a6080;font-size:12px;">Health data unavailable.</div>`;
@@ -424,7 +567,7 @@
   async function loadEvents() {
     const list = document.getElementById('eventList');
     try {
-      const res = await fetch(`/homes/${HOME_ID}/devices/${DEVICE_ID}/events/`, { headers: { 'Accept': 'application/json' } });
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/devices/${DEVICE_ID}/events/`, { headers: authHeaders({ 'Accept': 'application/json' }) });
       if (!res.ok) throw new Error('Events not found');
       const events = await res.json();
 
@@ -433,16 +576,26 @@
         return;
       }
 
-      list.innerHTML = events.map(e => `
-        <div class="event-row">
-          <div>
-            <div class="event-label">${e.label || e.event_type}</div>
-            <div class="event-sub">${e.event_type}${e.confidence != null ? ' · ' + e.confidence + '%' : ''}</div>
-            ${e.alert_generated ? `<div class="event-alert">Alert generated</div>` : ''}
+      list.innerHTML = events.map(e => {
+        const title = e.person_label || (e.person_type && e.person_type !== 'UNKNOWN' ? e.person_type : e.event_type.replaceAll('_', ' '));
+        const confidencePct = (e.confidence_score != null) ? Math.round(e.confidence_score * 100) : null;
+        const subParts = [e.event_type.replaceAll('_', ' ')];
+        if (confidencePct != null) subParts.push(`${confidencePct}% confidence`);
+        if (e.camera_location) subParts.push(e.camera_location);
+        const thumb = e.image_url || e.snapshot_url;
+
+        return `
+          <div class="event-row">
+            ${thumb ? `<img class="event-thumb" src="${thumb}" alt="event snapshot">` : ''}
+            <div style="flex:1;">
+              <div class="event-label">${title}</div>
+              <div class="event-sub">${subParts.join(' · ')}</div>
+              ${e.event_summary ? `<div class="event-sub">${e.event_summary}</div>` : ''}
+            </div>
+            <div class="event-time">${timeAgo(e.timestamp)}</div>
           </div>
-          <div class="event-time">${timeAgo(e.created_at)}</div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     } catch (err) {
       list.innerHTML = `<div style="color:#4a6080;font-size:12px;">Could not load events.</div>`;
     }
@@ -450,7 +603,7 @@
 
   async function loadLockDetail() {
     try {
-      const res = await fetch(`/homes/${HOME_ID}/locks/${DEVICE_ID}/`, { headers: { 'Accept': 'application/json' } });
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/locks/${DEVICE_ID}/`, { headers: authHeaders({ 'Accept': 'application/json' }) });
       if (!res.ok) throw new Error('Lock detail not found');
       const lock = await res.json();
 
@@ -465,12 +618,12 @@
     }
   }
 
-  // --- Lock / Unlock actions ---
   document.getElementById('unlockBtn').addEventListener('click', async () => {
+    if (!CAN_CONTROL) return;
     try {
-      const res = await fetch(`/homes/${HOME_ID}/locks/${DEVICE_ID}/unlock/`, {
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/locks/${DEVICE_ID}/unlock/`, {
         method: 'POST',
-        headers: { 'X-CSRFToken': getCsrfToken() },
+        headers: authHeaders(),
       });
       if (!res.ok) throw new Error('Unlock failed');
       loadLockDetail();
@@ -480,10 +633,11 @@
   });
 
   document.getElementById('lockBtn').addEventListener('click', async () => {
+    if (!CAN_CONTROL) return;
     try {
-      const res = await fetch(`/homes/${HOME_ID}/locks/${DEVICE_ID}/lock/`, {
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/locks/${DEVICE_ID}/lock/`, {
         method: 'POST',
-        headers: { 'X-CSRFToken': getCsrfToken() },
+        headers: authHeaders(),
       });
       if (!res.ok) throw new Error('Lock failed');
       loadLockDetail();
@@ -492,14 +646,14 @@
     }
   });
 
-  // --- Restart ---
   document.getElementById('restartBtn').addEventListener('click', async () => {
+    if (!CAN_CONTROL) return;
     const btn = document.getElementById('restartBtn');
     btn.textContent = 'Restarting…';
     try {
-      const res = await fetch(`/homes/${HOME_ID}/devices/${DEVICE_ID}/restart/`, {
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/devices/${DEVICE_ID}/restart/`, {
         method: 'POST',
-        headers: { 'X-CSRFToken': getCsrfToken() },
+        headers: authHeaders(),
       });
       if (!res.ok) throw new Error('Restart failed');
       loadHealth();
@@ -510,9 +664,9 @@
     }
   });
 
-  // --- Edit modal ---
   const editModal = document.getElementById('editDeviceModal');
   document.getElementById('editBtn').addEventListener('click', () => {
+    if (!CAN_CONTROL) return;
     document.getElementById('eName').value = device.name;
     document.getElementById('eLocation').value = device.location;
     document.getElementById('eIp').value = device.ip_address;
@@ -524,6 +678,7 @@
   editModal.addEventListener('click', e => { if (e.target === editModal) editModal.classList.remove('open'); });
 
   document.getElementById('submitEditDevice').addEventListener('click', async () => {
+    if (!CAN_CONTROL) return;
     const errorBox = document.getElementById('editError');
     const payload = {
       name: document.getElementById('eName').value.trim(),
@@ -533,9 +688,9 @@
     };
 
     try {
-      const res = await fetch(`/homes/${HOME_ID}/devices/${DEVICE_ID}/`, {
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/devices/${DEVICE_ID}/`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('Update failed');
@@ -550,14 +705,9 @@
     }
   });
 
-  // --- Settings shortcut ---
-  document.getElementById('settingsBtn').addEventListener('click', () => {
-    window.location.href = `device_settings.html?id=${DEVICE_ID}`;
-  });
-
-  // --- Delete modal ---
   const deleteModal = document.getElementById('deleteDeviceModal');
   document.getElementById('deleteBtn').addEventListener('click', () => {
+    if (!CAN_CONTROL) return;
     document.getElementById('deleteDeviceName').textContent = device.name;
     deleteModal.classList.add('open');
   });
@@ -566,14 +716,15 @@
   deleteModal.addEventListener('click', e => { if (e.target === deleteModal) deleteModal.classList.remove('open'); });
 
   document.getElementById('confirmDeleteDevice').addEventListener('click', async () => {
+    if (!CAN_CONTROL) return;
     const errorBox = document.getElementById('deleteError');
     try {
-      const res = await fetch(`/homes/${HOME_ID}/devices/${DEVICE_ID}/`, {
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/devices/${DEVICE_ID}/`, {
         method: 'DELETE',
-        headers: { 'X-CSRFToken': getCsrfToken() },
+        headers: authHeaders(),
       });
       if (!res.ok) throw new Error('Delete failed');
-      window.location.href = 'device.html';
+      window.location.href = '/devices/';
     } catch (err) {
       errorBox.textContent = 'Could not delete this device. Please try again.';
       errorBox.style.display = 'block';

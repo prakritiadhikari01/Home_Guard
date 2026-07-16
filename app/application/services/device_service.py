@@ -40,6 +40,22 @@ class DeviceService:
         return membership
 
     @staticmethod
+    def _require_membership(acting_user, home):
+        """
+        Read-only guard: confirms the acting user belongs to this home,
+        without requiring can_control_devices. Use this on GET views
+        (device list/detail/health/events/settings) so any member can
+        view devices, while register/edit/delete/restart still require
+        can_control_devices via _get_membership_or_raise.
+        """
+        membership = HomeMember.objects.filter(home=home, user=acting_user).first()
+
+        if not membership:
+            raise PermissionDenied("Not home member")
+
+        return membership
+
+    @staticmethod
     def register_device(
         acting_user,
         home,

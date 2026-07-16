@@ -1,43 +1,65 @@
 from rest_framework import serializers
 
-from app.interfaces.api.serializers.home_serializer import HomeListSerializer
-from app.interfaces.api.serializers.home_member_serializer import (
-    HomeMemberListSerializer,
-)
-from app.interfaces.api.serializers.device_serializer import DeviceListSerializer
-from app.interfaces.api.serializers.smart_lock_serializer import (
-    SmartLockSerializer,
-)
-from app.interfaces.api.serializers.event_serializers import (
-   EventIngestSerializer,
-)
+
+class DashboardHomeSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+
+
+class DashboardSecurityModeSerializer(serializers.Serializer):
+    current = serializers.CharField()
+    can_change = serializers.BooleanField()
+
+
+class DashboardSummarySerializer(serializers.Serializer):
+    title = serializers.CharField()
+    message = serializers.CharField()
 
 
 class DashboardStatsSerializer(serializers.Serializer):
-
     members = serializers.IntegerField()
-
     unknown_detections = serializers.IntegerField()
-
     alerts = serializers.IntegerField()
-
     devices_online = serializers.IntegerField()
-
     devices_total = serializers.IntegerField()
+
+
+class DashboardLivePreviewSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    location = serializers.CharField()
+    status = serializers.CharField()
+    stream_url = serializers.CharField(
+        allow_null=True,
+        allow_blank=True,
+    )
+    current_detection = serializers.CharField()
+
+
+class DashboardRecentEventSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    summary = serializers.CharField(
+        allow_blank=True,
+        allow_null=True,
+    )
+    device = serializers.CharField()
+    timestamp = serializers.DateTimeField()
 
 
 class DashboardSerializer(serializers.Serializer):
 
-    home = HomeListSerializer()
+    home = DashboardHomeSerializer()
 
-    security_mode = serializers.CharField()
+    security_mode = DashboardSecurityModeSerializer()
+
+    summary = DashboardSummarySerializer()
 
     stats = DashboardStatsSerializer()
 
-    members = HomeMemberListSerializer(many=True)
+    live_preview = DashboardLivePreviewSerializer(
+        many=True
+    )
 
-    devices = DeviceListSerializer(many=True)
-
-    smart_locks = SmartLockSerializer(many=True)
-
-    recent_events = EventIngestSerializer(many=True)
+    recent_events = DashboardRecentEventSerializer(
+        many=True
+    )

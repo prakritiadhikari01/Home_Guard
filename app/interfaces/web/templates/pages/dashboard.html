@@ -22,8 +22,10 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         </div>
         <div class="flex-1">
-          <div style="font-size:10px;letter-spacing:.1em;color:#3b82f6;margin-bottom:6px;">AI INTELLIGENCE BRIEF · <span style="color:#4a5a7a;">updated 2m ago</span></div>
-          <p style="color:#c8d8f0;font-size:14px;line-height:1.6;">All systems normal. <strong style="color:white;">3 known members</strong> entered today. One unrecognized vehicle classed as delivery at 14:22. No suspicious motion patterns in the last 6 hours.</p>
+          <div style="font-size:10px;letter-spacing:.1em;color:#3b82f6;margin-bottom:6px;">
+            <span id="summaryTitle">AI Intelligence Brief</span>
+          </div>
+          <p id="summaryMessage" style="color:#c8d8f0;font-size:14px;line-height:1.6;"></p>
         </div>
         <a href="{% url 'web:assistant' %}" style="background:#3b82f6;color:white;font-size:13px;font-weight:600;padding:8px 18px;border-radius:8px;white-space:nowrap;text-decoration:none;display:flex;align-items:center;gap:6px;">Ask assistant <span>↗</span></a>
       </div>
@@ -38,19 +40,19 @@
           <div style="font-size:10px;color:#3a4a6a;letter-spacing:.08em;">LAST CHANGE · 2D AGO</div>
         </div>
         <div class="flex gap-3">
-          <button class="mode-btn active" onclick="setMode(this)">
+          <button class="mode-btn" data-mode="NORMAL" onclick="setMode('NORMAL', this)">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <span style="font-size:13px;">Normal</span>
           </button>
-          <button class="mode-btn" onclick="setMode(this)">
+          <button class="mode-btn" data-mode="AWAY" onclick="setMode('AWAY', this)">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span style="font-size:13px;">Away</span>
           </button>
-          <button class="mode-btn" onclick="setMode(this)">
+          <button class="mode-btn" data-mode="HIGH" onclick="setMode('HIGH', this)">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span style="font-size:13px;">High</span>
           </button>
-          <button class="mode-btn" onclick="setMode(this)">
+          <button class="mode-btn" data-mode="SOS" onclick="setMode('SOS', this)">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             <span style="font-size:13px;">SOS</span>
           </button>
@@ -59,7 +61,7 @@
 
       <!-- Stats Row -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;">
-        <div class="stat-tile"><div class="stat-tile-label">MEMBERS RECOGNIZED</div><div class="stat-tile-value"id="membersCount">0</div><div class="stat-tile-sub">all home</div></div>
+        <div class="stat-tile"><div class="stat-tile-label">MEMBERS RECOGNIZED</div><div class="stat-tile-value" id="membersCount">0</div><div class="stat-tile-sub">all home</div></div>
         <div class="stat-tile"><div class="stat-tile-label">UNKNOWN DETECTIONS</div><div class="stat-tile-value" id="unknownCount">0</div><div class="stat-tile-sub">today</div></div>
         <div class="stat-tile"><div class="stat-tile-label">ALERTS TRIGGERED</div><div class="stat-tile-value" id="alertCount">0</div><div class="stat-tile-sub">−40% wk</div></div>
         <div class="stat-tile"><div class="stat-tile-label">CAMERAS ONLINE</div><div class="stat-tile-value" id="deviceCount">0 / 0</div><div class="stat-tile-sub">100%</div></div>
@@ -73,53 +75,11 @@
           <div class="flex justify-between items-center mb-3">
             <div>
               <div style="color:white;font-size:15px;font-weight:600;">Live Surveillance</div>
-              <div style="color:#4a6080;font-size:11px;margin-top:1px;">4 cameras streaming · AI overlays active</div>
+              <div style="color:#4a6080;font-size:11px;margin-top:1px;" id="liveSubtitle">No cameras streaming</div>
             </div>
             <a href="{% url 'web:live' %}" style="color:#3b82f6;font-size:13px;text-decoration:none;">View all ›</a>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="cam-feed" style="min-height:160px;">
-              <div class="cam-feed-overlay"></div>
-              <!-- Camera scene: front door teal night vision look -->
-              <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 300 190" preserveAspectRatio="xMidYMid slice">
-                <rect width="300" height="190" fill="#071520"/>
-                <rect x="80" y="30" width="140" height="120" rx="4" fill="#0a2535"/>
-                <rect x="115" y="50" width="70" height="90" rx="3" fill="#0d3040"/>
-                <rect x="125" y="55" width="24" height="50" rx="2" fill="#0f3d50"/>
-                <rect x="155" y="55" width="24" height="50" rx="2" fill="#0f3d50"/>
-                <ellipse cx="150" cy="30" rx="20" ry="6" fill="#0c2535"/>
-                <ellipse cx="120" cy="28" rx="6" ry="3" fill="#1a4a60" opacity=".8"/>
-                <ellipse cx="180" cy="28" rx="6" ry="3" fill="#1a4a60" opacity=".8"/>
-                <rect x="0" y="0" width="300" height="190" fill="rgba(0,180,220,0.03)"/>
-              </svg>
-              <div class="cam-label">
-                <div>
-                  <div style="display:flex;gap:4px;margin-bottom:4px;"><span class="badge badge-live">● LIVE</span><span class="badge badge-cam">CAM-01</span></div>
-                  <div style="color:white;font-size:12px;font-weight:600;">Front Door</div>
-                  <div style="color:#6a8aaa;font-size:10px;">11:38:03 PM</div>
-                </div>
-                <span class="badge badge-known">KNOWN PERSON · 99%</span>
-              </div>
-            </div>
-            <div class="cam-feed" style="min-height:160px;">
-              <div class="cam-feed-overlay"></div>
-              <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 300 190" preserveAspectRatio="xMidYMid slice">
-                <rect width="300" height="190" fill="#050e20"/>
-                <ellipse cx="220" cy="60" rx="60" ry="40" fill="#1a3a6a" opacity=".5"/>
-                <rect x="80" y="100" width="140" height="60" rx="4" fill="#0a1a35"/>
-                <ellipse cx="160" cy="115" rx="30" ry="12" fill="#1a3060"/>
-                <rect x="40" y="80" width="10" height="60" fill="#0a1a30"/>
-                <rect x="250" y="80" width="10" height="60" fill="#0a1a30"/>
-              </svg>
-              <div class="cam-label">
-                <div>
-                  <div style="display:flex;gap:4px;margin-bottom:4px;"><span class="badge badge-live">● LIVE</span><span class="badge badge-cam">CAM-02</span></div>
-                  <div style="color:white;font-size:12px;font-weight:600;">Driveway</div>
-                  <div style="color:#6a8aaa;font-size:10px;">11:38:03 PM</div>
-                </div>
-                <span class="badge badge-vehicle">VEHICLE · 92%</span>
-              </div>
-            </div>
+          <div id="livePreviewContainer" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           </div>
         </div>
 
@@ -129,23 +89,13 @@
             <div style="color:white;font-size:15px;font-weight:600;">Activity Timeline</div>
             <a href="{% url 'web:timeline' %}" style="color:#3b82f6;font-size:13px;text-decoration:none;">Archive ›</a>
           </div>
-            <div
-                id="timelineContainer"
-                style="display:flex;flex-direction:column;gap:2px;">
-            </div>
+          <div id="timelineContainer" style="display:flex;flex-direction:column;gap:2px;">
           </div>
         </div>
       </div>
 
       <!-- Bottom Devices Row -->
-      <div
-          id="deviceContainer"
-          style="
-              display:grid;
-              grid-template-columns:repeat(4,1fr);
-              gap:14px;
-              margin-top:20px;
-          ">
+      <div id="deviceContainer" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px;">
       </div>
 
     </div>
@@ -153,185 +103,198 @@
 </div>
 <script src="{% static 'js/sidebar.js' %}"></script>
 <script>
-  async function loadDashboard(){
 
+async function loadDashboard(){
     const token = localStorage.getItem("access");
     const homeId = localStorage.getItem("active_home");
 
-    const response = await fetch(
-        `/api/dashboard/${homeId}/`,
-        {
-            headers:{
-                Authorization:`Bearer ${token}`
-            }
+    try {
+        const response = await fetch(`/api/dashboard/${homeId}/`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+            showDashboardError();
+            return;
         }
-    );
 
-    if(!response.ok){
+        const dashboard = await response.json();
+        populateDashboard(dashboard);
 
-        return;
+    } catch (err) {
+        console.error("Failed to load dashboard:", err);
+        showDashboardError();
     }
-
-    const dashboard = await response.json();
-
-    populateDashboard(dashboard);
-
 }
+
+function showDashboardError(){
+    document.getElementById("summaryTitle").innerText = "Unable to load";
+    document.getElementById("summaryMessage").innerText =
+        "We couldn't reach your dashboard right now. Please refresh or try again shortly.";
+}
+
 function populateDashboard(data){
+    document.getElementById("summaryTitle").innerText = data.summary.title;
+    document.getElementById("summaryMessage").innerText = data.summary.message;
 
-    document.getElementById("membersCount").innerText =
-        data.stats.members;
+    updateSecurityMode(data.security_mode);
 
-    document.getElementById("unknownCount").innerText =
-        data.stats.unknown_detections;
-
-    document.getElementById("alertCount").innerText =
-        data.stats.alerts;
-
+    document.getElementById("membersCount").innerText = data.stats.members;
+    document.getElementById("unknownCount").innerText = data.stats.unknown_detections;
+    document.getElementById("alertCount").innerText = data.stats.alerts;
     document.getElementById("deviceCount").innerText =
         `${data.stats.devices_online} / ${data.stats.devices_total}`;
 
-    document.getElementById("memberTotal").innerText =
-        data.members.length;
-
-    renderTimeline(data.recent_events);
-
-    renderMembers(data.members);
-
-    renderDevices(data.devices);
-
+    renderTimeline(data.recent_events || []);
+    renderLivePreview(data.live_preview || []);
+    renderDevices(data.devices || []);
 }
+
+function updateSecurityMode(mode){
+    const buttons = document.querySelectorAll(".mode-btn");
+
+    buttons.forEach(btn=>{
+        btn.classList.remove("active");
+        btn.disabled = !mode.can_change;
+        btn.style.opacity = mode.can_change ? 1 : 0.6;
+        btn.style.cursor = mode.can_change ? "pointer" : "not-allowed";
+    });
+
+    const activeBtn = document.querySelector(`.mode-btn[data-mode="${mode.current}"]`);
+    if (activeBtn) activeBtn.classList.add("active");
+}
+
 function renderTimeline(events){
+    let html = "";
 
-    let html="";
-
-    events.forEach(event=>{
-
-        html+=`
-        <div style="padding:12px;border-bottom:1px solid rgba(255,255,255,.05);">
-
-            <div class="flex justify-between">
-
-                <span style="color:white;font-size:13px;font-weight:600;">
-
-                    ${event.person_name ?? "Unknown"}
-
-                </span>
-
-                <span style="color:#6a8aaa;font-size:11px;">
-
+    if (events.length === 0){
+        html = `
+        <div style="padding:25px;color:#6a8aaa;text-align:center;">
+            No recent activity.
+        </div>
+        `;
+    } else {
+        events.forEach(event=>{
+            html += `
+            <div style="padding:14px;border-bottom:1px solid rgba(255,255,255,.05);">
+                <div style="color:white;font-size:13px;font-weight:600;">
+                    ${event.device}
+                </div>
+                <div style="color:#8ca2c2;font-size:12px;margin-top:4px;">
+                    ${event.summary ?? "Detection Event"}
+                </div>
+                <div style="color:#5c7294;font-size:11px;margin-top:6px;">
                     ${new Date(event.timestamp).toLocaleString()}
-
-                </span>
-
+                </div>
             </div>
+            `;
+        });
+    }
 
-            <div style="color:#6a8aaa;font-size:11px;">
+    document.getElementById("timelineContainer").innerHTML = html;
+}
 
-                ${event.summary ?? event.event_type}
+function renderLivePreview(cameras){
+    const subtitle = document.getElementById("liveSubtitle");
+    const container = document.getElementById("livePreviewContainer");
 
+    if (!cameras.length){
+        subtitle.innerText = "No cameras streaming";
+        container.innerHTML = `
+        <div class="card p-5" style="grid-column:1 / -1;text-align:center;color:#4a6080;font-size:13px;">
+            No live camera feeds available yet.
+        </div>
+        `;
+        return;
+    }
+
+    subtitle.innerText = `${cameras.length} camera${cameras.length > 1 ? "s" : ""} streaming · AI overlays active`;
+
+    let html = "";
+    cameras.forEach(cam=>{
+        const badge = cam.detection_label
+            ? `<span class="badge ${cam.detection_badge_class ?? 'badge-known'}">${cam.detection_label}</span>`
+            : "";
+
+        html += `
+        <div class="cam-feed" style="min-height:160px;">
+            <div class="cam-feed-overlay"></div>
+            ${cam.snapshot_url
+                ? `<img src="${cam.snapshot_url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" alt="${cam.name}">`
+                : `<div style="position:absolute;inset:0;background:#071520;"></div>`
+            }
+            <div class="cam-label">
+                <div>
+                    <div style="display:flex;gap:4px;margin-bottom:4px;">
+                        <span class="badge badge-live">● LIVE</span>
+                        <span class="badge badge-cam">${cam.code ?? ""}</span>
+                    </div>
+                    <div style="color:white;font-size:12px;font-weight:600;">${cam.name}</div>
+                    <div style="color:#6a8aaa;font-size:10px;">${new Date().toLocaleTimeString()}</div>
+                </div>
+                ${badge}
             </div>
-
         </div>
         `;
     });
 
-    document.getElementById("timelineContainer").innerHTML =
-        html;
-
+    container.innerHTML = html;
 }
-function renderMembers(members){
 
-    let html="";
-
-    members.forEach(member=>{
-
-        const initials =
-            member.name
-                .split(" ")
-                .map(x=>x[0])
-                .join("");
-
-        html+=`
-        <div
-        style="
-        width:32px;
-        height:32px;
-        border-radius:50%;
-        background:#3b82f6;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        color:white;
-        font-size:11px;
-        margin-left:-6px;
-        ">
-
-        ${initials}
-
-        </div>
-        `;
-    });
-
-    document.getElementById("memberAvatars").innerHTML =
-        html;
-
-}
 function renderDevices(devices){
+    const container = document.getElementById("deviceContainer");
 
-    let html="";
-
-    devices.forEach(device=>{
-
-        html+=`
-
-        <div class="card p-5">
-
-            <div
-            style="
-            color:#6a8aaa;
-            font-size:11px;
-            ">
-
-                ${device.type}
-
-            </div>
-
-            <div
-            style="
-            color:white;
-            font-size:16px;
-            margin-top:10px;
-            ">
-
-                ${device.name}
-
-            </div>
-
-            <div
-            style="
-            color:#22c55e;
-            font-size:12px;
-            margin-top:5px;
-            ">
-
-                ${device.status}
-
-            </div>
-
+    if (!devices.length){
+        container.innerHTML = `
+        <div class="card p-5" style="grid-column:1 / -1;text-align:center;color:#4a6080;font-size:13px;">
+            No devices registered yet.
         </div>
+        `;
+        return;
+    }
 
+    let html = "";
+    devices.forEach(device=>{
+        html += `
+        <div class="card p-5">
+            <div style="color:#6a8aaa;font-size:11px;">${device.type}</div>
+            <div style="color:white;font-size:16px;margin-top:10px;">${device.name}</div>
+            <div style="color:#22c55e;font-size:12px;margin-top:5px;">${device.status}</div>
+        </div>
         `;
     });
 
-    document.getElementById("deviceContainer").innerHTML =
-        html;
-
+    container.innerHTML = html;
 }
-  document.getElementById('sidebar').innerHTML = renderSidebar('dashboard');
-  initHomeSwitcher();
-  async function loadUser() {
 
+async function setMode(modeValue, btnEl){
+    const token = localStorage.getItem("access");
+    const homeId = localStorage.getItem("active_home");
+
+    try {
+        const response = await fetch(`/api/settings/${homeId}/`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ security_mode: modeValue })
+        });
+
+        if (!response.ok){
+            console.error("Failed to update security mode");
+            return;
+        }
+
+        document.querySelectorAll(".mode-btn").forEach(btn=>btn.classList.remove("active"));
+        btnEl.classList.add("active");
+
+    } catch (err) {
+        console.error("Error setting security mode:", err);
+    }
+}
+
+async function loadUser() {
     const token = localStorage.getItem("access");
 
     if (!token) {
@@ -340,11 +303,8 @@ function renderDevices(devices){
     }
 
     try {
-
         const response = await fetch("/api/auth/me/", {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
         });
 
         if (!response.ok) {
@@ -354,58 +314,25 @@ function renderDevices(devices){
         }
 
         const user = await response.json();
-
         const firstName = user.full_name.split(" ")[0];
 
-        document.getElementById("topbar").innerHTML =
-            renderTopbar(
-                "System Overview",
-                `Welcome back, ${firstName}. Everything looks secure.`
-            );
+        document.getElementById("topbar").innerHTML = renderTopbar(
+            "System Overview",
+            `Welcome back, ${firstName}. Everything looks secure.`
+        );
 
     } catch (err) {
         console.error(err);
         window.location.href = "{% url 'web:login' %}";
     }
-
 }
-async function setMode(mode){
 
-    const token = localStorage.getItem("access");
-    const homeId = localStorage.getItem("active_home");
-
-    await fetch(`/api/settings/${homeId}/`,{
-
-        method:"PATCH",
-
-        headers:{
-            "Content-Type":"application/json",
-            Authorization:`Bearer ${token}`
-        },
-
-        body:JSON.stringify({
-            security_mode:mode
-        })
-
-    });
-
-    document.querySelectorAll(".mode-btn")
-        .forEach(btn=>btn.classList.remove("active"));
-
-    event.target.closest(".mode-btn").classList.add("active");
-
-}
-document.getElementById("sidebar").innerHTML =
-renderSidebar("dashboard");
-
+document.getElementById("sidebar").innerHTML = renderSidebar("dashboard");
 initHomeSwitcher();
 
 loadUser();
 loadDashboard();
-  function setMode(el) {
-    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-  }
+
 </script>
 </body>
 </html>

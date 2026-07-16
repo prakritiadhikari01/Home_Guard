@@ -1,198 +1,215 @@
-from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404
 
 from app.infrastructure.db.models.home_model import Home
 from app.infrastructure.db.models.home_member_model import HomeMember
 from app.infrastructure.db.models.device_model import Device
-from app.infrastructure.db.models.smart_lock_model import SmartLock
 from app.infrastructure.db.models.detection_event_model import DetectionEvent
-
+from app.domain.value_objects.device_status import DeviceStatus
 
 class DashboardService:
 
-    @staticmethod
-    def get_dashboard(home_id):
+    @classmethod
+    def get_dashboard(cls, home_id, user):
+        """
+        Returns everything required by the dashboard page.
+        """
 
-        home = (
-            Home.objects
-            .prefetch_related(
-                "members__user",
-                "devices",
-                "events",
-            )
-            .get(id=home_id)
-        )
+        home = cls._get_home(home_id, user)
 
         return {
-            "home": DashboardService.get_home(home),
-            "security_mode": home.security_mode,
-            "stats": DashboardService.get_stats(home),
-            "members": DashboardService.get_members(home),
-            "devices": DashboardService.get_devices(home),
-            "smart_locks": DashboardService.get_smart_locks(home),
-            "recent_events": DashboardService.get_recent_events(home),
+            "home": cls._get_home_information(home),
+            "security_mode": cls._get_security_mode(home, user),
+            "summary": cls._get_summary(home),
+            "stats": cls._get_stats(home),
+            "live_preview": cls._get_live_preview(home),
+            "recent_events": cls._get_recent_events(home),
         }
 
     @staticmethod
-    def get_home(home):
+    def _get_home(home_id, user):
+        """
+        Validate user belongs to the requested home.
+        """
+
+        home = get_object_or_404(
+            Home.objects.select_related("owner"),
+            id=home_id,
+        )
+
+        if home.owner_id == user.id:
+            return home
+
+        is_member = HomeMember.objects.filter(
+            home=home,
+            user=user,
+        ).exists()
+
+        if not is_member:
+            raise PermissionError(
+                "You are not a member of this home."
+            )
+
+        return home
+
+    @staticmethod
+    def _get_home_information(home):
 
         return {
             "id": home.id,
             "name": home.name,
-            "address": home.address,
-            "security_mode": home.security_mode,
         }
 
     @staticmethod
-    def get_stats(home):
+    def _get_security_mode(home, user):
 
-        members_count = HomeMember.objects.filter(
-            home=home
-        ).count()
+        return {
+            "current": home.security_mode,
+            "can_change": home.owner_id == user.id,
+        }
 
-        unknown_count = DetectionEvent.objects.filter(
-            home=home,
-            person_type="UNKNOWN",
-        ).count()
+    @staticmethod
+    def _get_summary(home):
 
-        alerts_count = DetectionEvent.objects.filter(
+        alerts = DetectionEvent.objects.filter(
             home=home,
             person_type="INTRUDER",
         ).count()
 
-        total_devices = Device.objects.filter(
-            home=home
+        unknown = DetectionEvent.objects.filter(
+            home=home,
+            person_type="UNKNOWN",
         ).count()
 
-        online_devices = Device.objects.filter(
-            home=home,
-            status="online",
-        ).count()
+        if alerts > 0:
+            message = (
+                f"{alerts} active alert(s) require immediate attention."
+            )
+
+        elif unknown > 0:
+            message = (
+                f"{unknown} unknown visitor(s) detected recently."
+            )
+
+        else:
+            message = (
+                "Everything looks secure. No unusual activity detected."
+            )
 
         return {
-            "members": members_count,
-            "unknown_detections": unknown_count,
-            "alerts": alerts_count,
-            "devices_online": online_devices,
-            "devices_total": total_devices,
+            "title": "AI Intelligence Brief",
+            "message": message,
         }
 
     @staticmethod
-    def get_members(home):
+    def _get_stats(home):
 
-        members = (
-            HomeMember.objects
-            .select_related("user")
-            .filter(home=home)
-        )
+        members = HomeMember.objects.filter(
+            home=home,
+        ).count()
 
-        data = []
+        unknown = DetectionEvent.objects.filter(
+            home=home,
+            person_type="UNKNOWN",
+        ).count()
 
-        for member in members:
+        alerts = DetectionEvent.objects.filter(
+            home=home,
+            person_type="INTRUDER",
+        ).count()
 
-            data.append({
-                "id": member.id,
-                "name": member.user.full_name,
-                "email": member.user.email,
-                "role": member.role,
-                "joined_at": member.joined_at,
-            })
+        devices_total = Device.objects.filter(
+            home=home,
+        ).count()
 
-        return data
+        devices_online = Device.objects.filter(
+            home=home,
+            status=DeviceStatus.ONLINE.value,
+        ).count()
+
+        return {
+            "members": members,
+            "unknown_detections": unknown,
+            "alerts": alerts,
+            "devices_online": devices_online,
+            "devices_total": devices_total,
+        }
 
     @staticmethod
-    def get_devices(home):
+    def _get_live_preview(home):
+        """
+        Dashboard shows only first four cameras.
+        """
 
-        devices = Device.objects.filter(
-            home=home
+        devices = (
+            Device.objects.filter(
+                home=home,
+            )
+            .order_by("name")[:4]
         )
 
-        data = []
+        previews = []
 
         for device in devices:
 
-            data.append({
-                "id": device.id,
-                "name": device.name,
-                "type": device.device_type,
-                "location": device.location,
-                "status": device.status,
-                "ip_address": device.ip_address,
-                "last_active": device.last_active,
-            })
-
-        return data
-
-    @staticmethod
-    def get_smart_locks(home):
-
-        locks = (
-            SmartLock.objects
-            .select_related(
-                "device",
-                "last_unlocked_by__user",
+            latest_event = (
+                DetectionEvent.objects.filter(
+                    device=device,
+                )
+                .order_by("-timestamp")
+                .first()
             )
-            .filter(
-                device__home=home
-            )
-        )
 
-        data = []
-
-        for lock in locks:
-
-            unlocked_by = None
-
-            if lock.last_unlocked_by:
-
-                unlocked_by = {
-                    "id": lock.last_unlocked_by.id,
-                    "name": lock.last_unlocked_by.user.full_name,
+            previews.append(
+                {
+                    "id": device.id,
+                    "name": device.name,
+                    "location": device.location,
+                    "status": device.status,
+                    "stream_url": device.stream_url,
+                    "current_detection": (
+                        latest_event.person_label
+                        if latest_event
+                        else "No Activity"
+                    ),
                 }
+            )
 
-            data.append({
-                "id": lock.id,
-                "device_name": lock.device.name,
-                "location": lock.device.location,
-                "status": lock.status,
-                "last_unlocked_by": unlocked_by,
-                "last_unlocked_at": lock.last_unlocked_at,
-            })
-
-        return data
+        return previews
 
     @staticmethod
-    def get_recent_events(home):
+    def _get_recent_events(home):
 
         events = (
-            DetectionEvent.objects
-            .select_related(
-                "matched_member__user",
-                "device",
+            DetectionEvent.objects.filter(
+                home=home,
             )
-            .filter(home=home)
-            .order_by("-timestamp")[:10]
+            .select_related(
+                "device",
+                "matched_member__user",
+            )
+            .order_by("-timestamp")[:5]
         )
 
-        data = []
+        results = []
 
         for event in events:
 
-            person_name = event.person_label
-
             if event.matched_member:
-                person_name = event.matched_member.user.full_name
+                summary = (
+                    f"{event.matched_member.user.full_name} "
+                    f"detected at {event.device.location}"
+                )
 
-            data.append({
-                "id": event.id,
-                "event_type": event.event_type,
-                "person_type": event.person_type,
-                "person_name": person_name,
-                "device": event.device.name,
-                "location": event.camera_location,
-                "confidence": event.confidence_score,
-                "summary": event.event_summary,
-                "timestamp": event.timestamp,
-                "thumbnail": event.thumbnail_url,
-            })
+            else:
+                summary = event.event_summary
 
-        return data
+            results.append(
+                {
+                    "id": event.id,
+                    "summary": summary,
+                    "device": event.device.name,
+                    "timestamp": event.timestamp,
+                }
+            )
+
+        return results

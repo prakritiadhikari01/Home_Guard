@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 
 from app.application.services.home_invitation_service import HomeInvitationService
+from app.domain.repositories import home_member_repository
 from app.infrastructure.db.models.home_model import Home
 from app.application.services.home_member_service import HomeMemberService
 
@@ -16,13 +17,14 @@ from app.interfaces.api.serializers.home_member_serializer import (
     UpdateMemberRoleSerializer,
 )
 
+
+from django.core.mail import send_mail
+from django.conf import settings
 from app.infrastructure.db.repositories.django_home_member_repository import (
     DjangoHomeMemberRepository,
 )
 
-from django.core.mail import send_mail
-from django.conf import settings
-
+home_member_repository = DjangoHomeMemberRepository()
 User = get_user_model()
 
 class AddHomeMemberView(APIView):
@@ -136,8 +138,13 @@ class UpdateMemberRoleView(APIView):
         )
 
         serializer.is_valid(raise_exception=True)
+        print(serializer.validated_data)
 
         role = serializer.validated_data["role"]
+        overrides = {
+            k: v for k in ("can_control_devices", "can_manage_members", "can_unlock_door", "receive_alerts")
+            if (v := serializer.validated_data.get(k)) is not None
+        }
 
         home = get_object_or_404(Home, id=home_id)
 
@@ -152,11 +159,36 @@ class UpdateMemberRoleView(APIView):
                 home=home,
                 target_user=target_user,
                 role=role,
+                permission_overrides=overrides or None,
             )
         )
 
         return Response({
             "message": "Role updated",
             "role": member.role,
+            "can_control_devices": member.can_control_devices,
+            "can_manage_members": member.can_manage_members,
+            "can_unlock_door": member.can_unlock_door,
+            "receive_alerts": member.receive_alerts,
+        })
+    
+class MyHomeMembershipView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, home_id):
+        home = get_object_or_404(Home, id=home_id)
+        membership = home_member_repository.get_membership(home, request.user)
+
+        if membership is None:
+            return Response({"detail": "Not a member of this home."}, status=403)
+
+        return Response({
+            "role": membership.role,
+            "permissions": {
+                "can_control_devices": membership.can_control_devices,
+                "can_manage_members": membership.can_manage_members,
+                "can_unlock_door": membership.can_unlock_door,
+                "receive_alerts": membership.receive_alerts,
+            },
         })
     

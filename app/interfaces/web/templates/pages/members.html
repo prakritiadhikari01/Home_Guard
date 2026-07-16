@@ -15,140 +15,313 @@
     <div id="topbar"></div>
     <div class="page-body">
 
-      <!-- Search + Add -->
-      <div style="display:flex;gap:12px;align-items:center;margin-bottom:24px;">
-        <div style="flex:1;max-width:520px;position:relative;">
-          <svg style="position:absolute;left:14px;top:50%;transform:translateY(-50%);" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4a6080" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" placeholder="Search members..." id="searchInput" oninput="filterMembers()"
-            style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);color:white;padding:10px 14px 10px 40px;border-radius:10px;font-size:14px;outline:none;"/>
+      <div id="noAccessState" style="display:none;">
+        <div class="grid-message">
+          You don't have permission to manage members in this home. This requires the "manage members" permission (OWNER or ADMIN roles).
         </div>
-        <button onclick="showAddModal()" style="background:#3b82f6;color:white;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;border:none;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add member
-        </button>
       </div>
 
-      <div style="font-size:11px;letter-spacing:.1em;color:#3a4a6a;margin-bottom:14px;" id="rosterLabel">// ROSTER · 4</div>
+      <div id="pageContent" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px;">
+          <div style="display:flex;gap:12px;" id="statRow"></div>
+          <button class="btn-primary" id="openInviteMember">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Invite Member
+          </button>
+        </div>
 
-      <!-- Members Grid -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;" id="membersGrid"></div>
+        <div class="device-grid" id="memberGrid"></div>
+      </div>
 
     </div>
   </div>
 </div>
 
-<!-- Add Member Modal -->
-<div id="addModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center;">
-  <div style="background:#0d1929;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:28px;width:420px;position:relative;">
-    <button onclick="hideAddModal()" style="position:absolute;top:18px;right:18px;background:none;border:none;color:#6a8aaa;cursor:pointer;">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-    <div style="color:white;font-size:18px;font-weight:700;margin-bottom:4px;">Add household member</div>
-    <div style="color:#4a6080;font-size:13px;margin-bottom:20px;">They'll receive an email to log in (or register) and verify their identity.</div>
-    <div style="display:flex;flex-direction:column;gap:14px;">
-      <div><label style="color:#8a9ab8;font-size:12px;display:block;margin-bottom:5px;">Full name</label>
-        <input id="inviteName" type="text" placeholder="Name" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:white;padding:10px 14px;border-radius:8px;font-size:14px;outline:none;"/></div>
-      <div><label style="color:#8a9ab8;font-size:12px;display:block;margin-bottom:5px;">Email</label>
-        <input id="inviteEmail" type="email" placeholder="name@email.com" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:white;padding:10px 14px;border-radius:8px;font-size:14px;outline:none;"/></div>
-      <div><label style="color:#8a9ab8;font-size:12px;display:block;margin-bottom:5px;">Phone (optional)</label>
-        <input id="invitePhone" type="tel" placeholder="+977 98XXXXXXXX" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:white;padding:10px 14px;border-radius:8px;font-size:14px;outline:none;"/></div>
-      <div><label style="color:#8a9ab8;font-size:12px;display:block;margin-bottom:5px;">Role</label>
-        <select id="inviteRole" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:white;padding:10px 14px;border-radius:8px;font-size:14px;outline:none;">
-          <option value="Viewer">Viewer — can watch & receive alerts</option>
-          <option value="Member">Member — can manage devices & view all</option>
-          <option value="Owner">Owner — full control & billing</option>
-        </select></div>
+<!-- Invite Member Modal -->
+<div class="modal-overlay" id="inviteMemberModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div style="color:white;font-size:16px;font-weight:600;">Invite member</div>
+      <button class="modal-close" id="closeInviteMember">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
-    <div style="display:flex;gap:10px;margin-top:22px;">
-      <button onclick="hideAddModal()" style="flex:1;background:rgba(255,255,255,0.06);color:#8a9ab8;padding:11px;border-radius:8px;font-size:14px;cursor:pointer;border:none;">Cancel</button>
-      <button onclick="sendInvite()" style="flex:1;background:#3b82f6;color:white;padding:11px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;">Send invite</button>
+
+    <div class="modal-body">
+      <div style="color:#9ab0cc;font-size:12px;line-height:1.5;margin-bottom:6px;">
+        This sends an email invitation. The person becomes an active member only after they accept it and complete face enrollment.
+      </div>
+
+      <label class="field-label">Email address</label>
+      <input class="field-input" id="iEmail" type="email" placeholder="name@example.com">
+
+      <label class="field-label">Role</label>
+      <select class="field-input" id="iRole">
+        <option value="ADMIN">Admin</option>
+        <option value="MEMBER" selected>Member</option>
+        <option value="GUEST">Guest</option>
+        <option value="SECURITY">Security</option>
+      </select>
+
+      <div id="inviteError" style="color:#f87171;font-size:12px;margin-top:6px;display:none;"></div>
+      <div id="inviteSuccess" style="color:#22c55e;font-size:12px;margin-top:6px;display:none;"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-ghost" id="cancelInviteMember">Cancel</button>
+      <button class="btn-primary" id="submitInviteMember">Send invitation</button>
     </div>
   </div>
 </div>
 
 <style>
-.member-card { border-radius:14px;padding:20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:background .15s; }
-.member-card:hover { background:rgba(255,255,255,0.06); }
-.role-badge { font-size:10px;font-weight:700;letter-spacing:.08em;padding:2px 8px;border-radius:4px; }
-.role-owner { background:rgba(59,130,246,0.15);color:#60a5fa; }
-.role-member { background:rgba(34,197,94,0.1);color:#22c55e; }
-.role-viewer { background:rgba(234,179,8,0.1);color:#eab308; }
-.last-seen { font-size:10px;letter-spacing:.08em;color:#3a4a6a;margin-top:6px; }
-.last-seen span { color:#4a6080; }
+.btn-primary { background:#3b82f6;color:white;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;border:none; }
+.btn-primary:hover { background:#2f6fd9; }
+.btn-primary:disabled { opacity:.6;cursor:default; }
+.btn-ghost { background:rgba(255,255,255,0.06);color:#9ab0cc;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none; }
+.btn-ghost:hover { background:rgba(255,255,255,0.1);color:white; }
+
+.stat-pill { background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:10px 18px;min-width:120px; }
+.stat-pill .label { font-size:11px;color:#4a6080;letter-spacing:.04em;margin-bottom:4px; }
+.stat-pill .value { font-size:20px;font-weight:700;color:white; }
+
+.device-grid { display:grid;grid-template-columns:repeat(3, 1fr);gap:16px; }
+@media (max-width: 1100px){ .device-grid{ grid-template-columns:repeat(2,1fr); } }
+@media (max-width: 680px){ .device-grid{ grid-template-columns:1fr; } }
+
+.device-card { background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:18px;cursor:pointer;transition:transform .15s, border-color .15s; }
+.device-card:hover { transform:translateY(-2px);border-color:rgba(59,130,246,0.4); }
+
+.device-icon { width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(59,130,246,0.12);color:#3b82f6;margin-bottom:14px;font-size:16px;font-weight:700; }
+.device-icon.owner, .device-icon.admin { background:rgba(168,85,247,0.12);color:#a855f7; }
+.device-icon.guest { background:rgba(100,116,139,0.15);color:#64748b; }
+
+.device-name { color:white;font-size:15px;font-weight:600;margin-bottom:2px; }
+.device-type { color:#4a6080;font-size:11px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:12px; }
+
+.device-meta { color:#4a6080;font-size:11px;margin-bottom:14px; }
+
+.device-footer { display:flex;justify-content:space-between;align-items:center; }
+.device-open { color:#3b82f6;font-size:12px;font-weight:600; }
+
+.role-pill { font-size:10px;font-weight:700;letter-spacing:.04em;padding:3px 8px;border-radius:6px;background:rgba(59,130,246,0.12);color:#3b82f6;text-transform:uppercase; }
+.role-pill.owner, .role-pill.admin { background:rgba(168,85,247,0.12);color:#a855f7; }
+.role-pill.guest { background:rgba(100,116,139,0.15);color:#64748b; }
+
+.grid-message { grid-column: 1 / -1; color:#4a6080; font-size:13px; text-align:center; padding:40px 20px;border:1px dashed rgba(255,255,255,0.08); border-radius:14px; }
+.grid-message.is-error { color:#f87171; border-color:rgba(248,113,113,0.2); }
+
+.modal-overlay { display:none;position:fixed;inset:0;background:rgba(2,8,20,0.7);backdrop-filter:blur(2px);align-items:center;justify-content:center;z-index:50; }
+.modal-overlay.open { display:flex; }
+.modal-card { background:#0a1424;border:1px solid rgba(255,255,255,0.08);border-radius:16px;width:420px;max-width:92vw;max-height:88vh;overflow-y:auto; }
+.modal-header { display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid rgba(255,255,255,0.06); }
+.modal-close { background:none;border:none;color:#6a8aaa;cursor:pointer;padding:4px; }
+.modal-close:hover { color:white; }
+.modal-body { padding:18px 20px;display:flex;flex-direction:column; }
+.field-label { color:#9ab0cc;font-size:12px;font-weight:600;margin:12px 0 6px; }
+.field-label:first-child { margin-top:0; }
+.field-input { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:9px 12px;color:white;font-size:13px;outline:none;width:100%;font-family:inherit; }
+.field-input:focus { border-color:#3b82f6; }
+.field-input::placeholder { color:#3d5170; }
+.modal-footer { display:flex;justify-content:flex-end;gap:10px;padding:16px 20px;border-top:1px solid rgba(255,255,255,0.06); }
 </style>
 
 <script src="{% static 'js/sidebar.js' %}"></script>
 <script>
+  const API_BASE = "/api";
+  const TOKEN = localStorage.getItem("access");
+  const HOME_ID = localStorage.getItem("active_home");
+
+  if (!TOKEN) {
+    window.location.href = "{% url 'web:login' %}";
+  }
+
+  function authHeaders(extra = {}) {
+    return { Authorization: `Bearer ${TOKEN}`, ...extra };
+  }
+
+  function handleAuthFailure(res) {
+    if (res.status === 401) {
+      localStorage.clear();
+      window.location.href = "{% url 'web:login' %}";
+      return true;
+    }
+    return false;
+  }
+
+  // Members routes do NOT sit under /homes/ — only /members/me/ does.
+  const LIST_MEMBERS_URL = `${API_BASE}/${HOME_ID}/members/`;
+  const INVITE_MEMBER_URL = `${API_BASE}/${HOME_ID}/members/add/`;
+  const MY_MEMBERSHIP_URL = `${API_BASE}/homes/${HOME_ID}/members/me/`;
+
   document.getElementById('sidebar').innerHTML = renderSidebar('members');
   initHomeSwitcher();
-  const activeHome = localStorage.getItem('hg_active_home') || 'My Home';
-  document.getElementById('topbar').innerHTML = renderTopbar('Members', `${activeHome} · manage household access`);
+  document.getElementById('topbar').innerHTML = renderTopbar('Members', 'Manage roles and permissions for this home');
 
-  let members = JSON.parse(localStorage.getItem('hg_members') || JSON.stringify([
-    { initials:'AR', name:'Alex Reyes', role:'Owner', rel:'Primary admin', email:'alex@home.com', status:'ACTIVE', lastSeen:'NOW', where:'FRONT DOOR', color:'#3b82f6' },
-    { initials:'ER', name:'Elena Reyes', role:'Member', rel:'Spouse', email:'elena@home.com', status:'ACTIVE', lastSeen:'15:42', where:'FRONT DOOR', color:'#10b981' },
-    { initials:'MK', name:'Marcus K.', role:'Member', rel:'Son', email:'marcus@home.com', status:'ACTIVE', lastSeen:'YESTERDAY', where:'GARAGE', color:'#8b5cf6' },
-    { initials:'SB', name:'Sara Bell', role:'Viewer', rel:'Housekeeper', email:'sara@home.com', status:'ACTIVE', lastSeen:'MON', where:'FRONT DOOR', color:'#ef4444' },
-  ]));
-
-  function saveMembers() { localStorage.setItem('hg_members', JSON.stringify(members)); }
-
-  function getInitials(name) {
-    return name.split(' ').filter(Boolean).slice(0,2).map(w => w[0].toUpperCase()).join('');
-  }
-  function getColor(seed) {
-    const colors = ['#3b82f6','#10b981','#8b5cf6','#ef4444','#eab308','#06b6d4'];
-    let h = 0; for (let i=0;i<seed.length;i++) h += seed.charCodeAt(i);
-    return colors[h % colors.length];
+  function showNoAccess() {
+    document.getElementById('noAccessState').style.display = 'block';
   }
 
-  function renderMembers(list) {
-    document.getElementById('rosterLabel').textContent = `// ROSTER · ${members.length}`;
-    document.getElementById('membersGrid').innerHTML = list.map(m => `
-      <div class="card member-card">
-        <div style="width:54px;height:54px;border-radius:50%;background:${m.color};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:white;flex-shrink:0;">${m.initials}</div>
-        <div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-            <span style="color:white;font-size:15px;font-weight:600;">${m.name}</span>
-            <span class="role-badge role-${m.role.toLowerCase()}">${m.role.toUpperCase()}</span>
-          </div>
-          <div style="color:#6a8aaa;font-size:13px;">${m.email || m.rel}</div>
-          ${m.status === 'ACTIVE'
-            ? `<div class="last-seen">LAST SEEN · <span>${m.lastSeen}</span> · <span>${m.where}</span></div>`
-            : `<div style="display:flex;align-items:center;gap:5px;margin-top:6px;"><span style="width:6px;height:6px;border-radius:50%;background:#eab308;"></span><span style="color:#eab308;font-size:10px;letter-spacing:.08em;">INVITATION PENDING</span></div>`
-          }
+  async function loadPermissions() {
+    try {
+      const res = await fetch(MY_MEMBERSHIP_URL, { headers: authHeaders({ 'Accept': 'application/json' }) });
+      if (handleAuthFailure(res)) return null;
+      if (res.status === 403 || res.status === 404) return null;
+      if (!res.ok) throw new Error('permissions fetch failed');
+      return await res.json(); // { role, permissions: { can_manage_members, ... } }
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  }
+
+  // Matches the actual HomeMemberListSerializer: id (HomeMember UUID),
+  // user_id (int — required for the detail page / remove / role URLs),
+  // email, full_name, role, joined_at.
+  function extractName(m) { return m.full_name || m.email || 'Unnamed member'; }
+  function extractEmail(m) { return m.email || ''; }
+  function extractUserId(m) { return m.user_id; }
+  function extractMemberId(m) { return m.id; }
+  function initials(name) {
+    return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+  }
+
+  let members = [];
+
+  function renderStats() {
+    const total = members.length;
+    const owners = members.filter(m => (m.role || '').toUpperCase() === 'OWNER' || (m.role || '').toUpperCase() === 'ADMIN').length;
+    const guests = members.filter(m => (m.role || '').toUpperCase() === 'GUEST').length;
+    document.getElementById('statRow').innerHTML = `
+      <div class="stat-pill"><div class="label">TOTAL MEMBERS</div><div class="value">${total}</div></div>
+      <div class="stat-pill"><div class="label">OWNERS / ADMINS</div><div class="value" style="color:#a855f7;">${owners}</div></div>
+      <div class="stat-pill"><div class="label">GUESTS</div><div class="value" style="color:#64748b;">${guests}</div></div>
+    `;
+  }
+
+  function memberCard(m) {
+    const role = (m.role || '').toLowerCase();
+    const name = extractName(m);
+    return `
+      <div class="device-card" data-member-id="${extractMemberId(m)}">
+        <div class="device-icon ${role}">${initials(name)}</div>
+        <div class="device-name">${name}</div>
+        <div class="device-type">${extractEmail(m)}</div>
+        <div class="device-meta">Joined ${m.joined_at ? new Date(m.joined_at).toLocaleDateString() : '—'}</div>
+        <div class="device-footer" style="margin-top:10px;">
+          <span class="role-pill ${role}">${m.role}</span>
+          <span class="device-open">Manage →</span>
         </div>
-      </div>
-    `).join('');
+      </div>`;
   }
 
-  function filterMembers() {
-    const q = document.getElementById('searchInput').value.toLowerCase();
-    renderMembers(members.filter(m => m.name.toLowerCase().includes(q) || (m.email||'').toLowerCase().includes(q)));
-  }
+  function renderGrid() {
+    const grid = document.getElementById('memberGrid');
+    if (!members.length) {
+      grid.innerHTML = `<div class="grid-message">No members yet. Click "Invite Member" to add someone to this home.</div>`;
+      return;
+    }
+    grid.innerHTML = members.map(memberCard).join('');
 
-  function showAddModal() { document.getElementById('addModal').style.display = 'flex'; }
-  function hideAddModal() { document.getElementById('addModal').style.display = 'none'; }
-
-  function sendInvite() {
-    const name = document.getElementById('inviteName').value.trim();
-    const email = document.getElementById('inviteEmail').value.trim();
-    const phone = document.getElementById('invitePhone').value.trim();
-    const role = document.getElementById('inviteRole').value;
-    if (!name || !email) { alert('Please enter at least a name and email.'); return; }
-    members.push({
-      initials: getInitials(name), name, role, rel: phone || '', email,
-      status: 'PENDING', lastSeen: '', where: '', color: getColor(name)
+    grid.querySelectorAll('.device-card[data-member-id]').forEach(card => {
+      card.addEventListener('click', () => {
+        window.location.href = `/members/${card.dataset.memberId}/`;
+      });
     });
-    saveMembers();
-    renderMembers(members);
-    document.getElementById('inviteName').value = '';
-    document.getElementById('inviteEmail').value = '';
-    document.getElementById('invitePhone').value = '';
-    hideAddModal();
   }
 
-  renderMembers(members);
+  async function loadMembers() {
+    const grid = document.getElementById('memberGrid');
+    try {
+      const res = await fetch(LIST_MEMBERS_URL, { headers: authHeaders({ 'Accept': 'application/json' }) });
+      if (handleAuthFailure(res)) return;
+      if (res.status === 403) { showNoAccess(); return; }
+      if (!res.ok) throw new Error('Failed to load members');
+      members = await res.json();
+
+      document.getElementById('pageContent').style.display = 'block';
+      renderStats();
+      renderGrid();
+    } catch (err) {
+      console.error(err);
+      document.getElementById('statRow').innerHTML = '';
+      grid.innerHTML = `<div class="grid-message is-error">Could not load members. Please refresh, or check your connection.</div>`;
+    }
+  }
+
+  (async function init() {
+    const me = await loadPermissions();
+    if (!me || !me.permissions || !me.permissions.can_manage_members) {
+      showNoAccess();
+      return;
+    }
+    await loadMembers();
+  })();
+
+  // --- Invite Member modal ---
+  const modal = document.getElementById('inviteMemberModal');
+  const openBtn = document.getElementById('openInviteMember');
+  const closeBtn = document.getElementById('closeInviteMember');
+  const cancelBtn = document.getElementById('cancelInviteMember');
+  const submitBtn = document.getElementById('submitInviteMember');
+  const errorBox = document.getElementById('inviteError');
+  const successBox = document.getElementById('inviteSuccess');
+
+  function openModal(){ modal.classList.add('open'); }
+  function closeModal(){
+    modal.classList.remove('open');
+    errorBox.style.display = 'none';
+    successBox.style.display = 'none';
+    document.getElementById('iEmail').value = '';
+    document.getElementById('iRole').value = 'MEMBER';
+  }
+
+  openBtn.addEventListener('click', openModal);
+  closeBtn.addEventListener('click', closeModal);
+  cancelBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  submitBtn.addEventListener('click', async () => {
+    const email = document.getElementById('iEmail').value.trim();
+    const role = document.getElementById('iRole').value;
+
+    errorBox.style.display = 'none';
+    successBox.style.display = 'none';
+
+    if (!email) {
+      errorBox.textContent = 'Email address is required.';
+      errorBox.style.display = 'block';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
+
+    try {
+      const res = await fetch(INVITE_MEMBER_URL, {
+        method: 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ email, role }),
+      });
+
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || Object.values(data)[0] || 'Could not send invitation.');
+      }
+
+      const result = await res.json();
+      successBox.textContent = `Invitation sent to ${result.email || email}.`;
+      successBox.style.display = 'block';
+      document.getElementById('iEmail').value = '';
+    } catch (err) {
+      errorBox.textContent = typeof err.message === 'string' ? err.message : 'Could not send invitation.';
+      errorBox.style.display = 'block';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send invitation';
+    }
+  });
 </script>
 </body>
 </html>

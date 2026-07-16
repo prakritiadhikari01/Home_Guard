@@ -1,3 +1,4 @@
+#app/infrastructure/db/models/detection_event_model.py
 import uuid
 
 from django.db import models
@@ -114,24 +115,15 @@ class DetectionEvent(models.Model):
     )
 
     class Meta:
-        app_label = "events"
-
-        ordering = [
-            "-timestamp"
-        ]
-
+        ...
         indexes = [
+            models.Index(fields=["timestamp"]),
+            models.Index(fields=["person_type"]),
+            models.Index(fields=["event_type"]),
+            models.Index(fields=["camera_location"]),
             models.Index(
-                fields=["timestamp"]
-            ),
-            models.Index(
-                fields=["person_type"]
-            ),
-            models.Index(
-                fields=["event_type"]
-            ),
-            models.Index(
-                fields=["camera_location"]
+                fields=["device", "person_type", "matched_face", "timestamp"],
+                name="idx_dedup_lookup",
             ),
         ]
 

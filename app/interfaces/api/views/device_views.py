@@ -46,6 +46,8 @@ class HomeDevicesView(APIView):
 
     def get(self, request, home_id):
         home = get_object_or_404(Home, id=home_id)
+        DeviceService._require_membership(request.user, home)
+
         devices = DeviceService.get_home_devices(home)
         return Response(DeviceListSerializer(devices, many=True).data)
 
@@ -55,6 +57,8 @@ class DeviceDetailView(APIView):
 
     def get(self, request, home_id, device_id):
         home = get_object_or_404(Home, id=home_id)
+        DeviceService._require_membership(request.user, home)
+
         device = DeviceService.get_device(home, device_id)
         if not device:
             return Response({"detail": "Device not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -69,6 +73,8 @@ class DeviceDetailView(APIView):
         serializer = DeviceUpdateSerializer(device, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
+        # update_device already enforces can_control_devices via
+        # DeviceService._get_membership_or_raise — no separate check needed here.
         updated = DeviceService.update_device(request.user, home, device, serializer.validated_data)
         return Response(DeviceDetailSerializer(updated).data)
 
@@ -78,6 +84,8 @@ class DeviceDetailView(APIView):
         if not device:
             return Response({"detail": "Device not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        # delete_device already enforces can_control_devices via
+        # DeviceService._get_membership_or_raise — no separate check needed here.
         DeviceService.delete_device(request.user, home, device)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -87,6 +95,8 @@ class DeviceHealthView(APIView):
 
     def get(self, request, home_id, device_id):
         home = get_object_or_404(Home, id=home_id)
+        DeviceService._require_membership(request.user, home)
+
         device = DeviceService.get_device(home, device_id)
         if not device:
             return Response({"detail": "Device not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -100,6 +110,8 @@ class DeviceEventsView(APIView):
 
     def get(self, request, home_id, device_id):
         home = get_object_or_404(Home, id=home_id)
+        DeviceService._require_membership(request.user, home)
+
         device = DeviceService.get_device(home, device_id)
         if not device:
             return Response({"detail": "Device not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -117,6 +129,8 @@ class DeviceRestartView(APIView):
         if not device:
             return Response({"detail": "Device not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        # restart_device already enforces can_control_devices via
+        # DeviceService._get_membership_or_raise — no separate check needed here.
         DeviceService.restart_device(request.user, home, device)
         return Response({"message": "Restart requested"})
     
@@ -127,6 +141,8 @@ class DeviceSettingsView(APIView):
 
     def get(self, request, home_id, device_id):
         home = get_object_or_404(Home, id=home_id)
+        DeviceService._require_membership(request.user, home)
+
         device = DeviceService.get_device(home, device_id)
         if not device:
             return Response({"detail": "Device not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -136,6 +152,9 @@ class DeviceSettingsView(APIView):
 
     def patch(self, request, home_id, device_id):
         home = get_object_or_404(Home, id=home_id)
+        # Writing settings should require control permission, not just membership.
+        DeviceService._get_membership_or_raise(request.user, home)
+
         device = DeviceService.get_device(home, device_id)
         if not device:
             return Response({"detail": "Device not found"}, status=status.HTTP_404_NOT_FOUND)
