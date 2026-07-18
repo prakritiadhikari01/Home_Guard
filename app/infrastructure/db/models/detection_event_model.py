@@ -94,9 +94,21 @@ class DetectionEvent(models.Model):
         blank=True
     )
 
+    clip_url = models.URLField(
+        null=True,
+        blank=True,
+        help_text="URL to the short video clip covering this event, attached during enrichment."
+    )
+
     event_summary = models.TextField(
         null=True,
-        blank=True
+        blank=True,
+        help_text="Natural-language description from the AI engine's VLM pass, attached during enrichment."
+    )
+
+    is_enriched = models.BooleanField(
+        default=False,
+        help_text="True once clip_url/event_summary have been attached by the enrichment step."
     )
 
     duration_seconds = models.PositiveIntegerField(

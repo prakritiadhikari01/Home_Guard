@@ -18,6 +18,10 @@ class DetectionEvent:
     camera_location: Optional[str]
     image_url: Optional[str]
     snapshot_url: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    clip_url: Optional[str] = None
+    event_summary: Optional[str] = None
     timestamp: datetime = field(default_factory=datetime.utcnow)
     duration_seconds: int = 0
     metadata: dict = field(default_factory=dict)
+    is_enriched: bool = False

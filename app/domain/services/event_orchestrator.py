@@ -33,6 +33,7 @@ class EventOrchestrator:
             existing.confidence_score = incoming.confidence_score
             existing.image_url = incoming.image_url or existing.image_url
             existing.snapshot_url = incoming.snapshot_url or existing.snapshot_url
+            existing.thumbnail_url = incoming.thumbnail_url or existing.thumbnail_url
 
         existing.metadata["occurrence_count"] = existing.metadata.get("occurrence_count", 1) + 1
 

@@ -1,6 +1,6 @@
 from django.urls import path
 from app.interfaces.api.views.active_device_view import ActiveDeviceListView
-from app.interfaces.api.views.event_views import EventIngestView
+from app.interfaces.api.views.event_views import EventIngestView, EventEnrichView
 
 from app.interfaces.api.views.face_list_view import FaceListView
 from app.interfaces.api.views.home_invitation_view import AcceptInvitationView, PendingInvitationsView, RejectInvitationView
@@ -122,6 +122,7 @@ urlpatterns = [
     path("faces/all/", FaceListView.as_view()),
     path("devices/active/",ActiveDeviceListView.as_view(),),
     path("events/ingest/", EventIngestView.as_view()),
+    path("events/<uuid:event_id>/enrich/", EventEnrichView.as_view()),
 
     path(
         "dashboard/<uuid:home_id>/",
