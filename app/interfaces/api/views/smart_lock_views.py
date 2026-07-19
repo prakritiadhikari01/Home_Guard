@@ -23,8 +23,11 @@ class UnlockDoorView(APIView):
         home = get_object_or_404(Home, id=home_id)
         device = get_object_or_404(Device, id=lock_id, home=home)
 
-        smart_lock = SmartLockService.manual_unlock(acting_user=request.user, device=device)
-        return Response(SmartLockSerializer(smart_lock).data)
+        result = SmartLockService.manual_unlock(
+            acting_user=request.user,
+            device=device,
+        )
+        return Response(result)
 
 
 class LockDoorView(APIView):
