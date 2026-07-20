@@ -6,16 +6,8 @@ from app.infrastructure.db.models.user_settings_model import UserSettings
 from app.infrastructure.db.models.home_settings_model import HomeSettings
 import json
 
-from django.contrib import admin
-
-from app.infrastructure.db.models.enrollment_session_model import (
-    EnrollmentSession,
-)
-
-from app.infrastructure.db.models.face_profile_model import (
-    FaceProfile,
-)
 print("APP ADMIN LOADED")
+
 
 @admin.register(UserSettings)
 class UserSettingsAdmin(admin.ModelAdmin):
@@ -39,10 +31,6 @@ class HomeSettingsAdmin(admin.ModelAdmin):
         "home",
     )
 
-# app/infrastructure/db/admin.py
-
-
-
 
 # ==========================================================
 # ENROLLMENT SESSION
@@ -53,8 +41,8 @@ class EnrollmentSessionAdmin(admin.ModelAdmin):
 
     list_display = (
         "id_short",
-        "member_email",
-        "home_name",
+        "user_email",
+        "invitation_home_name",
         "status_badge",
         "started_at",
         "completed_at",
@@ -68,12 +56,13 @@ class EnrollmentSessionAdmin(admin.ModelAdmin):
     )
 
     search_fields = (
-        "invitation__email",
+        "user__email",
         "invitation__home__name",
     )
 
     readonly_fields = (
         "id",
+        "user",
         "invitation",
         "status",
         "ai_engine",
@@ -90,13 +79,14 @@ class EnrollmentSessionAdmin(admin.ModelAdmin):
         return str(obj.id)[:8]
     id_short.short_description = "Session"
 
-    def member_email(self, obj):
-        return obj.invitation.email
-    member_email.short_description = "Invited User"
+    def user_email(self, obj):
+        return obj.user.email
+    user_email.short_description = "User"
 
-    def home_name(self, obj):
-        return obj.invitation.home.name
-    home_name.short_description = "Home"
+    def invitation_home_name(self, obj):
+        # invitation is optional now — settings-triggered enrollment has none
+        return obj.invitation.home.name if obj.invitation else "-"
+    invitation_home_name.short_description = "Home (via invite)"
 
     def status_badge(self, obj):
 
@@ -135,13 +125,13 @@ class FaceProfileAdmin(admin.ModelAdmin):
 
     search_fields = (
         "label_name",
-        "home_member__user__email",
-        "home_member__user__full_name",
+        "user__email",
+        "user__full_name",
     )
 
     readonly_fields = (
         "id",
-        "home_member",
+        "user",
         "label_name",
         "is_verified",
         "created_at",
@@ -166,7 +156,7 @@ class FaceProfileAdmin(admin.ModelAdmin):
     member_name.short_description = "Person"
 
     def member_email(self, obj):
-        return obj.home_member.user.email
+        return obj.user.email
     member_email.short_description = "Email"
 
     def verified(self, obj):
@@ -174,24 +164,25 @@ class FaceProfileAdmin(admin.ModelAdmin):
     verified.short_description = "Verified"
 
     def pose_summary(self, obj):
-
         if not obj.embeddings:
             return "-"
 
-        summary = []
+        total = 0
+        parts = []
 
-        for pose, value in obj.embeddings.items():
+        for pose in ["CENTER", "LEFT", "RIGHT", "UP", "DOWN"]:
+            embeddings = obj.embeddings.get(pose, [])
 
-            count = len(value.get("embeddings", []))
+            count = len(embeddings) if isinstance(embeddings, list) else 0
 
-            summary.append(f"{pose}: {count}")
+            total += count
+            parts.append(f"{pose}: {count}")
 
-        return " | ".join(summary)
+        return f"{total} total ({', '.join(parts)})"
 
     pose_summary.short_description = "Embeddings"
 
     def formatted_embeddings(self, obj):
-
         return json.dumps(
             obj.embeddings,
             indent=4,

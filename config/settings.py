@@ -65,6 +65,8 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+    "EXCEPTION_HANDLER": "app.interfaces.api.exception_handlers.custom_exception_handler",
+    
 }
 
 MIDDLEWARE = [
@@ -224,3 +226,4 @@ SERVER_EMAIL = env(
 )
 
 AI_ENGINE_API_KEY = config("AI_ENGINE_API_KEY")
+FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:8000")

@@ -12,6 +12,7 @@ from app.application.services.home_invitation_service import (
 from app.infrastructure.db.models.home_invitation_model import (
     HomeInvitation,
 )
+from app.interfaces.api.permissions.face_permissions import IsFaceEnrolled
 from app.interfaces.api.serializers.home_invitation_serializer import PendingInvitationSerializer
 
 
@@ -36,37 +37,21 @@ class PendingInvitationsView(APIView):
 
 
 class AcceptInvitationView(APIView):
+    
+    permission_classes = [IsAuthenticated, IsFaceEnrolled]
 
-    permission_classes = [IsAuthenticated]
-
-    def post(
-        self,
-        request,
-        invitation_id,
-    ):
+    def post(self, request, invitation_id):
 
         invitation = get_object_or_404(
-            HomeInvitation,
-            id=invitation_id,
-            email=request.user.email,
-            status="pending",
+            HomeInvitation, id=invitation_id, email=request.user.email, status="pending",
         )
+        
+        result = HomeInvitationService.accept_invitation(invitation, request.user)
 
-        session = (
-            HomeInvitationService.accept_invitation(
-                invitation,
-                request.user,
-            )
-        )
-
-        return Response(
-            {
-                "message": "Enrollment required before joining home.",
-                "session_id": session.id,
-                "status": session.status,
-                "scan_url": f"/scan-face/?session={session.id}",
-            }
-        )
+        return Response({
+            "message": "Home joined.",
+            "home_id": str(result["member"].home_id),
+        })
 
 class RejectInvitationView(APIView):
 

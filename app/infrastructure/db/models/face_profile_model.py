@@ -1,30 +1,34 @@
-#app/infrastructure/db/models/face_profile_model.py
 import uuid
-from django.db import models
 
-from app.infrastructure.db.models.home_member_model import HomeMember
+from django.conf import settings
+from django.db import models
 
 
 class FaceProfile(models.Model):
     """
-    Stores facial embeddings for known users.
+    Stores a user's facial embeddings.
+
+    One user can have only one FaceProfile.
+    This profile is shared across all homes the user belongs to.
     """
 
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
-        editable=False
+        editable=False,
     )
 
-    home_member = models.ForeignKey(
-        HomeMember,
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="face_profiles",
+        related_name="face_profile",
     )
 
-    label_name = models.CharField(max_length=255)
+    label_name = models.CharField(
+        max_length=255,
+    )
 
-    # Store # Multiple embeddings grouped by pose
+    # Example:
     # {
     #   "CENTER": [[512 floats], [512 floats]],
     #   "LEFT":   [[...], [...]],
@@ -33,23 +37,28 @@ class FaceProfile(models.Model):
     #   "DOWN":   [[...]]
     # }
     embeddings = models.JSONField(
-        default=dict
+        default=dict,
     )
 
     image_url = models.URLField(
         null=True,
-        blank=True
+        blank=True,
     )
 
-    is_verified = models.BooleanField(default=False)
+    is_verified = models.BooleanField(
+        default=False,
+    )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
 
     class Meta:
         app_label = "devices"
 
     def __str__(self):
-        if self.home_member:
-            return f"{self.label_name} ({self.home_member.user.email})"
+        return f"{self.label_name} ({self.user.email})"

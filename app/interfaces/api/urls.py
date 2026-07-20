@@ -20,6 +20,7 @@ from app.interfaces.api.views.enrollment_views import (
     EnrollmentStatusView,
     CompleteEnrollmentView,
     FailEnrollmentView,
+    StartEnrollmentView,
 )
 from app.interfaces.api.views.device_views import (
     DeviceSettingsView,
@@ -36,6 +37,7 @@ from app.interfaces.api.views.face_save_view import FaceSaveView
 from app.interfaces.api.views.settings_views import SettingsView
 from app.interfaces.api.views.dashboard_views import DashboardView
 
+from app.interfaces.api.views.face_list_view import FaceListView, HomeFacesView
 
 from app.interfaces.api.views.device_views import (
     RegisterDeviceView,
@@ -121,9 +123,15 @@ urlpatterns = [
     path("faces/save/", FaceSaveView.as_view()),
     path("faces/all/", FaceListView.as_view()),
     path("devices/active/",ActiveDeviceListView.as_view(),),
+
+
     path("events/ingest/", EventIngestView.as_view()),
     path("events/<uuid:event_id>/enrich/", EventEnrichView.as_view()),
-
+        path(
+        "enrollment/start/",
+        StartEnrollmentView.as_view(),
+        name="start-enrollment",
+    ),
     path(
         "dashboard/<uuid:home_id>/",
         DashboardView.as_view(),
@@ -141,7 +149,7 @@ urlpatterns = [
     path("homes/<uuid:home_id>/devices/<uuid:device_id>/restart/", DeviceRestartView.as_view()),
     path("homes/<uuid:home_id>/locks/<uuid:lock_id>/lock/", LockDoorView.as_view()),
     path("homes/<uuid:home_id>/locks/<uuid:lock_id>/", SmartLockDetailView.as_view()),
-
+    path("homes/<uuid:home_id>/faces/", HomeFacesView.as_view()),
 
 
 ]

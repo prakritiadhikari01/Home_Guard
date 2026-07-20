@@ -104,11 +104,10 @@ async function completeRegister() {
     // Validation
     // ------------------------
 
-    if (!name || !email || !password || !confirm) {
+    if (!name || !email || !phone || !password || !confirm) {
         alert("Please fill in all required fields.");
         return;
     }
-
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!emailPattern.test(email)) {
