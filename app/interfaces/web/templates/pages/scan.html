@@ -509,19 +509,8 @@ if (!accessToken) {
 
 // The AI Engine is a separate device/server running
 // app/api/enrollment_api.py (FastAPI). Point this at it.
-const AI_ENGINE_URL = "http://192.168.1.2:8001";
+const AI_ENGINE_URL = "http://192.168.1.12:8001";
 
-const params = new URLSearchParams(window.location.search);
-
-const enrollmentSessionId = params.get("session");
-
-if (!enrollmentSessionId) {
-
-    alert("Enrollment session not found.");
-
-    history.back();
-
-}
 // Must match FaceEnrollmentService.STEPS / FRAMES_PER_STEP exactly
 const STEPS = [
     "LOOK_CENTER",
@@ -558,8 +547,11 @@ const CAPTURE_INTERVAL_MS = 250;
 
 let stream = null;
 
-// Django session id
-const sessionId = enrollmentSessionId;
+// Django session id — filled in lazily by ensureSession().
+// If a ?session=... query param is present (e.g. resumed link), use it directly.
+// Otherwise it stays null until the user clicks "Start Scan", at which point
+// we create a fresh EnrollmentSession via the Django API.
+let sessionId = new URLSearchParams(window.location.search).get("session");
 
 // AI Engine session id
 let aiSessionId = null;
@@ -597,6 +589,41 @@ const faceRing = document.getElementById("faceRing");
 
 const engineDot = document.getElementById("engineDot");
 const engineStatusText = document.getElementById("engineStatusText");
+
+// ===================================================
+// DJANGO ENROLLMENT SESSION (lazy — created on first Start Scan click)
+// ===================================================
+
+async function ensureSession() {
+
+    if (sessionId) return sessionId;
+
+    try {
+
+        const response = await fetch("/api/enrollment/start/", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error("Could not start enrollment session.");
+        }
+
+        const data = await response.json();
+        sessionId = data.session_id;
+        return sessionId;
+
+    } catch (e) {
+        console.error(e);
+        showError("Could not start enrollment. Please try again.");
+        startBtn.disabled = true;
+        return null;
+    }
+
+}
 
 // ===================================================
 // CAMERA
@@ -956,6 +983,15 @@ async function beginEnrollment() {
 
     startBtn.disabled = true;
     startBtn.innerText = "Starting...";
+
+    // Create (or reuse) the Django enrollment session before talking to the AI Engine.
+    const resolvedSessionId = await ensureSession();
+
+    if (!resolvedSessionId) {
+        startBtn.disabled = false;
+        startBtn.innerText = "Start Scan";
+        return;
+    }
 
     try {
 

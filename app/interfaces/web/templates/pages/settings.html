@@ -15,151 +15,636 @@
     <div id="topbar"></div>
     <div class="page-body">
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+      <div id="loadingState" style="color:#6a8aaa;font-size:13px;">Loading settings…</div>
+      <div id="errorState" style="color:#f87171;font-size:13px;display:none;"></div>
 
-        <!-- Notifications -->
-        <div class="card p-6">
-          <div style="color:white;font-size:16px;font-weight:600;margin-bottom:18px;">Notifications</div>
-          <div class="toggle-wrap">
-            <div>
-              <div style="color:white;font-size:14px;">Push notifications</div>
-              <div style="color:#4a6080;font-size:12px;margin-top:2px;">Critical alerts on all devices</div>
-            </div>
-            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
-          </div>
-          <div class="toggle-wrap">
-            <div>
-              <div style="color:white;font-size:14px;">Email digests</div>
-              <div style="color:#4a6080;font-size:12px;margin-top:2px;">Daily summary at 8 PM</div>
-            </div>
-            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
-          </div>
-          <div class="toggle-wrap">
-            <div>
-              <div style="color:white;font-size:14px;">Family-wide notifications</div>
-              <div style="color:#4a6080;font-size:12px;margin-top:2px;">Notify all household members</div>
-            </div>
-            <label class="toggle"><input type="checkbox"/><span class="toggle-slider"></span></label>
-          </div>
-          <div class="toggle-wrap">
-            <div>
-              <div style="color:white;font-size:14px;">Emergency contacts</div>
-              <div style="color:#4a6080;font-size:12px;margin-top:2px;">Auto-dial on critical alerts</div>
-            </div>
-            <label class="toggle"><input type="checkbox"/><span class="toggle-slider"></span></label>
-          </div>
-        </div>
+      <div id="settingsRoot" class="settings-shell" style="display:none;">
 
-        <!-- AI Detection -->
-        <div class="card p-6">
-          <div style="color:white;font-size:16px;font-weight:600;margin-bottom:18px;">AI Detection</div>
-          <div class="toggle-wrap">
-            <div style="color:white;font-size:14px;">Human detection</div>
-            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
-          </div>
-          <div class="toggle-wrap">
-            <div style="color:white;font-size:14px;">Animal detection</div>
-            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
-          </div>
-          <div class="toggle-wrap">
-            <div style="color:white;font-size:14px;">Vehicle detection</div>
-            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
-          </div>
-          <div class="toggle-wrap">
-            <div style="color:white;font-size:14px;">Motion detection</div>
-            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
-          </div>
-          <div class="toggle-wrap">
-            <div style="color:white;font-size:14px;">AI summary digests</div>
-            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
-          </div>
-        </div>
+        <!-- Rail -->
+        <nav class="settings-rail" id="settingsRail">
+          <button class="rail-item active" data-section="profile">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+            <span>Profile</span>
+          </button>
+          <button class="rail-item" data-section="preferences">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v2M12 19v2M5 5l1.5 1.5M17.5 17.5L19 19M3 12h2M19 12h2M5 19l1.5-1.5M17.5 6.5L19 5"/><circle cx="12" cy="12" r="4"/></svg>
+            <span>Preferences</span>
+          </button>
+          <button class="rail-item" data-section="security">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <span>Security</span>
+          </button>
+          <button class="rail-item" data-section="home" id="homeRailItem" style="display:none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+            <span>Home</span>
+          </button>
+        </nav>
 
-        <!-- Automation Rules -->
-        <div class="card p-6">
-          <div style="color:white;font-size:16px;font-weight:600;margin-bottom:18px;">Automation Rules</div>
-          <div class="toggle-wrap">
-            <div style="color:white;font-size:14px;">Unknown detection → notify owner</div>
-            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
-          </div>
-          <div class="toggle-wrap">
-            <div style="color:white;font-size:14px;">Repeated detection → escalate alert</div>
-            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
-          </div>
-          <div class="toggle-wrap">
-            <div style="color:white;font-size:14px;">Known member entry → log only</div>
-            <label class="toggle"><input type="checkbox" checked/><span class="toggle-slider"></span></label>
-          </div>
-          <div class="toggle-wrap">
-            <div style="color:white;font-size:14px;">Animal detection → ignore</div>
-            <label class="toggle"><input type="checkbox"/><span class="toggle-slider"></span></label>
-          </div>
-        </div>
+        <!-- Panels -->
+        <div class="settings-content">
 
-        <!-- Detection Sensitivity -->
-        <div class="card p-6">
-          <div style="color:white;font-size:16px;font-weight:600;margin-bottom:20px;">Detection Sensitivity</div>
-          <div style="margin-bottom:24px;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
-              <div style="color:white;font-size:14px;">Confidence threshold</div>
-              <div style="color:#3b82f6;font-size:13px;font-weight:600;" id="sensitivityVal">78%</div>
-            </div>
-            <input type="range" min="0" max="100" value="78" id="sensitivitySlider" oninput="document.getElementById('sensitivityVal').textContent=this.value+'%'"/>
-            <div style="color:#4a6080;font-size:12px;margin-top:10px;">Lower threshold = more alerts. Tune to your environment.</div>
-          </div>
+          <!-- Profile -->
+          <section class="settings-section" id="section-profile">
+            <div class="section-eyebrow">PROFILE</div>
+            <div class="section-heading">Your account</div>
+            <p class="section-desc">Name, photo, and contact details other members may see.</p>
 
-          <!-- Account section -->
-          <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:20px;">
-            <div style="color:white;font-size:15px;font-weight:600;margin-bottom:14px;">Account</div>
-            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-              <div style="width:48px;height:48px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:white;">PR</div>
+            <div class="avatar-row">
+              <label for="profileImageInput" class="avatar-upload" id="avatarUpload">
+                <div id="avatarCircle"></div>
+                <div class="avatar-overlay">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </div>
+              </label>
+              <input type="file" id="profileImageInput" accept="image/*" style="display:none;">
               <div>
-                <div style="color:white;font-size:14px;font-weight:600;">Alex Reyes</div>
-                <div style="color:#4a6080;font-size:12px;">alex@home.com · Owner</div>
+                <div class="avatar-label">Profile photo</div>
+                <div class="field-hint">Click the photo to change it. JPG or PNG.</div>
               </div>
             </div>
-            <div style="display:flex;gap:10px;">
-              <button style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#8a9ab8;padding:9px;border-radius:8px;font-size:13px;cursor:pointer;">Edit Profile</button>
-              <button onclick="signOutUser()" style="flex:1;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#ef4444;padding:9px;border-radius:8px;font-size:13px;cursor:pointer;">Sign Out</button>
+
+            <div class="field-grid">
+              <div>
+                <label class="field-label">Full name</label>
+                <input id="fullNameInput" type="text" class="settings-input">
+              </div>
+              <div>
+                <label class="field-label">Phone</label>
+                <input id="phoneInput" type="tel" class="settings-input">
+              </div>
             </div>
-          </div>
+            <div>
+              <label class="field-label">Email</label>
+              <input id="emailInput" type="email" class="settings-input" disabled>
+              <div class="field-hint">Your email is your sign-in and can't be changed here.</div>
+            </div>
+
+            <div class="section-footer">
+              <button onclick="saveProfile()" id="saveProfileBtn" class="btn-accent">Save profile</button>
+              <span class="save-confirm" id="profileSaveConfirm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Saved</span>
+            </div>
+          </section>
+
+          <!-- Preferences -->
+          <section class="settings-section" id="section-preferences" style="display:none;">
+            <div class="section-eyebrow">PREFERENCES</div>
+            <div class="section-heading">Notifications & appearance</div>
+            <p class="section-desc">Controls how HomeGuard reaches you and how it looks.</p>
+
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-title">Push notifications</div>
+                <div class="toggle-sub">Alerts on all your signed-in devices</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="pushNotifToggle"/><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-title">Email notifications</div>
+                <div class="toggle-sub">Get alerts sent to your inbox</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="emailNotifToggle"/><span class="toggle-slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-title">Dark mode</div>
+                <div class="toggle-sub">Use the dark theme across HomeGuard</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="darkModeToggle"/><span class="toggle-slider"></span></label>
+            </div>
+
+            <div style="max-width:280px;">
+              <label class="field-label">Timezone</label>
+              <input id="timezoneInput" type="text" placeholder="Asia/Kathmandu" class="settings-input">
+            </div>
+
+            <div class="section-footer">
+              <button onclick="saveUserSettings()" id="saveUserSettingsBtn" class="btn-accent">Save preferences</button>
+              <span class="save-confirm" id="preferencesSaveConfirm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Saved</span>
+            </div>
+          </section>
+
+          <!-- Security -->
+          <section class="settings-section" id="section-security" style="display:none;">
+            <div class="section-eyebrow">SECURITY</div>
+            <div class="section-heading">Password & face recognition</div>
+            <p class="section-desc">Keep your account and your recognized face profile up to date.</p>
+
+            <div class="subsection">
+              <div class="subsection-title">Change password</div>
+              <div class="field-grid-3">
+                <input id="oldPasswordInput" type="password" placeholder="Current password" class="settings-input">
+                <input id="newPasswordInput" type="password" placeholder="New password" class="settings-input">
+                <input id="confirmPasswordInput" type="password" placeholder="Confirm new password" class="settings-input">
+              </div>
+              <div class="field-error" id="passwordError"></div>
+              <button onclick="changePassword()" id="changePasswordBtn" class="btn-quiet">Update password</button>
+            </div>
+
+            <div class="subsection">
+              <div class="subsection-title">Face recognition</div>
+              <p class="section-desc" style="margin-bottom:12px;">Re-scan your face if recognition isn't matching well, or scan for the first time if you skipped it earlier.</p>
+              <button onclick="startFaceEnrollment()" id="rescanFaceBtn" class="btn-quiet-accent">Scan face</button>
+            </div>
+
+            <div class="subsection">
+              <button onclick="signOutUser()" class="btn-danger-full">Sign out</button>
+            </div>
+          </section>
+
+          <!-- Home -->
+          <section class="settings-section" id="section-home" style="display:none;">
+            <div class="section-eyebrow">HOME</div>
+            <div class="section-heading">Home configuration</div>
+            <p class="section-desc">Applies to everyone in this home. Only owners and admins can change these.</p>
+
+            <div class="subsection">
+              <div class="subsection-title">Timeline & logging</div>
+              <div class="toggle-row"><div class="toggle-title">Timeline enabled</div><label class="toggle"><input type="checkbox" id="timelineEnabledToggle"/><span class="toggle-slider"></span></label></div>
+              <div class="toggle-row"><div class="toggle-title">Log known member entry</div><label class="toggle"><input type="checkbox" id="logKnownToggle"/><span class="toggle-slider"></span></label></div>
+              <div class="toggle-row"><div class="toggle-title">Log unknown person</div><label class="toggle"><input type="checkbox" id="logUnknownToggle"/><span class="toggle-slider"></span></label></div>
+            </div>
+
+            <div class="subsection">
+              <div class="subsection-title">Alerts</div>
+              <div class="toggle-row"><div class="toggle-title">Notify on unknown person</div><label class="toggle"><input type="checkbox" id="notifyUnknownToggle"/><span class="toggle-slider"></span></label></div>
+              <div class="toggle-row"><div class="toggle-title">Notify all family members</div><label class="toggle"><input type="checkbox" id="notifyFamilyToggle"/><span class="toggle-slider"></span></label></div>
+              <div class="toggle-row"><div class="toggle-title">Emergency contact auto-dial</div><label class="toggle"><input type="checkbox" id="emergencyContactToggle"/><span class="toggle-slider"></span></label></div>
+              <div class="toggle-row"><div class="toggle-title">Escalate repeated detection</div><label class="toggle"><input type="checkbox" id="escalateRepeatedToggle"/><span class="toggle-slider"></span></label></div>
+            </div>
+
+            <div class="subsection">
+              <div class="subsection-title">Recording & AI</div>
+              <div class="toggle-row"><div class="toggle-title">AI summary digests</div><label class="toggle"><input type="checkbox" id="aiSummaryToggle"/><span class="toggle-slider"></span></label></div>
+              <div class="toggle-row"><div class="toggle-title">Clip recording</div><label class="toggle"><input type="checkbox" id="clipRecordingToggle"/><span class="toggle-slider"></span></label></div>
+              <div class="toggle-row"><div class="toggle-title">Snapshots</div><label class="toggle"><input type="checkbox" id="snapshotEnabledToggle"/><span class="toggle-slider"></span></label></div>
+              <div class="toggle-row"><div class="toggle-title">Ignore animal detections</div><label class="toggle"><input type="checkbox" id="ignoreAnimalsToggle"/><span class="toggle-slider"></span></label></div>
+            </div>
+
+            <div class="subsection">
+              <div class="subsection-title">Detection tuning</div>
+              <div class="field-grid">
+                <div>
+                  <label class="field-label">Loitering threshold (seconds)</label>
+                  <input id="loiteringInput" type="number" min="0" class="settings-input">
+                </div>
+                <div>
+                  <label class="field-label">Repeat-detection window (seconds)</label>
+                  <input id="repeatWindowInput" type="number" min="0" class="settings-input">
+                </div>
+              </div>
+            </div>
+
+            <div class="section-footer">
+              <button onclick="saveHomeSettings()" id="saveHomeSettingsBtn" class="btn-accent">Save home settings</button>
+              <span class="save-confirm" id="homeSaveConfirm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Saved</span>
+            </div>
+          </section>
+
         </div>
-
-      </div>
-
-      <!-- Save Button -->
-      <div style="margin-top:20px;display:flex;justify-content:flex-end;">
-        <button onclick="saveSettings()" id="saveBtn" style="background:#3b82f6;color:white;padding:11px 28px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s;">
-          Save Settings
-        </button>
       </div>
 
     </div>
   </div>
 </div>
 
+<style>
+.settings-shell { display:flex; flex-direction:column; gap:20px; }
+
+.settings-rail {
+  display:flex; gap:4px; border-bottom:1px solid rgba(255,255,255,0.07); padding-bottom:0;
+}
+.rail-item {
+  display:flex; align-items:center; gap:8px; padding:10px 16px; border-radius:8px 8px 0 0;
+  background:none; border:none; border-bottom:2px solid transparent; cursor:pointer;
+  color:#6a8aaa; font-size:13px; font-weight:600; text-align:left; transition:color .15s, background .15s;
+  margin-bottom:-1px;
+}
+.rail-item svg { flex-shrink:0; opacity:.8; }
+.rail-item:hover { color:#c3d3e8; background:rgba(255,255,255,0.03); }
+.rail-item.active { color:#60a5fa; background:rgba(59,130,246,0.06); border-bottom-color:#3b82f6; }
+
+.settings-content { max-width:640px; }
+.settings-section {
+  background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);
+  border-radius:14px; padding:28px;
+}
+
+.section-eyebrow { color:#3b82f6; font-size:11px; font-weight:700; letter-spacing:.1em; margin-bottom:8px; }
+.section-heading { color:white; font-size:20px; font-weight:700; margin-bottom:6px; }
+.section-desc { color:#5a7699; font-size:13px; line-height:1.5; margin-bottom:24px; }
+
+.avatar-row { display:flex; align-items:center; gap:16px; margin-bottom:24px; }
+.avatar-upload { position:relative; width:64px; height:64px; border-radius:50%; cursor:pointer; display:block; flex-shrink:0; }
+#avatarCircle {
+  width:64px; height:64px; border-radius:50%; background:#3b82f6; display:flex;
+  align-items:center; justify-content:center; font-size:22px; font-weight:700; color:white; overflow:hidden;
+}
+#avatarCircle img { width:100%; height:100%; object-fit:cover; }
+.avatar-overlay {
+  position:absolute; inset:0; border-radius:50%; background:rgba(2,8,20,0.55);
+  display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .15s;
+}
+.avatar-upload:hover .avatar-overlay { opacity:1; }
+.avatar-label { color:white; font-size:14px; font-weight:600; }
+.field-hint { color:#4a6080; font-size:11px; margin-top:2px; }
+
+.field-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+.field-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:8px; }
+.field-label { color:#8a9ab8; font-size:12px; font-weight:600; display:block; margin-bottom:6px; }
+.field-error { color:#f87171; font-size:12px; margin-bottom:10px; min-height:0; }
+
+.settings-input {
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:8px;
+  padding:9px 12px; color:white; font-size:13px; width:100%; outline:none; font-family:inherit;
+  transition:border-color .15s;
+}
+.settings-input:focus { border-color:#3b82f6; }
+.settings-input:disabled { opacity:.5; cursor:not-allowed; }
+
+.toggle-row {
+  display:flex; justify-content:space-between; align-items:center; padding:12px 0;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.toggle-row:last-of-type { border-bottom:none; }
+.toggle-title { color:white; font-size:13px; font-weight:600; }
+.toggle-sub { color:#4a6080; font-size:11px; margin-top:2px; }
+
+.toggle { position:relative; display:inline-block; width:36px; height:20px; flex-shrink:0; }
+.toggle input { opacity:0; width:0; height:0; }
+.toggle-slider { position:absolute; cursor:pointer; inset:0; background:rgba(255,255,255,0.12); border-radius:20px; transition:.15s; }
+.toggle-slider:before { content:""; position:absolute; height:14px; width:14px; left:3px; bottom:3px; background:white; border-radius:50%; transition:.15s; }
+.toggle input:checked + .toggle-slider { background:#3b82f6; }
+.toggle input:checked + .toggle-slider:before { transform:translateX(16px); }
+
+.subsection { padding:18px 0; border-top:1px solid rgba(255,255,255,0.06); }
+.subsection:first-of-type { padding-top:0; border-top:none; }
+.subsection-title { color:white; font-size:14px; font-weight:600; margin-bottom:12px; }
+
+.section-footer { display:flex; align-items:center; gap:14px; margin-top:24px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.06); }
+.save-confirm {
+  display:none; align-items:center; gap:6px; color:#22c55e; font-size:13px; font-weight:600;
+}
+.save-confirm.show { display:flex; }
+
+.btn-accent { background:#3b82f6; color:white; padding:10px 22px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; border:none; transition:background .15s; }
+.btn-accent:hover { background:#2f6fd9; }
+.btn-accent:disabled { opacity:.6; cursor:default; }
+
+.btn-quiet { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#8a9ab8; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; margin-top:4px; }
+.btn-quiet:hover { background:rgba(255,255,255,0.08); color:white; }
+
+.btn-quiet-accent { background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3); color:#60a5fa; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; }
+.btn-quiet-accent:hover { background:rgba(59,130,246,0.16); }
+
+.btn-danger-full { width:100%; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#ef4444; padding:10px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; }
+.btn-danger-full:hover { background:rgba(239,68,68,0.16); }
+
+@media (max-width: 860px) {
+  .settings-rail { overflow-x:auto; }
+  .rail-item { white-space:nowrap; }
+  .field-grid, .field-grid-3 { grid-template-columns:1fr; }
+}
+</style>
+
 <script src="{% static 'js/sidebar.js' %}"></script>
 <script>
+  const API_BASE = "/api";
+  const TOKEN = localStorage.getItem("access");
+  const HOME_ID = localStorage.getItem("active_home");
+
+  if (!TOKEN) {
+    window.location.href = "{% url 'web:login' %}";
+  }
+
+  function authHeaders(extra = {}) {
+    return { Authorization: `Bearer ${TOKEN}`, ...extra };
+  }
+
+  function handleAuthFailure(res) {
+    if (res.status === 401) {
+      localStorage.clear();
+      window.location.href = "{% url 'web:login' %}";
+      return true;
+    }
+    return false;
+  }
+
   document.getElementById('sidebar').innerHTML = renderSidebar('settings');
   initHomeSwitcher();
-  document.getElementById('topbar').innerHTML = renderTopbar('Settings', 'Security control center & automation rules');
+  document.getElementById('topbar').innerHTML = renderTopbar('Settings', 'Account, preferences and home configuration');
 
-  function signOutUser() {
-    localStorage.removeItem('hg_user_name');
-    localStorage.removeItem('hg_user_email');
-    localStorage.removeItem('hg_active_home');
-    window.location.href = '../index.html';
+  function showError(msg) {
+    document.getElementById('loadingState').style.display = 'none';
+    const el = document.getElementById('errorState');
+    el.textContent = msg;
+    el.style.display = 'block';
   }
 
-  function saveSettings() {
-    const btn = document.getElementById('saveBtn');
-    btn.textContent = '✓ Saved';
-    btn.style.background = '#22c55e';
-    setTimeout(() => {
-      btn.textContent = 'Save Settings';
-      btn.style.background = '#3b82f6';
-    }, 2000);
+  function flashSaved(id) {
+    const el = document.getElementById(id);
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
   }
+
+  document.querySelectorAll('.rail-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.rail-item').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.settings-section').forEach(s => s.style.display = 'none');
+      btn.classList.add('active');
+      document.getElementById(`section-${btn.dataset.section}`).style.display = 'block';
+    });
+  });
+
+  let currentUser = null;
+  let userSettings = null;
+  let homeSettings = null;
+  let canManageMembers = false;
+
+  function renderAvatar() {
+    const circle = document.getElementById('avatarCircle');
+    if (currentUser.profile_image) {
+      circle.innerHTML = `<img src="${currentUser.profile_image}" alt="Profile photo">`;
+    } else {
+      circle.textContent = (currentUser.full_name || currentUser.email || '?').charAt(0).toUpperCase();
+    }
+  }
+
+  function renderProfile() {
+    document.getElementById('fullNameInput').value = currentUser.full_name || '';
+    document.getElementById('emailInput').value = currentUser.email || '';
+    document.getElementById('phoneInput').value = currentUser.phone || '';
+    renderAvatar();
+  }
+
+  function renderUserSettings() {
+    document.getElementById('pushNotifToggle').checked = !!userSettings.push_notifications;
+    document.getElementById('emailNotifToggle').checked = !!userSettings.email_notifications;
+    document.getElementById('darkModeToggle').checked = !!userSettings.dark_mode;
+    document.getElementById('timezoneInput').value = userSettings.timezone || 'UTC';
+  }
+
+  function renderHomeSettings() {
+    document.getElementById('timelineEnabledToggle').checked = !!homeSettings.timeline_enabled;
+    document.getElementById('logKnownToggle').checked = !!homeSettings.log_known_member_entry;
+    document.getElementById('logUnknownToggle').checked = !!homeSettings.log_unknown_person;
+    document.getElementById('notifyUnknownToggle').checked = !!homeSettings.notify_unknown_person;
+    document.getElementById('notifyFamilyToggle').checked = !!homeSettings.notify_family_members;
+    document.getElementById('emergencyContactToggle').checked = !!homeSettings.emergency_contact_enabled;
+    document.getElementById('escalateRepeatedToggle').checked = !!homeSettings.escalate_repeated_detection;
+    document.getElementById('aiSummaryToggle').checked = !!homeSettings.ai_summary_enabled;
+    document.getElementById('clipRecordingToggle').checked = !!homeSettings.clip_recording_enabled;
+    document.getElementById('snapshotEnabledToggle').checked = !!homeSettings.snapshot_enabled;
+    document.getElementById('ignoreAnimalsToggle').checked = !!homeSettings.ignore_animals;
+    document.getElementById('loiteringInput').value = homeSettings.loitering_seconds ?? 20;
+    document.getElementById('repeatWindowInput').value = homeSettings.repeated_detection_window ?? 300;
+  }
+
+  async function loadAll() {
+    if (!HOME_ID) {
+      showError('No active home selected. Please choose a home first.');
+      return;
+    }
+
+    try {
+      const meRes = await fetch(`${API_BASE}/auth/me/`, { headers: authHeaders({ 'Accept': 'application/json' }) });
+      if (handleAuthFailure(meRes)) return;
+      if (!meRes.ok) throw new Error('Failed to load profile');
+      currentUser = await meRes.json();
+
+      const permRes = await fetch(`${API_BASE}/homes/${HOME_ID}/members/me/`, { headers: authHeaders({ 'Accept': 'application/json' }) });
+      if (permRes.ok) {
+        const permData = await permRes.json();
+        canManageMembers = !!(permData.permissions && permData.permissions.can_manage_members);
+      }
+
+      const settingsRes = await fetch(`${API_BASE}/settings/?home_id=${HOME_ID}`, { headers: authHeaders({ 'Accept': 'application/json' }) });
+      if (handleAuthFailure(settingsRes)) return;
+      if (!settingsRes.ok) throw new Error('Failed to load settings');
+      const data = await settingsRes.json();
+
+      userSettings = data.user_settings;
+      homeSettings = data.home_settings;
+
+      renderProfile();
+      renderUserSettings();
+
+      if (canManageMembers) {
+        document.getElementById('homeRailItem').style.display = 'flex';
+        renderHomeSettings();
+      }
+
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('settingsRoot').style.display = 'flex';
+    } catch (err) {
+      console.error(err);
+      showError('Could not load settings. Please try again.');
+    }
+  }
+
+  document.getElementById('profileImageInput').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('profile_image', file);
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/me/`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: formData,
+      });
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) throw new Error('Upload failed');
+      currentUser = await res.json();
+      renderAvatar();
+    } catch (err) {
+      alert('Could not upload photo. Please try again.');
+    }
+  });
+
+  async function saveProfile() {
+    const btn = document.getElementById('saveProfileBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/me/`, {
+        method: 'PATCH',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          full_name: document.getElementById('fullNameInput').value.trim(),
+          phone: document.getElementById('phoneInput').value.trim(),
+        }),
+      });
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) throw new Error('Save failed');
+      currentUser = await res.json();
+      localStorage.setItem('user', JSON.stringify(currentUser));
+      renderProfile();
+      flashSaved('profileSaveConfirm');
+    } catch (err) {
+      alert('Could not save profile. Please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save profile';
+    }
+  }
+
+  async function saveUserSettings() {
+    const btn = document.getElementById('saveUserSettingsBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    try {
+      const res = await fetch(`${API_BASE}/settings/?home_id=${HOME_ID}`, {
+        method: 'PATCH',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          user_settings: {
+            push_notifications: document.getElementById('pushNotifToggle').checked,
+            email_notifications: document.getElementById('emailNotifToggle').checked,
+            dark_mode: document.getElementById('darkModeToggle').checked,
+            timezone: document.getElementById('timezoneInput').value.trim() || 'UTC',
+          },
+        }),
+      });
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) throw new Error('Save failed');
+      flashSaved('preferencesSaveConfirm');
+    } catch (err) {
+      alert('Could not save preferences. Please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save preferences';
+    }
+  }
+
+  async function saveHomeSettings() {
+    const btn = document.getElementById('saveHomeSettingsBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    try {
+      const res = await fetch(`${API_BASE}/settings/?home_id=${HOME_ID}`, {
+        method: 'PATCH',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          home_settings: {
+            timeline_enabled: document.getElementById('timelineEnabledToggle').checked,
+            log_known_member_entry: document.getElementById('logKnownToggle').checked,
+            log_unknown_person: document.getElementById('logUnknownToggle').checked,
+            notify_unknown_person: document.getElementById('notifyUnknownToggle').checked,
+            notify_family_members: document.getElementById('notifyFamilyToggle').checked,
+            emergency_contact_enabled: document.getElementById('emergencyContactToggle').checked,
+            escalate_repeated_detection: document.getElementById('escalateRepeatedToggle').checked,
+            ai_summary_enabled: document.getElementById('aiSummaryToggle').checked,
+            clip_recording_enabled: document.getElementById('clipRecordingToggle').checked,
+            snapshot_enabled: document.getElementById('snapshotEnabledToggle').checked,
+            ignore_animals: document.getElementById('ignoreAnimalsToggle').checked,
+            loitering_seconds: Number(document.getElementById('loiteringInput').value) || 0,
+            repeated_detection_window: Number(document.getElementById('repeatWindowInput').value) || 0,
+          },
+        }),
+      });
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || 'Save failed');
+      }
+      flashSaved('homeSaveConfirm');
+    } catch (err) {
+      alert(err.message || 'Could not save home settings. Please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save home settings';
+    }
+  }
+
+  async function changePassword() {
+    const errorBox = document.getElementById('passwordError');
+    errorBox.textContent = '';
+
+    const oldPassword = document.getElementById('oldPasswordInput').value;
+    const newPassword = document.getElementById('newPasswordInput').value;
+    const confirmPassword = document.getElementById('confirmPasswordInput').value;
+
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      errorBox.textContent = 'Please fill in all password fields.';
+      return;
+    }
+
+    const btn = document.getElementById('changePasswordBtn');
+    btn.disabled = true;
+    btn.textContent = 'Updating…';
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/change-password/`, {
+        method: 'POST',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          old_password: oldPassword,
+          new_password: newPassword,
+          confirm_password: confirmPassword,
+        }),
+      });
+      if (handleAuthFailure(res)) return;
+      const data = await res.json();
+      if (!res.ok) {
+        const firstError = Object.values(data)[0];
+        throw new Error(Array.isArray(firstError) ? firstError[0] : (firstError || 'Could not change password.'));
+      }
+      document.getElementById('oldPasswordInput').value = '';
+      document.getElementById('newPasswordInput').value = '';
+      document.getElementById('confirmPasswordInput').value = '';
+      btn.textContent = 'Updated';
+      setTimeout(() => { btn.textContent = 'Update password'; }, 1800);
+    } catch (err) {
+      errorBox.textContent = err.message;
+      btn.textContent = 'Update password';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function startFaceEnrollment() {
+    const btn = document.getElementById('rescanFaceBtn');
+    btn.disabled = true;
+    btn.textContent = 'Starting…';
+
+    try {
+      const res = await fetch(`${API_BASE}/enrollment/start/`, {
+        method: 'POST',
+        headers: authHeaders(),
+      });
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) throw new Error('Could not start enrollment');
+      const data = await res.json();
+      window.location.href = data.scan_url;
+    } catch (err) {
+      alert('Could not start face enrollment. Please try again.');
+      btn.disabled = false;
+      btn.textContent = 'Scan face';
+    }
+  }
+
+  async function signOutUser() {
+    const refresh = localStorage.getItem('refresh');
+    if (refresh) {
+      try {
+        await fetch(`${API_BASE}/auth/logout/`, {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ refresh }),
+        });
+      } catch (err) {}
+    }
+    localStorage.clear();
+    window.location.href = "{% url 'web:login' %}";
+  }
+
+  loadAll();
 </script>
 </body>
 </html>

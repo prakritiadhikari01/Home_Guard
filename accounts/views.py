@@ -12,7 +12,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
 from .serializers import ChangePasswordSerializer, LogoutSerializer, UserSerializer
 from rest_framework.permissions import IsAuthenticated, AllowAny
-
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.core.mail import send_mail
+from django.conf import settings
 class RegisterView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
@@ -65,13 +70,16 @@ class LoginView(APIView):
 
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]  # profile_image needs multipart
 
     def get(self, request):
-        print("USER:", request.user)
-        print("AUTH:", request.auth)
-        print("HEADERS:", request.META.get("HTTP_AUTHORIZATION"))
-
         serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
+    def patch(self, request):
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(serializer.data)
     
 
@@ -152,3 +160,75 @@ class LogoutView(APIView):
                 "Logout successful"
             }
         )
+class ForgotPasswordView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get("email")
+
+        if not email:
+            return Response({"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email=email).first()
+
+        # Always return 200 regardless of whether the email exists —
+        # prevents leaking which emails are registered.
+        if user is not None:
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+
+            reset_link = f"{settings.FRONTEND_URL}/?reset_uid={uid}&reset_token={token}"
+
+            send_mail(
+                subject="Reset your HomeGuard password",
+                message=(
+                    f"Hi {user.full_name},\n\n"
+                    f"Click the link below to reset your password. "
+                    f"This link expires shortly and can only be used once.\n\n"
+                    f"{reset_link}\n\n"
+                    f"If you didn't request this, you can safely ignore this email."
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+
+        return Response(
+            {"message": "If an account exists with that email, a reset link has been sent."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class ResetPasswordView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        uid = request.data.get("uid")
+        token = request.data.get("token")
+        new_password = request.data.get("new_password")
+
+        if not uid or not token or not new_password:
+            return Response(
+                {"error": "uid, token, and new_password are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(new_password) < 8:
+            return Response(
+                {"error": "Password must be at least 8 characters."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user_id = force_str(urlsafe_base64_decode(uid))
+            user = User.objects.get(pk=user_id)
+        except (User.DoesNotExist, ValueError, TypeError, OverflowError):
+            return Response({"error": "Invalid or expired reset link."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not default_token_generator.check_token(user, token):
+            return Response({"error": "Invalid or expired reset link."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save(update_fields=["password"])
+
+        return Response({"message": "Password reset successful. You can now sign in."}, status=status.HTTP_200_OK)

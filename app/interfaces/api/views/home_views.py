@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from app.application.services.home_service import HomeService
+from app.interfaces.api.permissions.face_permissions import IsFaceEnrolled
 from app.interfaces.api.serializers.home_serializer import (
     HomeCreateSerializer,
     HomeListSerializer,
@@ -13,7 +14,7 @@ from app.interfaces.api.serializers.home_serializer import (
 
 class HomeCreateView(APIView):
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,IsFaceEnrolled]
 
     def post(self, request):
 
@@ -21,15 +22,13 @@ class HomeCreateView(APIView):
 
         serializer.is_valid(raise_exception=True)
 
-        home = HomeService.create_home(
+        result = HomeService.create_home(
             user=request.user,
             validated_data=serializer.validated_data,
         )
 
-        return Response(
-            HomeCreateSerializer(home).data,
-            status=status.HTTP_201_CREATED,
-        )
+        data = HomeCreateSerializer(result["home"]).data
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
 class UserHomesView(APIView):

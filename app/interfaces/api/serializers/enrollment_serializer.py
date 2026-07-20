@@ -1,3 +1,4 @@
+#app/interfaces/api/serializers/enrollment_serializer.py 
 from rest_framework import serializers
 
 from app.domain.value_objects.enrollment_status import (

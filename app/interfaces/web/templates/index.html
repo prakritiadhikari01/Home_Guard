@@ -57,7 +57,7 @@
         <div>
           <div class="flex justify-between mb-1">
             <label class="text-slate-300 text-sm">Password</label>
-            <a href="#" class="text-blue-400 text-sm hover:underline">Forgot?</a>
+            <a href="#" onclick="openForgotModal(); return false;" class="text-blue-400 text-sm hover:underline">Forgot?</a>
           </div>
           <input id="loginPassword" type="password" placeholder="••••••••" class="auth-input"/>
         </div>
@@ -186,6 +186,127 @@ document.addEventListener("keypress", function(event) {
 
 });
 
+</script>
+
+<!-- Forgot Password Modal -->
+<div id="forgotModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+  <div class="bg-[#0a1120] border border-slate-700 rounded-xl w-full max-w-sm p-6">
+    <h3 class="text-white text-xl font-bold mb-1">Reset password</h3>
+    <p class="text-slate-400 text-sm mb-4">Enter your email and we'll send you a reset link.</p>
+    <input id="forgotEmail" type="email" placeholder="you@home.com" class="auth-input"/>
+    <div class="flex gap-3 mt-4">
+      <button onclick="closeForgotModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-lg">Cancel</button>
+      <button id="forgotSubmitBtn" onclick="submitForgotPassword()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg">Send Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reset Password Modal (shown automatically if URL has reset params) -->
+<div id="resetModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+  <div class="bg-[#0a1120] border border-slate-700 rounded-xl w-full max-w-sm p-6">
+    <h3 class="text-white text-xl font-bold mb-1">Set new password</h3>
+    <p class="text-slate-400 text-sm mb-4">Choose a new password for your account.</p>
+    <input id="newPassword" type="password" placeholder="At least 8 chars" class="auth-input mb-3"/>
+    <input id="newPasswordConfirm" type="password" placeholder="Repeat password" class="auth-input"/>
+    <button id="resetSubmitBtn" onclick="submitResetPassword()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg mt-4">Reset Password</button>
+  </div>
+</div>
+
+<script>
+function openForgotModal() {
+    document.getElementById("forgotModal").classList.remove("hidden");
+}
+function closeForgotModal() {
+    document.getElementById("forgotModal").classList.add("hidden");
+}
+
+async function submitForgotPassword() {
+    const btn = document.getElementById("forgotSubmitBtn");
+    const email = document.getElementById("forgotEmail").value.trim();
+
+    if (!email) {
+        alert("Please enter your email.");
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "Sending...";
+
+    try {
+        const response = await fetch("/api/auth/forgot-password/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+        });
+
+        const data = await response.json();
+
+        alert(data.message || "If an account exists with that email, a reset link has been sent.");
+        closeForgotModal();
+
+    } catch (error) {
+        console.error(error);
+        alert("Unable to connect to the server.\nPlease try again.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Send Link";
+    }
+}
+
+async function submitResetPassword() {
+    const btn = document.getElementById("resetSubmitBtn");
+    const newPassword = document.getElementById("newPassword").value;
+    const confirmPassword = document.getElementById("newPasswordConfirm").value;
+
+    const params = new URLSearchParams(window.location.search);
+    const uid = params.get("reset_uid");
+    const token = params.get("reset_token");
+
+    if (newPassword.length < 8) {
+        alert("Password must be at least 8 characters.");
+        return;
+    }
+    if (newPassword !== confirmPassword) {
+        alert("Passwords do not match.");
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "Resetting...";
+
+    try {
+        const response = await fetch("/api/auth/reset-password/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ uid, token, new_password: newPassword }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(data.error || "Reset failed. The link may have expired.");
+            return;
+        }
+
+        alert("Password reset successful. Please sign in.");
+        window.location.href = "{% url 'web:login' %}";
+
+    } catch (error) {
+        console.error(error);
+        alert("Unable to connect to the server.\nPlease try again.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Reset Password";
+    }
+}
+
+// Show reset modal automatically if the page was loaded from an email link
+window.addEventListener("DOMContentLoaded", () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("reset_uid") && params.get("reset_token")) {
+        document.getElementById("resetModal").classList.remove("hidden");
+    }
+});
 </script>
 </body>
 </html>

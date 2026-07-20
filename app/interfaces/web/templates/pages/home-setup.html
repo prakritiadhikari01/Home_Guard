@@ -70,17 +70,23 @@
       </div>
       <button onclick="createHome()" style="background:#3b82f6;color:white;padding:11px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;">Create home</button>
     </div>
+  </div>
 
-    <div style="text-align:center;margin-top:28px;">
-      <a href="/dashboard/" style="color:#4a6080;font-size:13px;text-decoration:none;" onclick="return skipForNow()">Skip for now →</a>
+  <!-- Enrollment required modal -->
+  <div id="enrollment-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-icon"></div>
+      <h3>Face Enrollment Required</h3>
+      <p>You need to set up face recognition before creating or joining a home. It only takes a minute.</p>
+      <div class="modal-actions">
+        <button id="enroll-now-btn" class="btn-primary">Enroll Face</button>
+        <button id="enroll-cancel-btn" class="btn-secondary">Cancel</button>
+      </div>
     </div>
   </div>
 
-  <!-- Toast -->
-  <div id="toast" style="display:none;position:fixed;bottom:24px;right:24px;background:#0d1929;border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:14px 20px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:200;">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-    <span style="color:white;font-size:13px;font-weight:500;">Identity verified</span>
-  </div>
+  <!-- Error toast -->
+  <div id="error-toast" class="toast hidden"></div>
 
 <style>
 .invite-card {
@@ -105,7 +111,46 @@
 .role-tag-owner { background: rgba(59,130,246,0.15); color:#60a5fa; }
 .role-tag-viewer { background: rgba(234,179,8,0.12); color:#eab308; }
 .role-tag-member { background: rgba(34,197,94,0.12); color:#22c55e; }
+
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+}
+.modal-overlay.hidden { display: none; }
+.modal-card {
+  background: #0f1729;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 28px;
+  max-width: 360px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+.modal-icon { font-size: 32px; margin-bottom: 8px; }
+.modal-card h3 { margin: 0 0 8px; font-size: 17px; color: white; }
+.modal-card p { color: #6a8aaa; font-size: 13px; line-height: 1.5; margin-bottom: 20px; }
+.modal-actions { display: flex; gap: 10px; justify-content: center; }
+.btn-primary {
+  background: #3b82f6; color: #fff; border: none;
+  padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;
+}
+.btn-secondary {
+  background: rgba(255,255,255,0.06); color: #8a9ab8; border: none;
+  padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 13px;
+}
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: #dc2626; color: #fff;
+  padding: 12px 20px; border-radius: 8px;
+  font-size: 13px; z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  max-width: 90%;
+}
+.toast.hidden { display: none; }
 </style>
+
 <script>
 
 const accessToken = localStorage.getItem("access");
@@ -116,6 +161,37 @@ if (!accessToken) {
 
 let pendingInvites = [];
 let yourHomes = [];
+
+// ---- error UI helpers ----
+
+function showEnrollmentRequiredModal() {
+    document.getElementById("enrollment-modal").classList.remove("hidden");
+}
+
+function hideEnrollmentRequiredModal() {
+    document.getElementById("enrollment-modal").classList.add("hidden");
+}
+
+function showErrorToast(message) {
+    const toast = document.getElementById("error-toast");
+    toast.textContent = message;
+    toast.classList.remove("hidden");
+    clearTimeout(showErrorToast._t);
+    showErrorToast._t = setTimeout(() => toast.classList.add("hidden"), 4000);
+}
+
+document.getElementById("enroll-now-btn").addEventListener("click", () => {
+    window.location.href = "{% url 'web:scan-page' %}";
+});
+
+document.getElementById("enroll-cancel-btn").addEventListener("click", hideEnrollmentRequiredModal);
+
+// ---- api wrapper ----
+// Centralizes 401 (session expired) and 403 (permission / enrollment) handling
+// so individual callers don't need to duplicate this logic.
+// Returns:
+//   null      -> already handled (redirected, modal shown, or toast shown). Caller should just return.
+//   Response  -> normal response, caller checks response.ok itself.
 
 async function api(url, options = {}) {
 
@@ -131,7 +207,17 @@ async function api(url, options = {}) {
     if (response.status === 401) {
         localStorage.clear();
         window.location.href = "{% url 'web:login' %}";
-        return;
+        return null;
+    }
+
+    if (response.status === 403) {
+        const body = await response.json().catch(() => ({}));
+        if (body.code === "face_enrollment_required") {
+            showEnrollmentRequiredModal();
+            return null;
+        }
+        showErrorToast(body.detail || "You don't have permission to do that.");
+        return null;
     }
 
     return response;
@@ -143,16 +229,24 @@ async function loadData() {
 
         // Load homes
         const homesResponse = await api("/api/my-homes/");
+        if (homesResponse === null) return;
 
         if (homesResponse.ok) {
             yourHomes = await homesResponse.json();
+        } else {
+            const body = await homesResponse.json().catch(() => ({}));
+            showErrorToast(body.detail || "Unable to load your homes.");
         }
 
         // Load invitations
         const inviteResponse = await api("/api/home-invitations/");
+        if (inviteResponse === null) return;
 
         if (inviteResponse.ok) {
             pendingInvites = await inviteResponse.json();
+        } else {
+            const body = await inviteResponse.json().catch(() => ({}));
+            showErrorToast(body.detail || "Unable to load invitations.");
         }
 
         // User
@@ -172,7 +266,7 @@ async function loadData() {
     catch (err) {
 
         console.error(err);
-        alert("Unable to load data.");
+        showErrorToast("Unable to load data. Please refresh the page.");
 
     }
 
@@ -296,16 +390,18 @@ async function acceptInvite(invitationId) {
         }
     );
 
+    // null means api() already handled it (401 redirect, or enrollment modal / permission toast)
+    if (response === null) return;
+
     if (!response.ok) {
-        alert("Unable to accept invitation.");
+        const body = await response.json().catch(() => ({}));
+        showErrorToast(body.detail || "Unable to accept invitation.");
         return;
     }
 
-    const data = await response.json();
-
-    console.log(data);
-
-    window.location.href = data.scan_url;
+    // Backend guarantees enrollment is complete before this call can succeed —
+    // no need to branch on a "needs_enrollment" flag anymore.
+    await loadData();
 }
 
 async function rejectInvite(invitationId) {
@@ -321,8 +417,11 @@ async function rejectInvite(invitationId) {
         }
     );
 
+    if (response === null) return;
+
     if (!response.ok) {
-        alert("Unable to reject invitation.");
+        const body = await response.json().catch(() => ({}));
+        showErrorToast(body.detail || "Unable to reject invitation.");
         return;
     }
 
@@ -339,7 +438,7 @@ async function createHome() {
         document.getElementById("homeAddressInput").value.trim();
 
     if (!name) {
-        alert("Please enter home name.");
+        showErrorToast("Please enter a home name.");
         return;
     }
 
@@ -354,19 +453,23 @@ async function createHome() {
 
     });
 
+    // null means api() already handled it (401 redirect, or enrollment modal / permission toast)
+    if (response === null) return;
+
     if (!response.ok) {
 
-        const error = await response.json();
+        const error = await response.json().catch(() => ({}));
 
-        alert(error.detail || "Unable to create home.");
+        showErrorToast(error.detail || "Unable to create home.");
 
         return;
 
     }
 
-    await loadData();
     document.getElementById("homeNameInput").value = "";
     document.getElementById("homeAddressInput").value = "";
+
+    await loadData();
 
 }
 
@@ -379,6 +482,7 @@ function enterDashboard(homeId) {
 }
 
 loadData();
+
 async function logout() {
 
     const refresh = localStorage.getItem("refresh");
@@ -403,3 +507,5 @@ async function logout() {
 }
 
 </script>
+</body>
+</html>
