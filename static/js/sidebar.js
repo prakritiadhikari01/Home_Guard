@@ -27,89 +27,258 @@ function renderSidebar(activePage) {
         <div class="sidebar-logo-sub">V2.4 · SECURE</div>
       </div>
     </div>
+
+    <!-- ACTIVE HOME: click to open dropdown (real homes + "Add or manage homes") -->
     <div class="sidebar-home-switcher" id="homeSwitcherWrap" style="position:relative;margin:14px 16px 4px;">
       <div style="font-size:9px;letter-spacing:.1em;color:#3a4a6a;margin-bottom:6px;padding-left:2px;">ACTIVE HOME</div>
       <div id="homeSwitcherBtn" onclick="toggleHomeSwitcher()" style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:9px;padding:9px 12px;cursor:pointer;">
         <div style="display:flex;align-items:center;gap:8px;overflow:hidden;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" style="flex-shrink:0;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          <span id="activeHomeName" style="color:white;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">My Home</span>
+          <span id="activeHomeName" style="color:white;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Loading...</span>
         </div>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6a8aaa" stroke-width="2" style="flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <div id="homeSwitcherMenu" style="display:none;position:absolute;top:100%;left:0;right:0;margin-top:6px;background:#0d1929;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:6px;z-index:50;box-shadow:0 10px 30px rgba(0,0,0,0.5);"></div>
     </div>
+
     <div class="sidebar-section-label">MONITOR</div>
     ${pages.map(navItem).join('')}
     <div class="sidebar-section-label">MANAGE</div>
     ${managePages.map(navItem).join('')}
     <div style="flex:1"></div>
-    <div class="sidebar-status">
-      <div class="sidebar-status-label">SYSTEM STATUS</div>
-      <div class="sidebar-status-main">● <span>Armed · Normal</span></div>
-      <div class="sidebar-status-sub">Uptime 99.98% · 4 cams live</div>
-    </div>
   `;
 }
 
 function renderTopbar(title, subtitle) {
-  const userName = localStorage.getItem('hg_user_name') || 'Alex Reyes';
-  const initials = userName.split(' ').filter(Boolean).slice(0,2).map(w => w[0].toUpperCase()).join('');
   return `
     <div class="topbar">
-      <div>
+
+      <div class="topbar-left">
         <div class="topbar-title">${title}</div>
         <div class="topbar-sub">${subtitle}</div>
       </div>
+
       <div class="topbar-right">
-        <div class="mode-badge"><span class="mode-dot"></span> NORMAL MODE</div>
-        <div class="notif-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a9ab8" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          <span class="notif-dot"></span>
+
+        <!-- Security Mode badge: filled by renderModeBadge() inside initHomeSwitcher() -->
+        <button class="mode-badge" id="modeBadgeBtn">
+          <span class="mode-dot" id="modeDot"></span>
+          <span id="modeLabel">LOADING...</span>
+        </button>
+
+        <!-- Notification: filled by loadHomeNotifications() -->
+        <div id="notificationBtn" class="notif-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a9ab8" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span class="notif-dot" id="notifDot" style="display:none;"></span>
         </div>
-        <div class="avatar-btn" title="${userName}">${initials}</div>
+
+        <!-- Avatar: filled by loadTopbarUser() with first+last initials -->
+        <div id="avatarWrap" style="position:relative;">
+
+          <div
+            class="avatar-btn"
+            id="avatarBtn"
+            onclick="toggleUserMenu()"
+            title="">
+          </div>
+
+          <div
+            id="userDropdown"
+            style="
+              display:none;
+              position:absolute;
+              right:0;
+              top:52px;
+              width:220px;
+              background:#0d1929;
+              border:1px solid rgba(255,255,255,.08);
+              border-radius:12px;
+              overflow:hidden;
+              box-shadow:0 12px 30px rgba(0,0,0,.45);
+              z-index:100;
+            ">
+
+            <div style="padding:16px;">
+              <div style="color:#fff;font-weight:600;" id="userDropdownName">
+                Loading...
+              </div>
+              <div style="margin-top:4px;color:#8a9ab8;font-size:12px;">
+                HomeGuard User
+              </div>
+            </div>
+
+            <div style="height:1px;background:rgba(255,255,255,.06);"></div>
+
+            <button
+              onclick="logout()"
+              style="
+                width:100%;
+                background:none;
+                border:none;
+                color:#ef4444;
+                text-align:left;
+                padding:14px 16px;
+                cursor:pointer;
+                font-size:14px;">
+                Logout
+            </button>
+
+          </div>
+
+        </div>
+
       </div>
+
     </div>
   `;
 }
 
-/* ===== ACTIVE HOME SWITCHER ===== */
-function getHomesList() {
-  let homes = JSON.parse(localStorage.getItem('hg_your_homes') || '[]');
-  if (homes.length === 0) {
-    // sensible demo fallback so the dropdown is never empty
-    homes = [{ name: 'My Home', address: '', role: 'Owner' }];
-    localStorage.setItem('hg_your_homes', JSON.stringify(homes));
-  }
-  return homes;
-}
+/* ===== USER DROPDOWN (avatar menu) ===== */
 
-function initHomeSwitcher() {
-  const homes = getHomesList();
-  let active = localStorage.getItem('hg_active_home') || homes[0].name;
-  if (!homes.find(h => h.name === active)) active = homes[0].name;
-  localStorage.setItem('hg_active_home', active);
-
-  const nameEl = document.getElementById('activeHomeName');
-  if (nameEl) nameEl.textContent = active;
-
-  const menu = document.getElementById('homeSwitcherMenu');
+function toggleUserMenu() {
+  const menu = document.getElementById("userDropdown");
   if (!menu) return;
-  menu.innerHTML = homes.map(h => `
-    <div onclick="switchHome('${h.name}')" style="display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-radius:7px;cursor:pointer;${h.name===active?'background:rgba(59,130,246,0.12);':''}" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='${h.name===active?'rgba(59,130,246,0.12)':'transparent'}'">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${h.name===active?'#3b82f6':'#6a8aaa'}" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        <span style="color:${h.name===active?'white':'#a0b0d0'};font-size:13px;">${h.name}</span>
+  menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+
+document.addEventListener("click", function (e) {
+  const wrap = document.getElementById("avatarWrap");
+  const menu = document.getElementById("userDropdown");
+  if (wrap && menu && !wrap.contains(e.target)) {
+    menu.style.display = "none";
+  }
+});
+
+/* ===== LOGOUT ===== */
+
+async function logout() {
+  const token = localStorage.getItem("access");
+  const refresh = localStorage.getItem("refresh");
+
+  if (refresh) {
+    try {
+      await fetch("/api/auth/logout/", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refresh }),
+      });
+    } catch (err) {
+      console.error("Logout request failed:", err);
+      // fall through and clear locally regardless, so the user is never stuck logged in
+    }
+  }
+
+  localStorage.clear();
+  window.location.href = "/index.html";
+}
+
+/* ===== TOPBAR: USER INFO (avatar initials + dropdown name) ===== */
+
+async function loadTopbarUser() {
+  const token = localStorage.getItem("access");
+  if (!token) {
+    window.location.href = "/login/";
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/auth/me/", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
+      localStorage.clear();
+      window.location.href = "/login/";
+      return;
+    }
+
+    const user = await res.json();
+    const initials = user.full_name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0].toUpperCase())
+      .join("");
+
+    const avatarBtn = document.getElementById("avatarBtn");
+    if (avatarBtn) {
+      avatarBtn.textContent = initials;
+      avatarBtn.title = user.full_name;
+    }
+
+    const nameEl = document.getElementById("userDropdownName");
+    if (nameEl) nameEl.textContent = user.full_name;
+
+    window.__hgCurrentUser = user;
+  } catch (err) {
+    console.error("Failed to load user:", err);
+    window.location.href = "/login/";
+  }
+}
+
+/* ===== ACTIVE HOME: name in sidebar + dropdown (real homes + manage link) ===== */
+
+let __hgHomesCache = [];
+
+async function fetchHomesFromApi() {
+  const token = localStorage.getItem("access");
+  if (!token) return [];
+  try {
+    const res = await fetch("/api/my-homes/", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : (data.results || []);
+  } catch (err) {
+    console.error("Failed to fetch homes:", err);
+    return [];
+  }
+}
+
+async function initHomeSwitcher() {
+  const homes = await fetchHomesFromApi();
+  __hgHomesCache = homes;
+
+  if (homes.length === 0) {
+    console.warn("No homes returned for user.");
+    return;
+  }
+
+  let activeId = localStorage.getItem("active_home");
+  let active = homes.find((h) => h.id === activeId) || homes[0];
+  localStorage.setItem("active_home", active.id);
+
+  const nameEl = document.getElementById("activeHomeName");
+  if (nameEl) nameEl.textContent = active.name;
+
+  const menu = document.getElementById("homeSwitcherMenu");
+  if (menu) {
+    menu.innerHTML = homes.map(h => `
+      <div onclick="switchHome('${h.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-radius:7px;cursor:pointer;${h.id===active.id?'background:rgba(59,130,246,0.12);':''}" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='${h.id===active.id?'rgba(59,130,246,0.12)':'transparent'}'">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="${h.id===active.id?'#3b82f6':'#6a8aaa'}" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span style="color:${h.id===active.id?'white':'#a0b0d0'};font-size:13px;">${h.name}</span>
+        </div>
+        <span style="font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,0.08);color:#8a9ab8;">${(h.role || '').toUpperCase()}</span>
       </div>
-      <span style="font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,0.08);color:#8a9ab8;">${h.role.toUpperCase()}</span>
-    </div>
-  `).join('') + `
-    <div style="border-top:1px solid rgba(255,255,255,0.07);margin-top:6px;padding-top:6px;">
-      <a href="/home-setup/" style="display:flex;align-items:center;gap:8px;padding:9px 10px;color:#3b82f6;font-size:13px;text-decoration:none;border-radius:7px;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Add or manage homes
-      </a>
-    </div>
-  `;
+    `).join('') + `
+      <div style="border-top:1px solid rgba(255,255,255,0.07);margin-top:6px;padding-top:6px;">
+        <a href="/home-setup/" style="display:flex;align-items:center;gap:8px;padding:9px 10px;color:#3b82f6;font-size:13px;text-decoration:none;border-radius:7px;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add or manage homes
+        </a>
+      </div>
+    `;
+  }
+
+  renderModeBadge(active);
 }
 
 function toggleHomeSwitcher() {
@@ -118,15 +287,54 @@ function toggleHomeSwitcher() {
   menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
 
-function switchHome(name) {
-  localStorage.setItem('hg_active_home', name);
-  initHomeSwitcher();
-  toggleHomeSwitcher();
+function switchHome(homeId) {
+  localStorage.setItem('active_home', homeId);
+  // Reload so every home-scoped widget on the page (mode badge, notifications,
+  // and the page's own dashboard/timeline/alerts data) re-fetches for the new home.
+  window.location.reload();
 }
 
-// Close dropdown when clicking outside
 document.addEventListener('click', function(e) {
   const wrap = document.getElementById('homeSwitcherWrap');
   const menu = document.getElementById('homeSwitcherMenu');
   if (wrap && menu && !wrap.contains(e.target)) menu.style.display = 'none';
 });
+
+/* ===== SECURITY MODE BADGE (topbar) ===== */
+
+const MODE_META = {
+  NORMAL: { label: "NORMAL MODE", color: "#22c55e" },
+  AWAY:   { label: "AWAY MODE",   color: "#3b82f6" },
+  HIGH:   { label: "HIGH ALERT",  color: "#f59e0b" },
+  SOS:    { label: "SOS ACTIVE",  color: "#ef4444" },
+};
+
+function renderModeBadge(home) {
+  const meta = MODE_META[home.security_mode] || MODE_META.NORMAL;
+  const modeLabel = document.getElementById("modeLabel");
+  const modeDot = document.getElementById("modeDot");
+  if (modeLabel) modeLabel.textContent = meta.label;
+  if (modeDot) modeDot.style.background = meta.color;
+}
+
+/* ===== NOTIFICATIONS (topbar, scoped to active home) ===== */
+
+async function loadHomeNotifications() {
+  const token = localStorage.getItem("access");
+  const homeId = localStorage.getItem("active_home");
+  if (!token || !homeId) return;
+
+  try {
+    const res = await fetch(`/api/homes/${homeId}/alerts/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const count = Array.isArray(data) ? data.length : (data.count ?? (data.results || []).length);
+      const notifDot = document.getElementById("notifDot");
+      if (notifDot) notifDot.style.display = count > 0 ? "block" : "none";
+    }
+  } catch (err) {
+    console.error("Failed to load home notifications:", err);
+  }
+}
