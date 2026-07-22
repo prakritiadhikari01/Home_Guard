@@ -13,135 +13,262 @@
   <div class="sidebar" id="sidebar"></div>
   <div class="main-content">
     <div id="topbar"></div>
-    <div class="page-body" style="display:flex;gap:20px;padding:0;overflow:hidden;">
+    <div class="page-body">
 
-      <!-- Main Feed -->
-      <div style="flex:1;padding:24px 0 24px 28px;overflow-y:auto;">
-        <div class="cam-feed" style="min-height:420px;border-radius:14px;margin-bottom:16px;">
-          <div class="cam-feed-overlay"></div>
-          <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 700 420" preserveAspectRatio="xMidYMid slice">
-            <rect width="700" height="420" fill="#071520"/>
-            <rect x="200" y="60" width="300" height="280" rx="6" fill="#0a2535"/>
-            <rect x="260" y="90" width="80" height="140" rx="4" fill="#0d3040"/>
-            <rect x="360" y="90" width="80" height="140" rx="4" fill="#0d3040"/>
-            <rect x="270" y="95" width="55" height="120" rx="3" fill="#0f3d50"/>
-            <rect x="370" y="95" width="55" height="120" rx="3" fill="#0f3d50"/>
-            <ellipse cx="350" cy="58" rx="40" ry="12" fill="#0c2535"/>
-            <ellipse cx="290" cy="54" rx="12" ry="5" fill="#1a5060" opacity=".8"/>
-            <ellipse cx="410" cy="54" rx="12" ry="5" fill="#1a5060" opacity=".8"/>
-            <rect x="160" y="280" width="380" height="80" fill="#060e18"/>
-            <rect x="0" y="0" width="700" height="420" fill="rgba(0,200,240,0.02)"/>
-            <!-- scanline effect -->
-            <rect x="0" y="0" width="700" height="420" fill="url(#scan)" opacity=".15"/>
-            <defs><pattern id="scan" patternUnits="userSpaceOnUse" width="1" height="4"><rect y="0" width="1" height="2" fill="rgba(0,220,255,0.1)"/></pattern></defs>
-          </svg>
-          <div style="position:absolute;top:14px;left:14px;display:flex;gap:6px;z-index:2;">
-            <span class="badge badge-live">● LIVE</span>
-            <span class="badge badge-cam">CAM-01</span>
-          </div>
-          <div style="position:absolute;top:14px;right:14px;z-index:2;cursor:pointer;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" opacity=".7"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-          </div>
-          <div class="cam-label" style="background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 100%);padding:16px 20px;">
+      <!-- Door status -->
+      <div class="panel" id="doorPanel" style="margin-bottom:20px;">
+        <div class="panel-title">Front Door</div>
+        <div id="doorLoading" style="color:#4a6080;font-size:13px;">Checking door status…</div>
+        <div id="doorNone" style="color:#4a6080;font-size:13px;display:none;">No smart lock is set up on this home yet.</div>
+        <div id="doorContent" style="display:none;">
+          <div class="lock-status-row">
             <div>
-              <div style="color:white;font-size:16px;font-weight:700;">Front Door</div>
-              <div style="color:#6a8aaa;font-size:12px;">11:40:15 PM</div>
+              <div class="lock-state" id="doorStateLabel">Locked</div>
+              <div class="device-meta" id="doorUpdatedAt" style="color:#4a6080;font-size:12px;margin-top:4px;"></div>
             </div>
-            <span class="badge badge-known" style="font-size:10px;padding:4px 10px;">KNOWN PERSON · 99%</span>
-          </div>
-        </div>
-
-        <!-- Camera specs -->
-        <div class="card" style="display:grid;grid-template-columns:repeat(3,1fr);padding:0;">
-          <div style="padding:18px 20px;border-right:1px solid rgba(255,255,255,0.07);">
-            <div style="font-size:10px;letter-spacing:.1em;color:#3a4a6a;margin-bottom:6px;">RESOLUTION</div>
-            <div style="color:white;font-size:15px;font-weight:600;">2160p · 30fps</div>
-          </div>
-          <div style="padding:18px 20px;border-right:1px solid rgba(255,255,255,0.07);">
-            <div style="font-size:10px;letter-spacing:.1em;color:#3a4a6a;margin-bottom:6px;">AI MODEL</div>
-            <div style="color:white;font-size:15px;font-weight:600;">YOLO-v8 + Face</div>
-          </div>
-          <div style="padding:18px 20px;">
-            <div style="font-size:10px;letter-spacing:.1em;color:#3a4a6a;margin-bottom:6px;">LATENCY</div>
-            <div style="color:#22c55e;font-size:15px;font-weight:600;">42 ms</div>
+            <div style="display:flex;gap:10px;" id="doorActions">
+              <button class="btn-ghost" id="doorLockBtn">Lock</button>
+              <button class="btn-primary" id="doorUnlockBtn">Unlock</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Right: All Cameras -->
-      <div style="width:340px;padding:24px 28px 24px 0;overflow-y:auto;">
-        <div style="font-size:10px;letter-spacing:.12em;color:#3a4a6a;margin-bottom:14px;">ALL CAMERAS</div>
-        <div style="display:flex;flex-direction:column;gap:14px;">
-
-          <!-- CAM 01 -->
-          <div class="card" style="overflow:hidden;cursor:pointer;border-color:rgba(59,130,246,0.3);">
-            <div class="cam-feed" style="height:140px;border-radius:0;">
-              <div class="cam-feed-overlay"></div>
-              <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 300 140" preserveAspectRatio="xMidYMid slice">
-                <rect width="300" height="140" fill="#071520"/>
-                <rect x="70" y="20" width="160" height="100" rx="4" fill="#0a2535"/>
-                <rect x="100" y="35" width="50" height="75" rx="3" fill="#0d3040"/>
-                <rect x="158" y="35" width="50" height="75" rx="3" fill="#0d3040"/>
-              </svg>
-              <div style="position:absolute;top:10px;left:10px;display:flex;gap:4px;"><span class="badge badge-live">● LIVE</span><span class="badge badge-cam">CAM-01</span></div>
-              <div style="position:absolute;top:10px;right:10px;cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" opacity=".6"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></div>
-              <div class="cam-label" style="padding:10px 12px;">
-                <div><div style="color:white;font-size:12px;font-weight:600;">Front Door</div><div style="color:#6a8aaa;font-size:10px;">11:40:15 PM</div></div>
-                <span class="badge badge-known">KNOWN PERSON · 99%</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- CAM 02 -->
-          <div class="card" style="overflow:hidden;cursor:pointer;">
-            <div class="cam-feed" style="height:140px;border-radius:0;">
-              <div class="cam-feed-overlay"></div>
-              <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 300 140" preserveAspectRatio="xMidYMid slice">
-                <rect width="300" height="140" fill="#050e20"/>
-                <ellipse cx="200" cy="50" rx="80" ry="40" fill="#1a3a6a" opacity=".4"/>
-                <rect x="60" y="80" width="180" height="40" rx="4" fill="#0a1a35"/>
-                <ellipse cx="150" cy="90" rx="40" ry="14" fill="#1a3060"/>
-              </svg>
-              <div style="position:absolute;top:10px;left:10px;display:flex;gap:4px;"><span class="badge badge-live">● LIVE</span><span class="badge badge-cam">CAM-02</span></div>
-              <div style="position:absolute;top:10px;right:10px;cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" opacity=".6"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></div>
-              <div class="cam-label" style="padding:10px 12px;">
-                <div><div style="color:white;font-size:12px;font-weight:600;">Driveway</div><div style="color:#6a8aaa;font-size:10px;">11:40:15 PM</div></div>
-                <span class="badge badge-vehicle">VEHICLE · 92%</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- CAM 03 -->
-          <div class="card" style="overflow:hidden;cursor:pointer;">
-            <div class="cam-feed" style="height:140px;border-radius:0;">
-              <div class="cam-feed-overlay"></div>
-              <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 300 140" preserveAspectRatio="xMidYMid slice">
-                <rect width="300" height="140" fill="#030c18"/>
-                <rect x="0" y="60" width="300" height="80" fill="#060e20"/>
-                <rect x="30" y="40" width="60" height="80" fill="#0a1828" rx="2"/>
-                <rect x="210" y="40" width="60" height="80" fill="#0a1828" rx="2"/>
-                <ellipse cx="150" cy="55" rx="100" ry="30" fill="#0d1e35" opacity=".8"/>
-                <circle cx="40" cy="30" r="15" fill="#1a3050" stroke="#2a4570" stroke-width="1"/>
-              </svg>
-              <div style="position:absolute;top:10px;left:10px;display:flex;gap:4px;"><span class="badge badge-live">● LIVE</span><span class="badge badge-cam">CAM-03</span></div>
-              <div style="position:absolute;top:10px;right:10px;cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" opacity=".6"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></div>
-              <div class="cam-label" style="padding:10px 12px;">
-                <div><div style="color:white;font-size:12px;font-weight:600;">Backyard</div><div style="color:#6a8aaa;font-size:10px;">11:40:15 PM</div></div>
-                <span class="badge badge-clear">CLEAR</span>
-              </div>
-            </div>
-          </div>
-
-        </div>
+      <!-- Header row -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+        <div style="font-size:12px;color:#4a6080;" id="cameraCountLabel">Loading cameras…</div>
+        <button onclick="loadCameras()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#8a9ab8;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh
+        </button>
       </div>
+
+      <!-- Camera Grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" id="cameraGrid"></div>
+
     </div>
   </div>
 </div>
+
+<style>
+.cam-card { border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s; }
+.cam-card:hover { transform:translateY(-2px); }
+.cam-settings-btn { background:rgba(255,255,255,0.08);border:none;border-radius:8px;padding:8px;cursor:pointer;color:#6a8aaa;transition:all .15s; }
+.cam-settings-btn:hover { background:rgba(255,255,255,0.15);color:white; }
+
+.panel {
+  background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;
+  padding:18px;
+}
+.panel-title { color:white;font-size:13px;font-weight:700;margin-bottom:14px; }
+.lock-status-row { display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px; }
+.lock-state { color:white;font-size:22px;font-weight:700; }
+
+.btn-primary {
+  background:#3b82f6;color:white;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;gap:6px;border:none;
+}
+.btn-primary:hover { background:#2f6fd9; }
+.btn-primary:disabled { opacity:.5;cursor:not-allowed; }
+.btn-ghost {
+  background:rgba(255,255,255,0.06);color:#9ab0cc;padding:10px 18px;border-radius:10px;
+  font-size:13px;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:6px;
+}
+.btn-ghost:hover { background:rgba(255,255,255,0.1);color:white; }
+.btn-ghost:disabled { opacity:.5;cursor:not-allowed; }
+
+.live-feed-frame {
+  width:100%;height:200px;border-radius:0;background:#050e20;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;color:#3d5170;font-size:13px;position:relative;
+}
+.live-feed-frame img { width:100%;height:100%;object-fit:cover; }
+</style>
+
 <script src="{% static 'js/sidebar.js' %}"></script>
 <script>
+  const API_BASE = "/api";
+  const TOKEN = localStorage.getItem("access");
+  const HOME_ID = localStorage.getItem("active_home");
+
+  if (!TOKEN) {
+    window.location.href = "{% url 'web:login' %}";
+  }
+
+  function authHeaders(extra = {}) {
+    return { Authorization: `Bearer ${TOKEN}`, ...extra };
+  }
+
+  function handleAuthFailure(res) {
+    if (res.status === 401) {
+      localStorage.clear();
+      window.location.href = "{% url 'web:login' %}";
+      return true;
+    }
+    return false;
+  }
+
+  // sidebar nav id 'live' matches the "Live Surveillance" entry in renderSidebar()
   document.getElementById('sidebar').innerHTML = renderSidebar('live');
   initHomeSwitcher();
-  document.getElementById('topbar').innerHTML = renderTopbar('Live Surveillance', 'Real-time AI-overlaid feeds across the residence');
+  document.getElementById('topbar').innerHTML = renderTopbar('Live Surveillance', 'Real-time feed from every active camera');
+
+  let CAN_CONTROL = false;
+  let doorDeviceId = null;
+
+  async function loadPermissions() {
+    try {
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/members/me/`, { headers: authHeaders({ 'Accept': 'application/json' }) });
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) return;
+      const data = await res.json();
+      CAN_CONTROL = !!(data.permissions && data.permissions.can_control_devices);
+    } catch (err) {
+      console.error('Could not load permissions, defaulting to read-only', err);
+      CAN_CONTROL = false;
+    }
+  }
+
+  function timeAgo(isoString) {
+    if (!isoString) return 'Never';
+    const diffMs = Date.now() - new Date(isoString).getTime();
+    const sec = Math.floor(diffMs / 1000);
+    if (sec < 10) return 'Just now';
+    if (sec < 60) return `${sec} sec ago`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min} min${min > 1 ? 's' : ''} ago`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr} hour${hr > 1 ? 's' : ''} ago`;
+    const day = Math.floor(hr / 24);
+    return `${day} day${day > 1 ? 's' : ''} ago`;
+  }
+
+  /* ===== DOOR STATUS ===== */
+  // NOTE: mirrors the lock panel in the device detail page — same
+  // /locks/{id}/, /locks/{id}/lock/, /locks/{id}/unlock/ endpoints.
+  async function loadDoorStatus() {
+    try {
+      // Assumes GET /api/homes/{HOME_ID}/devices/ returns every device,
+      // each with a device_type field ('camera' | 'smart_lock').
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/devices/`, { headers: authHeaders({ 'Accept': 'application/json' }) });
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) throw new Error('Devices fetch failed');
+      const devices = await res.json();
+      const lock = devices.find(d => d.device_type === 'smart_lock');
+
+      document.getElementById('doorLoading').style.display = 'none';
+
+      if (!lock) {
+        document.getElementById('doorNone').style.display = 'block';
+        return;
+      }
+
+      doorDeviceId = lock.id;
+      document.getElementById('doorContent').style.display = 'block';
+      document.getElementById('doorActions').style.display = CAN_CONTROL ? 'flex' : 'none';
+      await refreshDoorState();
+    } catch (err) {
+      console.error(err);
+      document.getElementById('doorLoading').textContent = 'Could not load door status.';
+    }
+  }
+
+  async function refreshDoorState() {
+    if (!doorDeviceId) return;
+    try {
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/locks/${doorDeviceId}/`, { headers: authHeaders({ 'Accept': 'application/json' }) });
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) throw new Error('Lock detail fetch failed');
+      const lockState = await res.json();
+      const locked = lockState.status === 'locked';
+      document.getElementById('doorStateLabel').textContent = locked ? 'Locked' : 'Unlocked';
+      document.getElementById('doorUpdatedAt').textContent =
+        lockState.last_unlocked_by_name
+          ? `Last unlocked by ${lockState.last_unlocked_by_name} · ${timeAgo(lockState.last_unlocked_at)}`
+          : `Updated ${timeAgo(lockState.last_unlocked_at)}`;
+    } catch (err) {
+      document.getElementById('doorStateLabel').textContent = 'Unknown';
+    }
+  }
+
+  document.getElementById('doorUnlockBtn').addEventListener('click', async () => {
+    if (!CAN_CONTROL || !doorDeviceId) return;
+    try {
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/locks/${doorDeviceId}/unlock/`, {
+        method: 'POST',
+        headers: authHeaders(),
+      });
+      if (!res.ok) throw new Error('Unlock failed');
+      refreshDoorState();
+    } catch (err) {
+      alert('Could not unlock the door. Please try again.');
+    }
+  });
+
+  document.getElementById('doorLockBtn').addEventListener('click', async () => {
+    if (!CAN_CONTROL || !doorDeviceId) return;
+    try {
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/locks/${doorDeviceId}/lock/`, {
+        method: 'POST',
+        headers: authHeaders(),
+      });
+      if (!res.ok) throw new Error('Lock failed');
+      refreshDoorState();
+    } catch (err) {
+      alert('Could not lock the door. Please try again.');
+    }
+  });
+
+  /* ===== ACTIVE CAMERAS ===== */
+  async function loadCameras() {
+    const grid = document.getElementById('cameraGrid');
+    const countLabel = document.getElementById('cameraCountLabel');
+    grid.innerHTML = Array.from({ length: 4 }).map(() => `<div style="height:280px;border-radius:14px;background:rgba(255,255,255,0.03);"></div>`).join('');
+
+    try {
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/devices/`, { headers: authHeaders({ 'Accept': 'application/json' }) });
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) throw new Error('Devices fetch failed');
+      const devices = await res.json();
+      const cameras = devices.filter(d => d.device_type === 'camera');
+      const online = cameras.filter(d => d.status === 'online');
+
+      countLabel.innerHTML = `${cameras.length} CAMERA${cameras.length === 1 ? '' : 'S'} · <span style="color:${online.length === cameras.length ? '#22c55e' : '#eab308'};">${online.length} ONLINE</span>`;
+
+      if (!cameras.length) {
+        grid.innerHTML = `<div style="grid-column:1/-1;color:#4a6080;font-size:13px;text-align:center;padding:40px 20px;border:1px dashed rgba(255,255,255,0.08);border-radius:14px;">No cameras added yet. Add one from Devices.</div>`;
+        return;
+      }
+
+      grid.innerHTML = cameras.map(c => `
+        <div class="card cam-card" onclick="window.location.href='/devices/${c.id}/'">
+          <div class="live-feed-frame">
+            ${c.stream_url ? `<img src="${c.stream_url}" alt="Live feed for ${c.name}">` : 'No stream URL configured'}
+            <div style="position:absolute;top:12px;left:12px;display:flex;gap:4px;z-index:2;">
+              <span class="badge ${c.status === 'online' ? 'badge-live' : 'badge-clear'}">${c.status === 'online' ? '● LIVE' : '○ OFFLINE'}</span>
+            </div>
+          </div>
+          <div style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="color:white;font-size:14px;font-weight:600;">${c.name}</div>
+              <div style="color:#4a6080;font-size:11px;margin-top:2px;">${c.location || ''} · ${timeAgo(c.last_active)}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    } catch (err) {
+      console.error(err);
+      grid.innerHTML = `<div style="grid-column:1/-1;color:#f87171;font-size:13px;text-align:center;padding:40px 20px;border:1px dashed rgba(248,113,113,0.2);border-radius:14px;">Could not load cameras. Please check your connection and refresh.</div>`;
+    }
+  }
+
+  (async function init() {
+    await loadPermissions();
+    loadDoorStatus();
+    loadCameras();
+  })();
+
+  // Keep door status and camera online/offline state feeling live.
+  setInterval(() => { refreshDoorState(); loadCameras(); }, 15000);
 </script>
 </body>
 </html>

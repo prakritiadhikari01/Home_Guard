@@ -1,3 +1,16 @@
+/* ============================================================
+   HOMEGUARD SIDEBAR + TOPBAR
+   ------------------------------------------------------------
+   Usage on every page:
+
+     document.getElementById("sidebar").innerHTML = renderSidebar("dashboard");
+     document.getElementById("topbar").innerHTML = renderTopbar("Page Title", "Subtitle text");
+
+     loadTopbarUser();       // fills avatar initials + dropdown name
+     initHomeSwitcher();     // fills active home name + mode badge + dropdown list
+     loadHomeNotifications();// fills notification dot for the active home
+   ============================================================ */
+
 function renderSidebar(activePage) {
   const pages = [
     { id: 'dashboard', label: 'Dashboard', href: '/dashboard/', icon: `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>` },
@@ -175,12 +188,17 @@ async function logout() {
   }
 
   localStorage.clear();
-  window.location.href = "/index.html";
+  window.location.href = "/";
 }
 
 /* ===== TOPBAR: USER INFO (avatar initials + dropdown name) ===== */
 
+const __hgInitialized = { user: false, home: false, notif: false };
+
 async function loadTopbarUser() {
+  if (__hgInitialized.user) return;
+  __hgInitialized.user = true;
+
   const token = localStorage.getItem("access");
   if (!token) {
     window.location.href = "/login/";
@@ -243,6 +261,9 @@ async function fetchHomesFromApi() {
 }
 
 async function initHomeSwitcher() {
+  if (__hgInitialized.home) return;
+  __hgInitialized.home = true;
+
   const homes = await fetchHomesFromApi();
   __hgHomesCache = homes;
 
@@ -320,6 +341,9 @@ function renderModeBadge(home) {
 /* ===== NOTIFICATIONS (topbar, scoped to active home) ===== */
 
 async function loadHomeNotifications() {
+  if (__hgInitialized.notif) return;
+  __hgInitialized.notif = true;
+
   const token = localStorage.getItem("access");
   const homeId = localStorage.getItem("active_home");
   if (!token || !homeId) return;
@@ -338,3 +362,30 @@ async function loadHomeNotifications() {
     console.error("Failed to load home notifications:", err);
   }
 }
+
+/* ===== AUTO-INIT (works on every page automatically) =====
+   Watches the DOM for the topbar/sidebar elements this file renders.
+   As soon as they appear - no matter which page inserted them, or when -
+   this fires loadTopbarUser() / initHomeSwitcher() / loadHomeNotifications()
+   on its own. Pages no longer need to remember to call these manually.
+   Calling them manually too is harmless - each one only ever runs once,
+   guarded by the __hgInitialized flags above. */
+
+function __hgTryAutoInit() {
+  if (!__hgInitialized.user && document.getElementById("avatarBtn")) {
+    loadTopbarUser();
+  }
+  if (!__hgInitialized.home && document.getElementById("activeHomeName") && document.getElementById("modeDot")) {
+    initHomeSwitcher().then(() => {
+      if (!__hgInitialized.notif) loadHomeNotifications();
+    });
+  }
+}
+
+const __hgObserver = new MutationObserver(__hgTryAutoInit);
+__hgObserver.observe(document.documentElement, { childList: true, subtree: true });
+
+// Also check immediately, in case the topbar/sidebar HTML was inserted
+// synchronously before this script finished loading.
+__hgTryAutoInit();
+document.addEventListener("DOMContentLoaded", __hgTryAutoInit);

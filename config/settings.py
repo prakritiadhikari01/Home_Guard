@@ -142,7 +142,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Kathmandu"
 
 USE_I18N = True
 
@@ -224,6 +224,8 @@ SERVER_EMAIL = env(
     "DJANGO_SERVER_EMAIL",
     default=EMAIL_HOST_USER,
 )
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 AI_ENGINE_API_KEY = config("AI_ENGINE_API_KEY")
 FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:8000")

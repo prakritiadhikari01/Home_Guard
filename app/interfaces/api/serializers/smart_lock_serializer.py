@@ -20,4 +20,4 @@ class SmartLockDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = SmartLock
         # NOTE: add battery_level to your SmartLock model if it's not there yet.
-        fields = ["id", "status", "last_unlocked_by_name", "last_unlocked_at", "battery_level"]
+        fields = ["id", "status", "last_unlocked_by_name", "last_unlocked_at"]

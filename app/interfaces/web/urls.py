@@ -21,5 +21,5 @@ urlpatterns = [
     path("settings/", views.settings_page, name="settings"),
     path("home-setup/",views.home_setup_page,name="home_setup"),
     path("scan-face/",views.scan_page,name="scan-page",)
-
+    
 ]

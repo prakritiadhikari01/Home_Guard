@@ -19,15 +19,15 @@
       <div style="display:grid;grid-template-columns:repeat(3,180px);gap:14px;margin-bottom:24px;">
         <div class="card p-5">
           <div style="font-size:11px;letter-spacing:.1em;color:#3a4a6a;margin-bottom:8px;">ACTIVE</div>
-          <div style="font-size:36px;font-weight:700;color:#ef4444;">2</div>
+          <div style="font-size:36px;font-weight:700;color:#ef4444;" id="statActive">–</div>
         </div>
         <div class="card p-5">
           <div style="font-size:11px;letter-spacing:.1em;color:#3a4a6a;margin-bottom:8px;">TODAY</div>
-          <div style="font-size:36px;font-weight:700;color:#eab308;">3</div>
+          <div style="font-size:36px;font-weight:700;color:#eab308;" id="statToday">–</div>
         </div>
         <div class="card p-5">
           <div style="font-size:11px;letter-spacing:.1em;color:#3a4a6a;margin-bottom:8px;">RESOLVED</div>
-          <div style="font-size:36px;font-weight:700;color:#22c55e;">14</div>
+          <div style="font-size:36px;font-weight:700;color:#22c55e;" id="statResolved">–</div>
         </div>
       </div>
 
@@ -44,77 +44,168 @@
   padding:7px 16px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;
   display:inline-flex;align-items:center;gap:5px;border:1px solid;transition:all .15s;
 }
+.alert-action-btn:disabled { opacity:0.5; cursor:not-allowed; }
 .btn-view { background:rgba(59,130,246,0.15);color:#60a5fa;border-color:rgba(59,130,246,0.3); }
 .btn-view:hover { background:rgba(59,130,246,0.25); }
 .btn-resolve { background:rgba(34,197,94,0.1);color:#22c55e;border-color:rgba(34,197,94,0.3); }
 .btn-resolve:hover { background:rgba(34,197,94,0.2); }
 .btn-dismiss { background:rgba(255,255,255,0.04);color:#6a8aaa;border-color:rgba(255,255,255,0.1); }
 .btn-dismiss:hover { background:rgba(255,255,255,0.08); }
+.skeleton-card { height:110px; border-radius:12px; background:linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 37%, rgba(255,255,255,0.03) 63%); background-size:400% 100%; animation:skeleton-shine 1.4s ease-in-out infinite; }
+@keyframes skeleton-shine { 0% { background-position:100% 0; } 100% { background-position:-100% 0; } }
+.grid-message { color:#4a6080; font-size:13px; text-align:center; padding:40px 20px; border:1px dashed rgba(255,255,255,0.08); border-radius:14px; }
+.grid-message.is-error { color:#f87171; border-color:rgba(248,113,113,0.2); }
 </style>
 
 <script src="{% static 'js/sidebar.js' %}"></script>
 <script>
+  const API_BASE = "/api";
+  const TOKEN = localStorage.getItem("access");
+  const HOME_ID = localStorage.getItem("active_home");
+
+  if (!TOKEN) {
+    window.location.href = "{% url 'web:login' %}";
+  }
+
+  function authHeaders(extra = {}) {
+    return { Authorization: `Bearer ${TOKEN}`, ...extra };
+  }
+
+  function handleAuthFailure(res) {
+    if (res.status === 401) {
+      localStorage.clear();
+      window.location.href = "{% url 'web:login' %}";
+      return true;
+    }
+    return false;
+  }
+
   document.getElementById('sidebar').innerHTML = renderSidebar('alerts');
   initHomeSwitcher();
   document.getElementById('topbar').innerHTML = renderTopbar('Alerts Center', 'Active and historical security events');
 
-  const alerts = [
-    {
-      level:'critical', cam:'CAM-03', time:'03:42',
-      title:'Repeated unknown presence',
-      sub:'Backyard · 3 detection cycles within 12 minutes',
-      icon:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
-      border:'rgba(239,68,68,0.25)', bg:'rgba(239,68,68,0.05)'
-    },
-    {
-      level:'warning', cam:'CAM-02', time:'14:22',
-      title:'Unrecognized vehicle in driveway',
-      sub:'Plate captured · classified as likely delivery',
-      icon:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
-      border:'rgba(234,179,8,0.2)', bg:'rgba(234,179,8,0.04)'
-    },
-    {
-      level:'warning', cam:'CAM-03', time:'12:55',
-      title:'Motion at side path',
-      sub:'Animal motion detected · 64% confidence',
-      icon:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
-      border:'rgba(234,179,8,0.2)', bg:'rgba(234,179,8,0.04)'
-    },
-  ];
+  const REASON_LABELS = {
+    INTRUDER_DETECTED: 'Intruder Detected',
+    REPEATED_UNKNOWN: 'Repeated Unknown Visitor',
+    LOITERING: 'Loitering',
+    UNRECOGNIZED_VEHICLE: 'Unrecognized Vehicle',
+  };
 
-  function dismissAlert(btn) {
-    btn.closest('.alert-card').parentElement.remove();
+  const ICONS = {
+    CRITICAL: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+    WARNING: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+  };
+
+  function formatTime(ts) {
+    const d = new Date(ts), now = new Date();
+    if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const yest = new Date(now); yest.setDate(now.getDate() - 1);
+    return d.toDateString() === yest.toDateString() ? 'Yesterday' : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
   }
 
-  document.getElementById('alertList').innerHTML = alerts.map((a,i) => `
-    <div style="border:1px solid ${a.border};border-left:3px solid ${a.level==='critical'?'#ef4444':'#eab308'};border-radius:12px;background:${a.bg};">
-      <div class="alert-card">
-        <div style="flex-shrink:0;margin-top:2px;">${a.icon}</div>
-        <div style="flex:1;">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-            <span class="badge ${a.level==='critical'?'badge-critical':'badge-warning'}">${a.level.toUpperCase()}</span>
-            <span style="font-size:12px;color:#4a5a7a;">${a.cam} · ${a.time}</span>
-          </div>
-          <div style="color:white;font-size:16px;font-weight:600;margin-bottom:4px;">${a.title}</div>
-          <div style="color:#6a8aaa;font-size:13px;margin-bottom:14px;">${a.sub}</div>
-          <div style="display:flex;gap:8px;">
-            <button class="alert-action-btn btn-view" onclick="window.location.href='live.html'">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="14" rx="2"/></svg>
-              View feed
-            </button>
-            <button class="alert-action-btn btn-resolve">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              Resolve
-            </button>
-            <button class="alert-action-btn btn-dismiss" onclick="dismissAlert(this)">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              Dismiss
-            </button>
+  function renderSkeleton() {
+    document.getElementById('alertList').innerHTML = Array.from({ length: 3 }).map(() => `<div class="skeleton-card"></div>`).join('');
+  }
+
+  function renderAlerts(alerts) {
+    const list = document.getElementById('alertList');
+
+    if (!alerts.length) {
+      list.innerHTML = `<div class="grid-message">No active alerts — everything looks quiet.</div>`;
+      return;
+    }
+
+    list.innerHTML = alerts.map(a => {
+      const isCritical = a.severity === 'CRITICAL';
+      const border = isCritical ? 'rgba(239,68,68,0.25)' : 'rgba(234,179,8,0.2)';
+      const bg = isCritical ? 'rgba(239,68,68,0.05)' : 'rgba(234,179,8,0.04)';
+      const accent = isCritical ? '#ef4444' : '#eab308';
+      const label = REASON_LABELS[a.reason] || a.reason.replace(/_/g, ' ');
+      return `
+        <div style="border:1px solid ${border};border-left:3px solid ${accent};border-radius:12px;background:${bg};" data-alert-id="${a.id}">
+          <div class="alert-card">
+            <div style="flex-shrink:0;margin-top:2px;">${ICONS[a.severity] || ICONS.WARNING}</div>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <span class="badge ${isCritical ? 'badge-critical' : 'badge-warning'}">${a.severity}</span>
+                <span style="font-size:12px;color:#4a5a7a;">${formatTime(a.created_at)}</span>
+              </div>
+              <div style="color:white;font-size:16px;font-weight:600;margin-bottom:4px;">${label}</div>
+              <div style="color:#6a8aaa;font-size:13px;margin-bottom:14px;">Detection event #${a.event_id.slice(0, 8)}</div>
+              <div style="display:flex;gap:8px;">
+                <button class="alert-action-btn btn-view" onclick="window.location.href='/live/'">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="14" rx="2"/></svg>
+                  View feed
+                </button>
+                <button class="alert-action-btn btn-resolve" onclick="resolveAlert('${a.id}', this)">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Resolve
+                </button>
+                <button class="alert-action-btn btn-dismiss" onclick="dismissAlert('${a.id}', this)">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  Dismiss
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  `).join('');
+      `;
+    }).join('');
+  }
+
+  async function loadAlerts() {
+    renderSkeleton();
+    try {
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/alerts/?status=active`, {
+        headers: authHeaders({ 'Accept': 'application/json' }),
+      });
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) throw new Error('Failed to load alerts');
+      const alerts = await res.json();
+      renderAlerts(alerts);
+      updateStats(alerts);
+    } catch (err) {
+      console.error(err);
+      document.getElementById('alertList').innerHTML =
+        `<div class="grid-message is-error">Could not load alerts. Please check your connection and refresh.</div>`;
+    }
+  }
+
+  function updateStats(activeAlerts) {
+    document.getElementById('statActive').textContent = activeAlerts.length;
+    const today = new Date().toDateString();
+    const todayCount = activeAlerts.filter(a => new Date(a.created_at).toDateString() === today).length;
+    document.getElementById('statToday').textContent = todayCount;
+    // Resolved count needs its own query if you want a real historical total —
+    // this endpoint only returns active alerts by design.
+    document.getElementById('statResolved').textContent = '–';
+  }
+
+  async function setAlertStatus(alertId, action, btn) {
+    const card = btn.closest('[data-alert-id]');
+    card.querySelectorAll('button').forEach(b => b.disabled = true);
+    try {
+      const res = await fetch(`${API_BASE}/alerts/${alertId}/${action}/`, {
+        method: 'PATCH',
+        headers: authHeaders({ 'Content-Type': 'application/json' }),
+      });
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) throw new Error('Request failed');
+      card.style.opacity = '0';
+      card.style.transition = 'opacity .2s ease';
+      setTimeout(() => { card.remove(); loadAlerts(); }, 200);
+    } catch (err) {
+      card.querySelectorAll('button').forEach(b => b.disabled = false);
+      console.error(`${action} failed:`, err);
+      alert(`Couldn't ${action} this alert. Please try again.`);
+    }
+  }
+
+  function resolveAlert(alertId, btn) { setAlertStatus(alertId, 'resolve', btn); }
+  function dismissAlert(alertId, btn) { setAlertStatus(alertId, 'dismiss', btn); }
+
+  loadAlerts();
+  setInterval(loadAlerts, 20000);
 </script>
 </body>
 </html>

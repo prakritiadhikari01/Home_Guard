@@ -8,6 +8,7 @@ class EventType(Enum):
     DOOR_LOCKED = "DOOR_LOCKED"
     MOTION_DETECTED = "MOTION_DETECTED"
     VEHICLE_DETECTED = "VEHICLE_DETECTED"
+    ANIMAL_DETECTED = "ANIMAL_DETECTED"
 
     @classmethod
     def choices(cls):

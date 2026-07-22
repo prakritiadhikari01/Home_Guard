@@ -333,7 +333,11 @@
   }
 
   document.getElementById('sidebar').innerHTML = renderSidebar('devices');
+  document.getElementById('topbar').innerHTML = renderTopbar('Device', 'Loading device details…');
+
+  loadTopbarUser();
   initHomeSwitcher();
+  loadHomeNotifications();
 
   function timeAgo(isoString) {
     if (!isoString) return 'Never';
@@ -398,7 +402,8 @@
       if (!res.ok) throw new Error('Device not found');
       device = await res.json();
 
-      document.getElementById('topbar').innerHTML = renderTopbar(device.name, `${device.location} · Device details`);
+      document.querySelector('.topbar-title').textContent = device.name;
+      document.querySelector('.topbar-sub').textContent = `${device.location} · Device details`;
       renderHeader();
       renderInfo();
       renderLiveFeed();
