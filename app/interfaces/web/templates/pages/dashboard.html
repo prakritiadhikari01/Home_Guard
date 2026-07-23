@@ -87,6 +87,12 @@
     }
     .lock-orb.is-unlocked{ background:var(--c-high-bg); color:var(--c-high); }
     .lock-orb.is-unlocked::before{ border-color:var(--c-high-bd); animation:lockRingPulse 1.7s ease-out infinite; }
+    .lock-orb.is-verifying{
+      background:var(--c-normal-bg); color:var(--c-normal); pointer-events:none;
+    }
+    .lock-orb.is-verifying::before{
+      border-color:var(--c-normal-bd); animation:lockRingPulse 1.1s ease-out infinite;
+    }
     .lock-orb.is-busy{ pointer-events:none; opacity:.6; }
     @keyframes lockRingPulse{
       0%   { box-shadow:0 0 0 0 rgba(245,158,11,.45); }
@@ -376,8 +382,11 @@ async function setMode(modeValue, btnEl){
 }
 
 /* ===== FRONT DOOR (camera + lock, combined hero card) ===== */
+/* ===== FRONT DOOR (camera + lock, combined hero card) ===== */
 let doorDeviceId = null;
-let doorLocked = null;
+let doorStatus = null;          // 'LOCKED' | 'UNLOCKED' | 'VERIFYING'
+let activePollTimer = null;
+let activePollTimeout = null;
 
 async function loadDoorStatus(){
     const token = localStorage.getItem("access");
@@ -406,46 +415,157 @@ async function loadDoorStatus(){
 }
 
 async function refreshHeroLock(){
-    if (!doorDeviceId) return;
+    if (!doorDeviceId) return null;
     const token = localStorage.getItem("access");
     const homeId = localStorage.getItem("active_home");
     try {
         const res = await fetch(`/api/homes/${homeId}/locks/${doorDeviceId}/`, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) throw new Error('lock detail fetch failed');
         const lockState = await res.json();
-        doorLocked = lockState.status === 'locked';
+        doorStatus = lockState.status;
         renderHeroLock(lockState);
+        return lockState;
     } catch (err) {
         document.getElementById('heroLockLabel').textContent = 'Unknown';
+        return null;
     }
 }
 
 function renderHeroLock(lockState){
-    const locked = doorLocked;
-
+    const status = lockState.status; // 'LOCKED' | 'UNLOCKED' | 'VERIFYING'
     const orb = document.getElementById('heroLockOrb');
+    const btn = document.getElementById('heroLockBtn');
+    const btnLabel = document.getElementById('heroLockBtnLabel');
+    const sub = document.getElementById('heroLockSub');
+
+    orb.classList.remove('is-unlocked', 'is-verifying');
+
+    if (status === 'VERIFYING') {
+        orb.classList.add('is-verifying');
+        document.getElementById('heroLockLabel').textContent = 'Verifying…';
+        sub.textContent = 'LOOK AT THE FRONT DOOR CAMERA';
+        sub.style.color = 'var(--c-normal)';
+        document.getElementById('heroLockDesc').textContent =
+            'Scanning your face to confirm identity — this takes a couple of seconds.';
+        btn.disabled = true;
+        btn.style.background = 'rgba(255,255,255,0.08)';
+        btn.style.color = '#cdd9ef';
+        btnLabel.textContent = 'Verifying…';
+        return;
+    }
+
+    const locked = status === 'LOCKED';
+
     orb.classList.toggle('is-unlocked', !locked);
     orb.classList.remove('just-toggled');
-    // restart the pop animation on every state change
     void orb.offsetWidth;
     orb.classList.add('just-toggled');
 
     document.getElementById('heroLockLabel').textContent = locked ? 'Locked' : 'Unlocked';
 
-    const sub = document.getElementById('heroLockSub');
-    sub.textContent = locked ? 'SECURE · DEADBOLT ENGAGED' : 'UNLOCKED · TAP TO SECURE';
-    sub.style.color = locked ? 'var(--c-safe)' : 'var(--c-high)';
+    if (locked && lockState.last_access_result === 'DENIED') {
+        sub.textContent = 'ACCESS DENIED · FACE NOT RECOGNIZED';
+        sub.style.color = 'var(--c-sos)';
+    } else {
+        sub.textContent = locked ? 'SECURE · DEADBOLT ENGAGED' : 'UNLOCKED · TAP TO SECURE';
+        sub.style.color = locked ? 'var(--c-safe)' : 'var(--c-high)';
+    }
 
     document.getElementById('heroLockDesc').textContent = locked
-        ? 'Face verification is required to unlock. Look at the Front Door camera when prompted.'
-        : `Door is currently unlocked${lockState.last_unlocked_by_name ? ' by ' + lockState.last_unlocked_by_name : ''}. Tap below to secure it.`;
+        ? (lockState.last_access_result === 'DENIED'
+            ? "The last face scan wasn't recognized. Door remains locked — try again."
+            : 'Face verification is required to unlock. Look at the Front Door camera when prompted.')
+        : `Door is currently unlocked${lockState.last_unlocked_by_name ? ' by ' + lockState.last_unlocked_by_name : ''}. It will relock automatically, or tap below to secure it now.`;
 
-    const btn = document.getElementById('heroLockBtn');
-    const btnLabel = document.getElementById('heroLockBtnLabel');
     btn.disabled = false;
     btn.style.background = locked ? 'var(--c-normal)' : 'rgba(255,255,255,0.08)';
     btn.style.color = locked ? 'white' : '#cdd9ef';
     btnLabel.textContent = locked ? 'Unlock with face scan' : 'Lock door';
+}
+
+function stopUnlockPolling(){
+    if (activePollTimer) { clearInterval(activePollTimer); activePollTimer = null; }
+    if (activePollTimeout) { clearTimeout(activePollTimeout); activePollTimeout = null; }
+}
+
+function startUnlockPolling(verificationId){
+    let announcedUnlock = false;
+
+    activePollTimer = setInterval(async () => {
+        const lockState = await refreshHeroLock();
+        if (!lockState) return;
+
+        // A newer attempt (or a manual lock) superseded this one — stop watching it
+        if (lockState.current_verification_id !== verificationId) {
+            stopUnlockPolling();
+            return;
+        }
+
+        if (lockState.status === 'VERIFYING') return; // still waiting on the AI engine
+
+        if (lockState.status === 'UNLOCKED') {
+            if (!announcedUnlock) {
+                announcedUnlock = true;
+                loadRecentActivity();
+            }
+            return; // keep polling — watching for the 15s auto-relock
+        }
+
+        // status is back to LOCKED: either access was denied, or it auto-relocked
+        stopUnlockPolling();
+        loadRecentActivity();
+    }, 1000);
+
+    // Safety net: if the AI engine never responds, stop polling and re-sync after 25s
+    activePollTimeout = setTimeout(() => {
+        stopUnlockPolling();
+        refreshHeroLock();
+    }, 25000);
+}
+
+async function heroDoorAction(){
+    if (!doorDeviceId || doorStatus === null || doorStatus === 'VERIFYING') return;
+
+    const token = localStorage.getItem("access");
+    const homeId = localStorage.getItem("active_home");
+    const btn = document.getElementById('heroLockBtn');
+    const orb = document.getElementById('heroLockOrb');
+
+    stopUnlockPolling();
+
+    if (doorStatus === 'LOCKED') {
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/api/homes/${homeId}/locks/${doorDeviceId}/unlock/`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) throw new Error('unlock request failed');
+            const data = await res.json(); // { status, verification_id, message }
+
+            doorStatus = 'VERIFYING';
+            renderHeroLock({ status: 'VERIFYING' });
+            startUnlockPolling(data.verification_id);
+        } catch (err) {
+            alert('Could not start face verification. Please try again.');
+            await refreshHeroLock();
+        }
+    } else {
+        btn.disabled = true;
+        orb.classList.add('is-busy');
+        try {
+            const res = await fetch(`/api/homes/${homeId}/locks/${doorDeviceId}/lock/`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) throw new Error('lock failed');
+            await refreshHeroLock();
+        } catch (err) {
+            alert('Could not lock the door. Please try again.');
+        } finally {
+            orb.classList.remove('is-busy');
+        }
+    }
 }
 
 async function heroDoorAction(){

@@ -1,4 +1,3 @@
-# app/interfaces/api/serializers/smart_lock_serializer.py
 from rest_framework import serializers
 
 from app.infrastructure.db.models.smart_lock_model import SmartLock
@@ -19,5 +18,17 @@ class SmartLockDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SmartLock
-        # NOTE: add battery_level to your SmartLock model if it's not there yet.
-        fields = ["id", "status", "last_unlocked_by_name", "last_unlocked_at"]
+        fields = [
+            "id",
+            "status",
+            "last_unlocked_by_name",
+            "last_unlocked_at",
+            "current_verification_id",
+            "last_access_result",
+        ]
+
+
+class UnlockAttemptSerializer(serializers.Serializer):
+    status = serializers.CharField()
+    verification_id = serializers.UUIDField()
+    message = serializers.CharField()

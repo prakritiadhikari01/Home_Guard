@@ -42,6 +42,13 @@ class SmartLock(models.Model):
         null=True,
         blank=True,
     )
+    current_verification_id = models.UUIDField(null=True, blank=True)
+    last_access_result = models.CharField(
+        max_length=20,
+        choices=[("GRANTED", "GRANTED"), ("DENIED", "DENIED")],
+        null=True,
+        blank=True,
+    )
     updated_at = models.DateTimeField(
         auto_now=True,
     )

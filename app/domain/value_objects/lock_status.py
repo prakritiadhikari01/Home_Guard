@@ -5,6 +5,7 @@ class LockStatus(Enum):
 
     LOCKED = "locked"
     UNLOCKED = "unlocked"
+    VERIFYING = "VERIFYING"
 
     @classmethod
     def choices(cls):

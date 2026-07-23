@@ -304,3 +304,34 @@ class EventDeleteView(APIView):
             {"deleted": True, "was_open": was_open},
             status=status.HTTP_200_OK,
         )
+
+class HomeEventsForAssistantView(APIView):
+    """
+    GET /api/homes/<uuid:home_id>/events/context/?limit=50
+
+    Called by the AI engine (not the browser) to pull recent events as
+    context for the assistant's question-answering. Same data as
+    HomeEventListView but IsAIEngine-gated since there's no logged-in
+    user on this call path.
+    """
+    permission_classes = [IsAIEngine]
+
+    def get(self, request, home_id):
+        limit = int(request.query_params.get("limit", 50))
+        qs = DetectionEventModel.objects.filter(
+            home_id=home_id
+        ).select_related("matched_member", "device").order_by("-timestamp")[:limit]
+
+        events = [
+            {
+                "timestamp": e.timestamp.isoformat() if e.timestamp else None,
+                "person_type": e.person_type,
+                "person_label": e.person_label,
+                "camera_location": e.camera_location,
+                "event_type": e.event_type,
+                "duration_seconds": e.duration_seconds,
+                "event_summary": e.event_summary,
+            }
+            for e in qs
+        ]
+        return Response({"events": events}, status=status.HTTP_200_OK)

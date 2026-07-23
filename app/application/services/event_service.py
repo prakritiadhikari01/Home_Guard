@@ -3,7 +3,6 @@ from django.conf import settings
 from app.infrastructure.db.repositories.django_detection_event_repository import DjangoDetectionEventRepository
 from app.infrastructure.db.repositories.django_home_member_repository import DjangoHomeMemberRepository
 from app.infrastructure.db.repositories.django_smart_lock_repository import DjangoSmartLockRepository
-from app.infrastructure.db.repositories.django_access_log_repository import DjangoAccessLogRepository
 from app.infrastructure.external.ai_client import AIClient
 from app.application.services.smart_lock_service import SmartLockService
 from app.infrastructure.db.models.home_member_model import HomeMember
@@ -12,7 +11,6 @@ class EventService:
     detection_event_repo = DjangoDetectionEventRepository()
     home_member_repo = DjangoHomeMemberRepository()
     smart_lock_repo = DjangoSmartLockRepository()
-    access_log_repo = DjangoAccessLogRepository()
 
     @staticmethod
     def process_event(home, device, image_base64, event_timestamp):
