@@ -129,3 +129,23 @@ class AIClient:
             return response.json()
         except Exception as e:
             return {"answer": None, "error": str(e)}
+
+    def verify_and_unlock(self, *, smart_lock):
+        camera_device = smart_lock.device.paired_camera or smart_lock.device
+        stream_url = camera_device.stream_url
+
+        if not stream_url:
+            return {"success": False, "person_type": "UNKNOWN", "reason": "no_camera_configured"}
+
+        payload = {
+            "smart_lock_id": str(smart_lock.id),
+            "device_id": str(smart_lock.device.id),
+            "home_id": str(smart_lock.device.home.id),
+            "stream_url": stream_url,
+        }
+        try:
+            response = requests.post(f"{self.BASE_URL}/smart-lock/verify/", json=payload, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            return {"success": False, "person_type": "UNKNOWN", "reason": "ai_engine_error", "error": str(e)}

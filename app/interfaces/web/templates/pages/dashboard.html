@@ -331,7 +331,6 @@ function populateDashboard(data){
 
     renderFrontDoorHero(data.live_preview || []);
     renderLivePreview(data.live_preview || []);
-    renderDevices(data.devices || []);
 }
 
 /* ---- Security mode: button-row UI, colour-coded per mode ---- */
@@ -495,32 +494,55 @@ function startUnlockPolling(verificationId){
         const lockState = await refreshHeroLock();
         if (!lockState) return;
 
-        // A newer attempt (or a manual lock) superseded this one — stop watching it
         if (lockState.current_verification_id !== verificationId) {
             stopUnlockPolling();
             return;
         }
 
-        if (lockState.status === 'VERIFYING') return; // still waiting on the AI engine
+        if (lockState.status === 'VERIFYING') return;
 
         if (lockState.status === 'UNLOCKED') {
             if (!announcedUnlock) {
                 announcedUnlock = true;
                 loadRecentActivity();
             }
-            return; // keep polling — watching for the 15s auto-relock
+            return;
         }
 
-        // status is back to LOCKED: either access was denied, or it auto-relocked
         stopUnlockPolling();
         loadRecentActivity();
     }, 1000);
 
-    // Safety net: if the AI engine never responds, stop polling and re-sync after 25s
-    activePollTimeout = setTimeout(() => {
+    // Hard cutoff: 15s after a state change, the door is LOCKED — period.
+    // Covers: verification never resolved, door opened but never auto-relocked,
+    // backend went silent, etc. The UI never gets stuck on VERIFYING/UNLOCKED.
+    activePollTimeout = setTimeout(async () => {
         stopUnlockPolling();
-        refreshHeroLock();
-    }, 25000);
+        await forceLockAfterTimeout();
+    }, 15000);
+}
+
+async function forceLockAfterTimeout(){
+    const token = localStorage.getItem("access");
+    const homeId = localStorage.getItem("active_home");
+
+    // Reflect LOCKED immediately so the UI never lingers on a stale state
+    doorStatus = 'LOCKED';
+    renderHeroLock({ status: 'LOCKED' });
+    loadRecentActivity();
+
+    try {
+        const res = await fetch(`/api/homes/${homeId}/locks/${doorDeviceId}/lock/`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error('force-lock failed');
+    } catch (err) {
+        console.error('Could not force-lock the door after timeout:', err);
+    } finally {
+        // Re-sync shortly after, in case backend state actually differs
+        setTimeout(refreshHeroLock, 1000);
+    }
 }
 
 async function heroDoorAction(){
@@ -565,31 +587,6 @@ async function heroDoorAction(){
         } finally {
             orb.classList.remove('is-busy');
         }
-    }
-}
-
-async function heroDoorAction(){
-    if (!doorDeviceId || doorLocked === null) return;
-    const action = doorLocked ? 'unlock' : 'lock';
-    const token = localStorage.getItem("access");
-    const homeId = localStorage.getItem("active_home");
-    const btn = document.getElementById('heroLockBtn');
-    const orb = document.getElementById('heroLockOrb');
-
-    btn.disabled = true;
-    orb.classList.add('is-busy');
-    try {
-        const res = await fetch(`/api/homes/${homeId}/locks/${doorDeviceId}/${action}/`, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error(`${action} failed`);
-        await refreshHeroLock();
-    } catch (err) {
-        alert(`Could not ${action} the door. Please try again.`);
-        btn.disabled = false;
-    } finally {
-        orb.classList.remove('is-busy');
     }
 }
 
@@ -735,32 +732,6 @@ function renderLivePreview(cameras){
     container.innerHTML = html;
 }
 
-function renderDevices(devices){
-    const container = document.getElementById("deviceContainer");
-
-    if (!devices.length){
-        container.innerHTML = `
-        <div class="card p-5" style="grid-column:1 / -1;text-align:center;color:#4a6080;font-size:13px;">
-            No devices registered yet.
-        </div>
-        `;
-        return;
-    }
-
-    let html = "";
-    devices.forEach(device=>{
-        const online = (device.status || '').toLowerCase().includes('online') || (device.status || '').toLowerCase().includes('active');
-        html += `
-        <div class="card p-5">
-            <div style="color:#6a8aaa;font-size:11px;">${device.type}</div>
-            <div style="color:white;font-size:16px;margin-top:10px;">${device.name}</div>
-            <div style="color:${online ? 'var(--c-safe)' : 'var(--c-sos)'};font-size:12px;margin-top:5px;">${device.status}</div>
-        </div>
-        `;
-    });
-
-    container.innerHTML = html;
-}
 
 document.getElementById("sidebar").innerHTML = renderSidebar("dashboard");
 document.getElementById("topbar").innerHTML = renderTopbar(

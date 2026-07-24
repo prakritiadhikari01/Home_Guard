@@ -1,5 +1,4 @@
 from django.shortcuts import get_object_or_404
-
 from app.infrastructure.db.models.home_model import Home
 from app.infrastructure.db.models.home_member_model import HomeMember
 from app.infrastructure.db.models.device_model import Device
@@ -213,3 +212,13 @@ class DashboardService:
             )
 
         return results
+
+    @staticmethod
+    def _get_summary(home):
+        return {
+            "title": "Ask Me Anything",
+            "message": "Curious about today's activity? Ask about any visitor, event, or camera — I'll pull the answer from your home's activity.",
+        }
+
+    
+        

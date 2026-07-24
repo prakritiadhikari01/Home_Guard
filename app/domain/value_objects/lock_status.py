@@ -3,8 +3,8 @@ from enum import Enum
 
 class LockStatus(Enum):
 
-    LOCKED = "locked"
-    UNLOCKED = "unlocked"
+    LOCKED = "LOCKED"
+    UNLOCKED = "UNLOCKED"
     VERIFYING = "VERIFYING"
 
     @classmethod

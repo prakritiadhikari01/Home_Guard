@@ -23,7 +23,7 @@ class UnlockDoorView(APIView):
         home = get_object_or_404(Home, id=home_id)
         device = get_object_or_404(Device, id=lock_id, home=home)
 
-        smart_lock, verification_id = SmartLockService.start_unlock_attempt(
+        smart_lock, verification_id = SmartLockService.request_unlock(
             acting_user=request.user,
             device=device,
         )

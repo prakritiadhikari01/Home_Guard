@@ -222,7 +222,6 @@ class AlertDismissView(APIView):
         return Response(AlertSerializer(alert.__dict__).data)
 
 
-# Add to app/interfaces/api/views/event_views.py
 
 from django.core.files.storage import default_storage
 from rest_framework.parsers import MultiPartParser

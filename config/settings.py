@@ -231,3 +231,6 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 AI_ENGINE_API_KEY = config("AI_ENGINE_API_KEY")
 FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:8000")
+
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"  
