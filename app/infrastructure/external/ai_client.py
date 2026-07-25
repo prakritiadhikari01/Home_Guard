@@ -95,43 +95,57 @@ class AIClient:
                 "embedding": None
             }
 
-    def verify_and_unlock(
-        self,
-        *,
-        smart_lock,
-    ):
+    def verify_and_unlock(self, *, smart_lock):
+        camera_device = smart_lock.device.paired_camera or smart_lock.device
+        stream_url = camera_device.stream_url
+
+        if not stream_url:
+            return {"success": False, "authorized": False, "reason": "no_camera_configured"}
+
         payload = {
             "smart_lock_id": str(smart_lock.id),
             "device_id": str(smart_lock.device.id),
             "home_id": str(smart_lock.device.home.id),
-            "stream_url": smart_lock.device.stream_url,
+            "stream_url": stream_url,
         }
-
-        response = requests.post(
-            f"{self.BASE_URL}/smart-lock/verify/",
-            json=payload,
-            timeout=30,
-        )
-
-        response.raise_for_status()
-
-        return response.json()
-   
+        try:
+            response = requests.post(f"{self.BASE_URL}/smart-lock/verify/", json=payload, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            return {"success": False, "authorized": False, "reason": "ai_engine_error", "error": str(e)}
+        
     @staticmethod
-    def manual_unlock(*, acting_user, device):
+    def ask_assistant(home_id: str, question: str) -> dict:
+        url = f"{AIClient.BASE_URL}/assistant/query"
+        try:
+            response = requests.post(
+                url,
+                json={"home_id": str(home_id), "question": question},
+                timeout=500,  # generation can be slow-ish even on gemma3:4b
+            )
+            if response.status_code >= 400:
+                return {"answer": None, "error": response.text}
+            return response.json()
+        except Exception as e:
+            return {"answer": None, "error": str(e)}
 
-        membership = HomeMember.objects.filter(
-            home=device.home,
-            user=acting_user,
-        ).first()
+    def verify_and_unlock(self, *, smart_lock):
+        camera_device = smart_lock.device.paired_camera or smart_lock.device
+        stream_url = camera_device.stream_url
 
-        if not membership:
-            raise ("Not a home member")
+        if not stream_url:
+            return {"success": False, "person_type": "UNKNOWN", "reason": "no_camera_configured"}
 
-        smart_lock = SmartLock.objects.get(device=device)
-
-        result = AIClient().verify_and_unlock(
-            smart_lock=smart_lock,
-        )
-
-        return result
+        payload = {
+            "smart_lock_id": str(smart_lock.id),
+            "device_id": str(smart_lock.device.id),
+            "home_id": str(smart_lock.device.home.id),
+            "stream_url": stream_url,
+        }
+        try:
+            response = requests.post(f"{self.BASE_URL}/smart-lock/verify/", json=payload, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            return {"success": False, "person_type": "UNKNOWN", "reason": "ai_engine_error", "error": str(e)}

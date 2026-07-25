@@ -142,7 +142,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Kathmandu"
 
 USE_I18N = True
 
@@ -176,6 +176,8 @@ from datetime import timedelta
 
 SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -224,6 +226,11 @@ SERVER_EMAIL = env(
     "DJANGO_SERVER_EMAIL",
     default=EMAIL_HOST_USER,
 )
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 AI_ENGINE_API_KEY = config("AI_ENGINE_API_KEY")
 FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:8000")
+
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"  

@@ -7,6 +7,359 @@
   <title>HomeGuard – Smart Assistant</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    .assistant-shell {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* ===== Chat history panel ===== */
+    .chat-history-panel {
+      width: 260px;
+      flex-shrink: 0;
+      border-right: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      flex-direction: column;
+      background: rgba(255,255,255,0.015);
+      transition: margin-left .2s ease, opacity .2s ease;
+    }
+
+    .chat-history-header {
+      padding: 16px 14px 10px;
+    }
+
+    .new-chat-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.35);
+      color: #93b8f5;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 9px 12px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .new-chat-btn:hover { background: rgba(59,130,246,0.2); }
+
+    .chat-history-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .chat-history-empty {
+      color: #4a5a7a;
+      font-size: 12px;
+      text-align: center;
+      padding: 24px 12px;
+    }
+
+    .chat-session-item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #9fb0d0;
+      font-size: 13px;
+      transition: background .12s;
+    }
+    .chat-session-item:hover { background: rgba(255,255,255,0.05); }
+    .chat-session-item.active {
+      background: rgba(59,130,246,0.14);
+      color: #dce8fd;
+    }
+
+    .chat-session-title {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    .chat-session-title-input {
+      flex: 1;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(59,130,246,0.4);
+      border-radius: 5px;
+      color: white;
+      font-size: 13px;
+      padding: 2px 6px;
+      min-width: 0;
+    }
+
+    .chat-session-actions {
+      display: none;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .chat-session-item:hover .chat-session-actions { display: flex; }
+
+    .chat-session-actions button {
+      background: none;
+      border: none;
+      color: #6a8aaa;
+      cursor: pointer;
+      padding: 3px;
+      display: flex;
+      border-radius: 4px;
+    }
+    .chat-session-actions button:hover { color: white; background: rgba(255,255,255,0.08); }
+
+    .chat-history-toggle {
+      display: none;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #9fb0d0;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* ===== Chat area ===== */
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .chat-area-inner {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 20px 28px 0;
+      max-width: 880px;
+      width: 100%;
+      margin: 0 auto;
+      min-height: 0;
+    }
+
+    .chat-area-topline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 10px;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding-bottom: 16px;
+    }
+
+    .chat-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(59,130,246,0.15);
+      border: 1px solid rgba(59,130,246,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .chat-bubble-ai {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 4px 18px 18px 18px;
+      padding: 14px 18px;
+      max-width: 80%;
+      color: #dbe4f3;
+      font-size: 14px;
+      line-height: 1.55;
+      word-wrap: break-word;
+    }
+
+    .chat-bubble-ai.error-bubble {
+      border-color: rgba(239,68,68,0.35);
+      background: rgba(239,68,68,0.06);
+      color: #fca5a5;
+    }
+
+    .chat-bubble-user {
+      background: #3b82f6;
+      color: white;
+      border-radius: 18px 4px 18px 18px;
+      padding: 14px 18px;
+      max-width: 80%;
+      font-size: 14px;
+      line-height: 1.55;
+      word-wrap: break-word;
+    }
+
+    .chat-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      animation: msgIn .25s ease;
+    }
+
+    .chat-row.user-row {
+      justify-content: flex-end;
+    }
+
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .user-msg-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .edit-msg-btn {
+      background: none;
+      border: none;
+      color: #6a8aaa;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity .15s;
+      padding: 4px;
+      display: flex;
+      flex-shrink: 0;
+    }
+    .user-msg-wrap:hover .edit-msg-btn { opacity: 1; }
+    .edit-msg-btn:hover { color: white; }
+
+    .chat-suggestion {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #a0b0d0;
+      font-size: 12.5px;
+      padding: 7px 13px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background .15s, border-color .15s, opacity .15s;
+      white-space: nowrap;
+    }
+    .chat-suggestion:hover {
+      background: rgba(59,130,246,0.12);
+      border-color: rgba(59,130,246,0.35);
+      color: #cddcf7;
+    }
+    .chat-suggestion:disabled { opacity: .4; cursor: not-allowed; }
+
+    .chat-input-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 10px 14px;
+      transition: border-color .15s;
+    }
+    .chat-input-bar:focus-within { border-color: rgba(59,130,246,0.5); }
+
+    #chatInput {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: white;
+      font-size: 14px;
+      min-width: 0;
+    }
+    #chatInput:disabled { opacity: .5; }
+
+    #sendBtn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #3b82f6;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background .15s, opacity .15s;
+    }
+    #sendBtn:hover:not(:disabled) { background: #2563eb; }
+    #sendBtn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .typing-dot {
+      width: 7px;
+      height: 7px;
+      background: #4a6080;
+      border-radius: 50%;
+      animation: typingBounce 1s infinite;
+    }
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: .5; }
+      40% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    .thinking-label { color: #6a8aaa; font-size: 12px; margin-left: 2px; }
+
+    .conn-banner {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.25);
+      color: #fca5a5;
+      font-size: 12.5px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .chat-area-inner { padding: 16px 16px 0; max-width: 100%; }
+      .chat-bubble-ai, .chat-bubble-user { max-width: 88%; }
+    }
+
+    @media (max-width: 760px) {
+      .chat-history-panel {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 60;
+        margin-left: -280px;
+        box-shadow: 20px 0 40px rgba(0,0,0,0.4);
+      }
+      .chat-history-panel.open { margin-left: 0; }
+      .chat-history-toggle { display: flex; }
+    }
+
+    @media (max-width: 560px) {
+      .chat-bubble-ai, .chat-bubble-user { max-width: 92%; font-size: 13.5px; }
+      .chat-suggestion { font-size: 11.5px; padding: 6px 10px; }
+      #suggestions { padding-bottom: 10px; }
+      .chat-input-bar { padding: 8px 10px; }
+    }
+  </style>
 </head>
 <body>
 <div class="app-layout">
@@ -14,115 +367,442 @@
   <div class="main-content">
     <div id="topbar"></div>
 
-    <!-- Chat Area -->
-    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;padding:24px 28px 0;">
+    <div class="assistant-shell">
 
-      <!-- Messages -->
-      <div id="chatMessages" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:20px;padding-bottom:16px;">
-        <!-- Initial AI greeting -->
-        <div style="display:flex;align-items:flex-start;gap:12px;">
-          <div style="width:36px;height:36px;border-radius:50%;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          </div>
-          <div class="chat-bubble-ai" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:4px 18px 18px 18px;padding:14px 18px;max-width:80%;">
-            Hello! I'm your HomeGuard AI assistant. Ask me anything about your home security — detected events, camera feeds, member activity, or alerts.
-          </div>
-        </div>
-      </div>
-
-      <!-- Suggestions -->
-      <div id="suggestions" style="display:flex;gap:8px;flex-wrap:wrap;padding-bottom:14px;">
-        <button class="chat-suggestion" onclick="sendSuggestion(this)">Show unknown detections</button>
-        <button class="chat-suggestion" onclick="sendSuggestion(this)">Summarize today</button>
-        <button class="chat-suggestion" onclick="sendSuggestion(this)">Any alerts overnight?</button>
-        <button class="chat-suggestion" onclick="sendSuggestion(this)">Lock all doors</button>
-        <button class="chat-suggestion" onclick="sendSuggestion(this)">Who came home today?</button>
-        <button class="chat-suggestion" onclick="sendSuggestion(this)">Show critical alerts</button>
-      </div>
-
-      <!-- Input -->
-      <div style="padding-bottom:24px;">
-        <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 14px;">
-          <input id="chatInput" type="text" placeholder="Ask HomeGuard..."
-            style="flex:1;background:transparent;border:none;outline:none;color:white;font-size:14px;"
-            onkeydown="if(event.key==='Enter')sendMessage()"/>
-          <button onclick="sendMessage()" id="sendBtn"
-            style="width:36px;height:36px;border-radius:50%;background:#3b82f6;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .15s;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      <!-- Chat history / sessions panel -->
+      <div class="chat-history-panel" id="chatHistoryPanel">
+        <div class="chat-history-header">
+          <button class="new-chat-btn" onclick="createNewChat()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Chat
           </button>
         </div>
+        <div id="chatHistoryList" class="chat-history-list"></div>
       </div>
+
+      <!-- Main chat area -->
+      <div class="chat-area">
+        <div class="chat-area-inner">
+
+          <div class="chat-area-topline">
+            <button class="chat-history-toggle" id="historyToggleBtn" onclick="toggleHistoryPanel()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+          </div>
+
+          <div id="connBanner" class="conn-banner">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fca5a5" stroke-width="2" style="flex-shrink:0;">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>Can't reach the AI assistant right now. Answers may be delayed or unavailable.</span>
+          </div>
+
+          <div id="chatMessages" class="chat-messages"></div>
+
+          <div id="suggestions" style="display:flex;gap:8px;flex-wrap:wrap;padding-bottom:14px;">
+            <button class="chat-suggestion" onclick="sendSuggestion(this)">Show unknown detections</button>
+            <button class="chat-suggestion" onclick="sendSuggestion(this)">Summarize today</button>
+            <button class="chat-suggestion" onclick="sendSuggestion(this)">Any alerts overnight?</button>
+            <button class="chat-suggestion" onclick="sendSuggestion(this)">Who came home today?</button>
+            <button class="chat-suggestion" onclick="sendSuggestion(this)">Show critical alerts</button>
+          </div>
+
+          <div style="padding-bottom:24px;">
+            <div class="chat-input-bar">
+              <input id="chatInput" type="text" placeholder="Ask HomeGuard..."
+                onkeydown="if(event.key==='Enter')sendMessage()"/>
+              <button onclick="sendMessage()" id="sendBtn" title="Send">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
 <script src="{% static 'js/sidebar.js' %}"></script>
 <script>
+  // ============================================================
+  // Shell init — sidebar.js's MutationObserver auto-fills user/home/
+  // notif info once these elements exist.
+  // ============================================================
   document.getElementById('sidebar').innerHTML = renderSidebar('assistant');
-  initHomeSwitcher();
   document.getElementById('topbar').innerHTML = renderTopbar('Smart Assistant', 'Ask anything about your home');
 
-  // Predefined smart responses for demo (no API key needed)
-  const smartResponses = {
-    "who came home today": "Three known members were detected today: <strong>Alex</strong> (15:42, Front Door), <strong>Elena</strong> (13:08, Front Door), and <strong>Marcus</strong> (yesterday evening). One unrecognized vehicle was logged at 14:22 in the driveway and classified as a likely delivery.",
-    "summarize today": "Today's summary: ✅ 3 known members recognized with high confidence. ⚠️ 1 unknown vehicle detected in the driveway at 14:22 (classified as delivery). ⚠️ Motion at the side path at 12:55 (likely animal, 64% confidence). 🔴 1 critical alert: repeated unknown presence in the backyard at 03:42 — loitering pattern, 3 cycles.",
-    "show unknown detections": "Here are today's unknown detections:\n\n🔴 <strong>03:42 – Backyard (CAM-03)</strong>: Repeated unknown presence. Loitering pattern detected across 3 cycles. Status: CRITICAL.\n\n⚠️ <strong>14:22 – Driveway (CAM-02)</strong>: Unknown vehicle. Plate captured, classified as likely delivery. Status: WARNING.",
-    "any alerts overnight": "Yes — one critical alert was triggered overnight: at <strong>03:42</strong>, CAM-03 (Backyard) detected a repeated unknown presence with a loitering pattern across 3 detection cycles. This was escalated automatically. No other alerts were recorded between midnight and 6:00 AM.",
-    "lock all doors": "✅ <strong>Main Entrance</strong> smart lock is already locked and secured. All connected locks are reporting normal status. No action required at this time.",
-    "show critical alerts": "There is currently <strong>1 active critical alert</strong>:\n\n🔴 <strong>Repeated unknown presence – Backyard</strong> (CAM-03, 03:42)\nLoitering pattern detected · 3 detection cycles within 12 minutes.\n\nWould you like to view the camera feed or resolve this alert?",
-    "default": "I've checked your HomeGuard system. Everything appears normal at this time — 4 cameras are online, all members are accounted for, and no new critical events have been detected in the last hour. Is there anything specific you'd like to know?"
-  };
+  const GREETING = "Hello! I'm your HomeGuard AI assistant. Ask me anything about your home security — detected events, camera feeds, member activity, or alerts.";
 
-  function getBestResponse(query) {
-    const q = query.toLowerCase().trim();
-    for (const key of Object.keys(smartResponses)) {
-      if (key !== 'default' && q.includes(key)) return smartResponses[key];
-    }
-    // keyword matching
-    if (q.includes('who') && (q.includes('home') || q.includes('came'))) return smartResponses['who came home today'];
-    if (q.includes('summar')) return smartResponses['summarize today'];
-    if (q.includes('unknown') || q.includes('detection')) return smartResponses['show unknown detections'];
-    if (q.includes('overnight') || q.includes('night')) return smartResponses['any alerts overnight'];
-    if (q.includes('lock')) return smartResponses['lock all doors'];
-    if (q.includes('critical') || q.includes('alert')) return smartResponses['show critical alerts'];
-    return smartResponses['default'];
+  let isWaitingForReply = false;
+  let currentChatId = null;
+  let chats = []; // [{id, title, titleIsCustom, messages:[{role:'user'|'ai', text, isError}], updatedAt}]
+
+  function homeId() {
+    return localStorage.getItem('active_home');
   }
 
-  function appendMessage(text, isUser) {
-    const container = document.getElementById('chatMessages');
+  function storageKey() {
+    const h = homeId();
+    return h ? `hg_chats_${h}` : null;
+  }
 
-    if (isUser) {
-      const div = document.createElement('div');
-      div.style.cssText = 'display:flex;justify-content:flex-end;';
-      div.innerHTML = `<div class="chat-bubble-user">${text}</div>`;
-      container.appendChild(div);
-    } else {
-      const div = document.createElement('div');
-      div.style.cssText = 'display:flex;align-items:flex-start;gap:12px;';
-      div.innerHTML = `
-        <div style="width:36px;height:36px;border-radius:50%;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        </div>
-        <div class="chat-bubble-ai" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:4px 18px 18px 18px;padding:14px 18px;max-width:80%;">${text.replace(/\n/g,'<br/>')}</div>`;
-      container.appendChild(div);
+  function activeChatKey() {
+    const h = homeId();
+    return h ? `hg_active_chat_${h}` : null;
+  }
+
+  // ============================================================
+  // Persistence
+  // ============================================================
+  function loadChats() {
+    const key = storageKey();
+    if (!key) { chats = []; return; }
+    try {
+      chats = JSON.parse(localStorage.getItem(key) || '[]');
+    } catch (e) {
+      chats = [];
     }
+  }
+
+  function saveChats() {
+    const key = storageKey();
+    if (!key) return;
+    localStorage.setItem(key, JSON.stringify(chats));
+  }
+
+  function getCurrentChat() {
+    return chats.find(c => c.id === currentChatId) || null;
+  }
+
+  function persistActiveChatId() {
+    const key = activeChatKey();
+    if (key && currentChatId) localStorage.setItem(key, currentChatId);
+  }
+
+  // ============================================================
+  // Session lifecycle
+  // ============================================================
+  function newChatId() {
+    return 'chat_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  }
+
+  function createNewChat() {
+    // If current chat is already empty, just reuse it instead of piling up blanks.
+    const current = getCurrentChat();
+    if (current && current.messages.length === 0) {
+      renderMessages();
+      closeHistoryPanelOnMobile();
+      return;
+    }
+
+    const chat = {
+      id: newChatId(),
+      title: 'New chat',
+      titleIsCustom: false,
+      messages: [],
+      updatedAt: Date.now(),
+    };
+    chats.unshift(chat);
+    currentChatId = chat.id;
+    persistActiveChatId();
+    saveChats();
+    renderHistoryList();
+    renderMessages();
+    closeHistoryPanelOnMobile();
+    document.getElementById('chatInput').focus();
+  }
+
+  function switchChat(id) {
+    if (id === currentChatId) return;
+    currentChatId = id;
+    persistActiveChatId();
+    renderHistoryList();
+    renderMessages();
+    closeHistoryPanelOnMobile();
+  }
+
+  function deleteChat(id, evt) {
+    if (evt) evt.stopPropagation();
+    if (!confirm('Delete this chat? This cannot be undone.')) return;
+
+    chats = chats.filter(c => c.id !== id);
+    saveChats();
+
+    if (currentChatId === id) {
+      if (chats.length > 0) {
+        currentChatId = chats[0].id;
+      } else {
+        currentChatId = null;
+        createNewChat();
+        return;
+      }
+    }
+    persistActiveChatId();
+    renderHistoryList();
+    renderMessages();
+  }
+
+  function startRenameChat(id, evt) {
+    if (evt) evt.stopPropagation();
+    renderHistoryList(id);
+    const input = document.getElementById('renameInput_' + id);
+    if (input) { input.focus(); input.select(); }
+  }
+
+  function commitRename(id, value) {
+    const chat = chats.find(c => c.id === id);
+    if (chat) {
+      const trimmed = (value || '').trim();
+      if (trimmed) {
+        chat.title = trimmed;
+        chat.titleIsCustom = true;
+      }
+    }
+    saveChats();
+    renderHistoryList();
+  }
+
+  function autoTitleFromFirstMessage(text) {
+    const clean = text.trim().replace(/\s+/g, ' ');
+    return clean.length > 42 ? clean.slice(0, 42) + '…' : clean;
+  }
+
+  // ============================================================
+  // Rendering: history list
+  // ============================================================
+  function renderHistoryList(renamingId) {
+    const list = document.getElementById('chatHistoryList');
+    const sorted = [...chats].sort((a, b) => b.updatedAt - a.updatedAt);
+
+    if (sorted.length === 0) {
+      list.innerHTML = `<div class="chat-history-empty">No chats yet — ask something to start one.</div>`;
+      return;
+    }
+
+    list.innerHTML = sorted.map(c => {
+      const isActive = c.id === currentChatId;
+      const isRenaming = c.id === renamingId;
+      const titleHtml = isRenaming
+        ? `<input class="chat-session-title-input" id="renameInput_${c.id}" value="${escapeAttr(c.title)}"
+             onclick="event.stopPropagation()"
+             onkeydown="if(event.key==='Enter'){this.blur();} if(event.key==='Escape'){renderHistoryList();}"
+             onblur="commitRename('${c.id}', this.value)"/>`
+        : `<span class="chat-session-title">${escapeHtml(c.title)}</span>`;
+
+      return `
+        <div class="chat-session-item ${isActive ? 'active' : ''}" onclick="switchChat('${c.id}')">
+          ${titleHtml}
+          <div class="chat-session-actions">
+            <button title="Rename" onclick="startRenameChat('${c.id}', event)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            </button>
+            <button title="Delete" onclick="deleteChat('${c.id}', event)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+  function escapeAttr(str) {
+    return String(str).replace(/"/g, '&quot;');
+  }
+
+  // ============================================================
+  // Rendering: messages
+  // ============================================================
+  function renderMessages() {
+    const container = document.getElementById('chatMessages');
+    container.innerHTML = '';
+
+    const chat = getCurrentChat();
+    if (!chat || chat.messages.length === 0) {
+      appendGreeting();
+      return;
+    }
+
+    chat.messages.forEach((m, idx) => {
+      if (m.role === 'user') {
+        appendUserRow(m.text, idx);
+      } else {
+        appendAiRow(m.text, m.isError);
+      }
+    });
     container.scrollTop = container.scrollHeight;
+  }
+
+  function appendGreeting() {
+    const container = document.getElementById('chatMessages');
+    const row = document.createElement('div');
+    row.className = 'chat-row';
+    row.innerHTML = `
+      <div class="chat-avatar">${aiIconSvg()}</div>
+      <div class="chat-bubble-ai"></div>`;
+    renderFormattedText(row.querySelector('.chat-bubble-ai'), GREETING);
+    container.appendChild(row);
+  }
+
+  function aiIconSvg() {
+    return `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
+  }
+
+  function appendUserRow(text, messageIndex) {
+    const container = document.getElementById('chatMessages');
+    const row = document.createElement('div');
+    row.className = 'chat-row user-row';
+    row.innerHTML = `
+      <div class="user-msg-wrap">
+        <button class="edit-msg-btn" title="Edit and resend" onclick="editMessage(${messageIndex})">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+        </button>
+        <div class="chat-bubble-user"></div>
+      </div>`;
+    row.querySelector('.chat-bubble-user').textContent = text;
+    container.appendChild(row);
+  }
+
+  // Builds bubble content from plain text nodes / <strong> / <br> only —
+  // never innerHTML on model output, so nothing the model returns can be
+  // interpreted as markup, even while supporting light formatting.
+  function renderFormattedText(bubble, text) {
+    const lines = text.split('\n');
+    lines.forEach((rawLine, i) => {
+      if (i > 0) bubble.appendChild(document.createElement('br'));
+
+      let line = rawLine;
+      const isBullet = /^\s*[-•]\s+/.test(line);
+      if (isBullet) {
+        line = line.replace(/^\s*[-•]\s+/, '');
+        bubble.appendChild(document.createTextNode('• '));
+      }
+
+      // Split on **bold** markers, alternating plain/bold text nodes.
+      const parts = line.split('**');
+      parts.forEach((part, idx) => {
+        if (part === '') return;
+        if (idx % 2 === 1) {
+          const strong = document.createElement('strong');
+          strong.textContent = part;
+          bubble.appendChild(strong);
+        } else {
+          bubble.appendChild(document.createTextNode(part));
+        }
+      });
+    });
+  }
+
+  function appendAiRow(text, isError) {
+    const container = document.getElementById('chatMessages');
+    const row = document.createElement('div');
+    row.className = 'chat-row';
+    row.innerHTML = `
+      <div class="chat-avatar">${aiIconSvg()}</div>
+      <div class="chat-bubble-ai${isError ? ' error-bubble' : ''}"></div>`;
+    const bubble = row.querySelector('.chat-bubble-ai');
+    renderFormattedText(bubble, text);
+    container.appendChild(row);
+  }
+
+  function scrollToBottom() {
+    const container = document.getElementById('chatMessages');
+    container.scrollTop = container.scrollHeight;
+  }
+
+  // Editing a past user message: reload it into the input and drop
+  // everything from that point forward in this chat, so resending
+  // continues from a clean branch — same pattern as Claude's edit/resend.
+  function editMessage(messageIndex) {
+    if (isWaitingForReply) return;
+    const chat = getCurrentChat();
+    if (!chat) return;
+
+    const msg = chat.messages[messageIndex];
+    if (!msg || msg.role !== 'user') return;
+
+    chat.messages = chat.messages.slice(0, messageIndex);
+    chat.updatedAt = Date.now();
+    saveChats();
+    renderMessages();
+
+    const input = document.getElementById('chatInput');
+    input.value = msg.text;
+    input.focus();
+  }
+
+  // ============================================================
+  // Networking (unchanged behavior from before, now chat-aware)
+  // ============================================================
+  function setInputEnabled(enabled) {
+    const input = document.getElementById('chatInput');
+    const btn = document.getElementById('sendBtn');
+    if (input) input.disabled = !enabled;
+    if (btn) btn.disabled = !enabled;
+    document.querySelectorAll('.chat-suggestion').forEach(b => b.disabled = !enabled);
+  }
+
+  function showConnBanner(show) {
+    const el = document.getElementById('connBanner');
+    if (el) el.style.display = show ? 'flex' : 'none';
+  }
+
+  async function askAssistant(question, history) {
+    const token = localStorage.getItem("access");
+    const hId = homeId();
+
+    if (!token) throw { kind: 'auth', message: "You're not logged in." };
+    if (!hId) throw { kind: 'no-home', message: "No active home selected." };
+
+    let response;
+    try {
+      response = await fetch(`/api/homes/${hId}/assistant/query/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        // "history" is optional context for the backend — safe to ignore
+        // server-side if not yet wired up; harmless to send either way.
+        body: JSON.stringify({ question, history }),
+      });
+    } catch (networkErr) {
+      throw { kind: 'network', message: 'Could not reach the server.' };
+    }
+
+    if (response.status === 401) throw { kind: 'auth', message: 'Session expired — please log in again.' };
+    if (response.status === 502) throw { kind: 'engine', message: 'The AI engine is unavailable right now.' };
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw { kind: 'other', message: err.error || 'Something went wrong.' };
+    }
+
+    const data = await response.json();
+    if (!data.answer) throw { kind: 'empty', message: 'No answer came back.' };
+    return data.answer;
   }
 
   function showTyping() {
     const container = document.getElementById('chatMessages');
-    const div = document.createElement('div');
-    div.id = 'typingIndicator';
-    div.style.cssText = 'display:flex;align-items:flex-start;gap:12px;';
-    div.innerHTML = `
-      <div style="width:36px;height:36px;border-radius:50%;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-      </div>
-      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:4px 18px 18px 18px;padding:14px 18px;display:flex;gap:5px;align-items:center;">
-        <span class="typing-dot"></span><span class="typing-dot" style="animation-delay:.2s"></span><span class="typing-dot" style="animation-delay:.4s"></span>
+    const row = document.createElement('div');
+    row.id = 'typingIndicator';
+    row.className = 'chat-row';
+    row.innerHTML = `
+      <div class="chat-avatar">${aiIconSvg()}</div>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:4px 18px 18px 18px;padding:14px 18px;display:flex;gap:9px;align-items:center;">
+        <span style="display:flex;gap:5px;align-items:center;">
+          <span class="typing-dot"></span><span class="typing-dot" style="animation-delay:.2s"></span><span class="typing-dot" style="animation-delay:.4s"></span>
+        </span>
+        <span class="thinking-label">HomeGuard is thinking…</span>
       </div>`;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
+    container.appendChild(row);
+    scrollToBottom();
   }
 
   function removeTyping() {
@@ -130,39 +810,119 @@
     if (el) el.remove();
   }
 
+  async function handleQuestion(text) {
+    if (!text || isWaitingForReply) return;
+
+    let chat = getCurrentChat();
+    if (!chat) { createNewChat(); chat = getCurrentChat(); }
+
+    const isFirstMessage = chat.messages.length === 0;
+
+    chat.messages.push({ role: 'user', text });
+    chat.updatedAt = Date.now();
+    if (isFirstMessage && !chat.titleIsCustom) {
+      chat.title = autoTitleFromFirstMessage(text);
+    }
+    saveChats();
+    renderHistoryList();
+    renderMessages();
+
+    isWaitingForReply = true;
+    setInputEnabled(false);
+    showTyping();
+
+    // last few turns as lightweight context, oldest first
+    const history = chat.messages.slice(-9, -1).map(m => ({ role: m.role, text: m.text }));
+
+    try {
+      const answer = await askAssistant(text, history);
+      removeTyping();
+      chat.messages.push({ role: 'ai', text: answer, isError: false });
+      chat.updatedAt = Date.now();
+      saveChats();
+      appendAiRow(answer, false);
+      scrollToBottom();
+      showConnBanner(false);
+    } catch (err) {
+      removeTyping();
+      const kind = err && err.kind;
+      let fallback;
+
+      if (kind === 'network' || kind === 'engine') {
+        fallback = "I can't reach the assistant right now — the AI engine may be offline. Please try again in a moment.";
+        showConnBanner(true);
+      } else if (kind === 'auth') {
+        fallback = "Your session seems to have expired. Please log in again.";
+      } else if (kind === 'no-home') {
+        fallback = "No home is selected yet — pick one from the sidebar first.";
+      } else {
+        fallback = (err && err.message) || "Something went wrong answering that — please try again.";
+      }
+
+      chat.messages.push({ role: 'ai', text: fallback, isError: true });
+      chat.updatedAt = Date.now();
+      saveChats();
+      appendAiRow(fallback, true);
+      scrollToBottom();
+      console.error('[Assistant] request failed:', err);
+    } finally {
+      isWaitingForReply = false;
+      setInputEnabled(true);
+      document.getElementById('chatInput').focus();
+    }
+  }
+
   function sendMessage() {
     const input = document.getElementById('chatInput');
     const text = input.value.trim();
     if (!text) return;
     input.value = '';
-    appendMessage(text, true);
-    showTyping();
-    setTimeout(() => {
-      removeTyping();
-      appendMessage(getBestResponse(text), false);
-    }, 900 + Math.random() * 600);
+    handleQuestion(text);
   }
 
   function sendSuggestion(btn) {
-    const text = btn.textContent;
-    appendMessage(text, true);
-    showTyping();
-    setTimeout(() => {
-      removeTyping();
-      appendMessage(getBestResponse(text), false);
-    }, 900 + Math.random() * 600);
+    if (btn.disabled) return;
+    handleQuestion(btn.textContent);
   }
-</script>
 
-<style>
-.typing-dot {
-  width: 7px; height: 7px; background: #4a6080; border-radius: 50%;
-  animation: typingBounce 1s infinite;
-}
-@keyframes typingBounce {
-  0%, 80%, 100% { transform: translateY(0); opacity: .5; }
-  40% { transform: translateY(-6px); opacity: 1; }
-}
-</style>
+  // ============================================================
+  // Mobile history panel toggle
+  // ============================================================
+  function toggleHistoryPanel() {
+    document.getElementById('chatHistoryPanel').classList.toggle('open');
+  }
+  function closeHistoryPanelOnMobile() {
+    if (window.innerWidth <= 760) {
+      document.getElementById('chatHistoryPanel').classList.remove('open');
+    }
+  }
+
+  // ============================================================
+  // Boot
+  // ============================================================
+  function initAssistant() {
+    if (!homeId()) {
+      // active_home isn't set yet (initHomeSwitcher sets it async on load) —
+      // wait briefly and retry rather than rendering an empty history.
+      setTimeout(initAssistant, 200);
+      return;
+    }
+    loadChats();
+    const savedActive = localStorage.getItem(activeChatKey());
+    if (savedActive && chats.some(c => c.id === savedActive)) {
+      currentChatId = savedActive;
+    } else if (chats.length > 0) {
+      currentChatId = [...chats].sort((a, b) => b.updatedAt - a.updatedAt)[0].id;
+    } else {
+      currentChatId = null;
+      createNewChat();
+      return;
+    }
+    renderHistoryList();
+    renderMessages();
+  }
+
+  initAssistant();
+</script>
 </body>
 </html>

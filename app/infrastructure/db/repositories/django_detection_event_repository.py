@@ -1,7 +1,7 @@
-#app/infrastructure/db/repositories/django_detection_event_repository.py
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
+
 from app.domain.repositories.detection_event_repository import DetectionEventRepository
 from app.domain.entities.detection_event import DetectionEvent
 from app.infrastructure.db.models.detection_event_model import DetectionEvent as DetectionEventModel
@@ -9,25 +9,19 @@ from app.infrastructure.db.models.detection_event_model import DetectionEvent as
 
 class DjangoDetectionEventRepository(DetectionEventRepository):
 
-    def find_recent_open_event(
-        self, device_id, person_type: str, face_profile_id, since: datetime
-    ) -> Optional[DetectionEvent]:
-        qs = DetectionEventModel.objects.filter(
-            device_id=device_id,
-            person_type=person_type,
-            timestamp__gte=since,
-        )
-        # None == None matches everything in Django's ORM for FK filters,
-        # so unknown visitors (face_profile_id=None) still bucket together correctly.
-        qs = qs.filter(matched_face_id=face_profile_id)
-
-        model = qs.order_by("-timestamp").first()
+    def find_open_by_track(self, device_id, track_id: str) -> Optional[DetectionEvent]:
+        model = DetectionEventModel.objects.filter(
+            device_id=device_id, track_id=track_id, status="OPEN",
+        ).first()
         return self._to_entity(model) if model else None
 
     def create(self, event: DetectionEvent) -> DetectionEvent:
         model = DetectionEventModel.objects.create(
             home_id=event.home_id,
             device_id=event.device_id,
+            track_id=event.track_id,
+            status=event.status,
+            pipeline_stage=event.pipeline_stage,
             event_type=event.event_type,
             person_type=event.person_type,
             person_label=event.person_label,
@@ -38,34 +32,46 @@ class DjangoDetectionEventRepository(DetectionEventRepository):
             image_url=event.image_url,
             snapshot_url=event.snapshot_url,
             thumbnail_url=event.thumbnail_url,
-            clip_url=event.clip_url,
-            event_summary=event.event_summary,
-            is_enriched=event.is_enriched,
-            timestamp=event.timestamp,
-            duration_seconds=event.duration_seconds,
+            started_at=event.started_at,
+            last_seen_at=event.last_seen_at,
+            timestamp=event.timestamp or event.started_at,
             metadata=event.metadata,
         )
         return self._to_entity(model)
 
-    def update(self, event: DetectionEvent) -> DetectionEvent:
-        # Deliberately does NOT touch clip_url / event_summary / is_enriched —
-        # those are owned by update_enrichment() and must survive a merge untouched.
+    def update_progress(self, event: DetectionEvent) -> DetectionEvent:
+        # Deliberately does NOT touch clip_url / event_summary / is_enriched /
+        # status / ended_at / duration_seconds — those belong to
+        # close_session() and attach_enrichment().
         DetectionEventModel.objects.filter(id=event.id).update(
-            timestamp=event.timestamp,
-            duration_seconds=event.duration_seconds,
+            pipeline_stage=event.pipeline_stage,
+            event_type=event.event_type,
+            person_type=event.person_type,
+            person_label=event.person_label,
+            matched_member_id=event.member_id,
+            matched_face_id=event.face_profile_id,
             confidence_score=event.confidence_score,
             image_url=event.image_url,
             snapshot_url=event.snapshot_url,
             thumbnail_url=event.thumbnail_url,
+            last_seen_at=event.last_seen_at,
             metadata=event.metadata,
         )
         return event
 
-    def get_by_id(self, event_id: UUID) -> Optional[DetectionEvent]:
+    def close_session(
+        self, event_id: UUID, ended_at: datetime, duration_seconds: int
+    ) -> Optional[DetectionEvent]:
         model = DetectionEventModel.objects.filter(id=event_id).first()
-        return self._to_entity(model) if model else None
+        if model is None:
+            return None
+        model.status = "CLOSED"
+        model.ended_at = ended_at
+        model.duration_seconds = duration_seconds
+        model.save(update_fields=["status", "ended_at", "duration_seconds"])
+        return self._to_entity(model)
 
-    def update_enrichment(
+    def attach_enrichment(
         self,
         event_id: UUID,
         clip_url: Optional[str],
@@ -84,20 +90,38 @@ class DjangoDetectionEventRepository(DetectionEventRepository):
         if event_summary is not None:
             model.event_summary = event_summary
         if extra_metadata:
-            # Merge rather than replace — keep occurrence_count etc. set by the orchestrator.
             model.metadata = {**model.metadata, **extra_metadata}
 
         model.is_enriched = True
+        model.status = "ENRICHED"
+        model.pipeline_stage = "ENRICHED"
         model.save(update_fields=[
-            "clip_url", "thumbnail_url", "event_summary", "metadata", "is_enriched",
+            "clip_url", "thumbnail_url", "event_summary", "metadata",
+            "is_enriched", "status", "pipeline_stage",
         ])
         return self._to_entity(model)
+
+    def get_by_id(self, event_id: UUID) -> Optional[DetectionEvent]:
+        model = DetectionEventModel.objects.filter(id=event_id).first()
+        return self._to_entity(model) if model else None
+
+    def find_stale_open_sessions(self, older_than: datetime) -> list[DetectionEvent]:
+        qs = DetectionEventModel.objects.filter(status="OPEN", last_seen_at__lt=older_than)
+        return [self._to_entity(m) for m in qs]
+
+    def count_recent_unknown(self, device_id, since: datetime) -> int:
+        return DetectionEventModel.objects.filter(
+            device_id=device_id, person_type="UNKNOWN", started_at__gte=since,
+        ).count()
 
     def _to_entity(self, model) -> DetectionEvent:
         return DetectionEvent(
             id=model.id,
             home_id=model.home_id,
             device_id=model.device_id,
+            track_id=model.track_id,
+            status=model.status,
+            pipeline_stage=model.pipeline_stage,
             event_type=model.event_type,
             person_type=model.person_type,
             person_label=model.person_label,
@@ -111,7 +135,10 @@ class DjangoDetectionEventRepository(DetectionEventRepository):
             clip_url=model.clip_url,
             event_summary=model.event_summary,
             is_enriched=model.is_enriched,
-            timestamp=model.timestamp,
+            started_at=model.started_at,
+            last_seen_at=model.last_seen_at,
+            ended_at=model.ended_at,
             duration_seconds=model.duration_seconds,
+            timestamp=model.timestamp,
             metadata=model.metadata,
         )

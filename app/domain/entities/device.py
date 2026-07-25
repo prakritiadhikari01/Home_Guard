@@ -7,6 +7,7 @@ class DeviceEntity:
         name,
         device_type,
         ip_address,
+        stream_url,
         location,
     ):
         self.home_id = home_id
@@ -14,3 +15,4 @@ class DeviceEntity:
         self.device_type = device_type
         self.ip_address = ip_address
         self.location = location
+        self.stream_url =stream_url

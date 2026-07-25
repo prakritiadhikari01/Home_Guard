@@ -1,240 +1,80 @@
-# app/infrastructure/db/admins/detection_event_admin.py
+# app/admin.py — add/replace the DetectionEvent registration
 
 from django.contrib import admin
 from django.utils.html import format_html
 
-from app.infrastructure.db.models.detection_event_model import (
-    DetectionEvent
-)
+from app.infrastructure.db.models.detection_event_model import DetectionEvent
 
 
 @admin.register(DetectionEvent)
 class DetectionEventAdmin(admin.ModelAdmin):
+    # --- List view: the columns you see on /admin/app/detectionevent/ ---
+    list_display = [
+        "timestamp", "status", "event_type", "person_type", "person_label",
+        "camera_location", "confidence_score", "is_enriched",
+        "thumbnail_preview", "has_clip", "summary_preview",
+    ]
+    list_filter = ["status", "event_type", "person_type", "is_enriched", "camera_location"]
+    search_fields = ["person_label", "camera_location", "event_summary", "track_id"]
+    ordering = ["-timestamp"]
 
-    list_display = (
-        "event_time",
-        "person_badge",
-        "person_name",
-        "camera",
-        "device_name",
-        "confidence",
-        "snapshot_preview",
-        "event_type",
-    )
-
-    list_filter = (
-        "person_type",
-        "event_type",
-        "camera_location",
-        "timestamp",
-    )
-
-    search_fields = (
-        "person_label",
-        "camera_location",
+    # --- Detail view: what you see when you click into one event ---
+    readonly_fields = [
+        "id", "created_at", "clip_preview", "thumbnail_full_preview", "event_summary",
+    ]
+    fields = [
+        "id", "home", "device", "track_id",
+        "status", "pipeline_stage",
+        "event_type", "person_type", "person_label", "matched_member", "matched_face",
+        "confidence_score", "camera_location",
+        "thumbnail_full_preview", "clip_preview",
         "event_summary",
-        "device__name",
-    )
+        "clip_url", "thumbnail_url", "image_url", "snapshot_url",
+        "started_at", "last_seen_at", "ended_at", "duration_seconds", "timestamp",
+        "metadata", "is_enriched", "created_at",
+    ]
 
-    readonly_fields = (
-        "id",
-        "home",
-        "device",
-        "matched_member",
-        "matched_face",
-        "event_type",
-        "person_type",
-        "person_label",
-        "confidence_score",
-        "camera_location",
-        "image_url",
-        "snapshot_url",
-        "event_summary",
-        "metadata",
-        "timestamp",
-        "created_at",
-        "large_snapshot",
-    )
-
-    ordering = (
-        "-timestamp",
-    )
-
-    date_hierarchy = "timestamp"
-
-    list_per_page = 25
-
-    fieldsets = (
-
-        (
-            "Detection Information",
-            {
-                "fields": (
-                    "id",
-                    "event_type",
-                    "person_type",
-                    "person_label",
-                    "confidence_score",
-                )
-            },
-        ),
-
-        (
-            "Device Information",
-            {
-                "fields": (
-                    "home",
-                    "device",
-                    "camera_location",
-                )
-            },
-        ),
-
-        (
-            "Recognition Match",
-            {
-                "fields": (
-                    "matched_member",
-                    "matched_face",
-                )
-            },
-        ),
-
-        (
-            "Evidence",
-            {
-                "fields": (
-                    "large_snapshot",
-                    "image_url",
-                    "snapshot_url",
-                )
-            },
-        ),
-
-        (
-            "Details",
-            {
-                "fields": (
-                    "event_summary",
-                    "metadata",
-                )
-            },
-        ),
-
-        (
-            "Timestamps",
-            {
-                "fields": (
-                    "timestamp",
-                    "created_at",
-                )
-            },
-        ),
-    )
-
-    def event_time(self, obj):
-        return obj.timestamp.strftime(
-            "%d %b %Y %H:%M:%S"
-        )
-
-    event_time.short_description = "Detected At"
-
-    def device_name(self, obj):
-        return obj.device.name
-
-    device_name.short_description = "Device"
-
-    def camera(self, obj):
-        return obj.camera_location
-
-    camera.short_description = "Location"
-
-    def confidence(self, obj):
-        return f"{obj.confidence_score:.2%}"
-
-    confidence.short_description = "Confidence"
-
-    def person_name(self, obj):
-
-        if obj.person_label:
-            return obj.person_label
-
-        return "Unknown"
-
-    person_name.short_description = "Person"
-
-    def person_badge(self, obj):
-
-        colors = {
-            "KNOWN": "#28a745",
-            "UNKNOWN": "#dc3545",
-            "INTRUDER": "#ff0000",
-            "VEHICLE": "#007bff",
-        }
-
-        color = colors.get(
-            obj.person_type,
-            "#6c757d"
-        )
-
+    # ---- List view helpers ----
+    def thumbnail_preview(self, obj):
+        if not obj.thumbnail_url:
+            return "—"
         return format_html(
-            '''
-            <span style="
-                background:{};
-                color:white;
-                padding:4px 8px;
-                border-radius:12px;
-                font-weight:bold;
-            ">
-                {}
-            </span>
-            ''',
-            color,
-            obj.person_type
+            '<img src="{}" style="height:40px;width:40px;object-fit:cover;border-radius:4px;" />',
+            obj.thumbnail_url,
         )
+    thumbnail_preview.short_description = "Thumb"
 
-    person_badge.short_description = "Type"
+    def has_clip(self, obj):
+        return bool(obj.clip_url)
+    has_clip.boolean = True
+    has_clip.short_description = "Clip?"
 
-    def snapshot_preview(self, obj):
+    def summary_preview(self, obj):
+        if not obj.event_summary:
+            return "—"
+        text = obj.event_summary
+        return text if len(text) <= 60 else text[:57] + "..."
+    summary_preview.short_description = "AI Summary"
 
-        if obj.snapshot_url:
+    # ---- Detail view helpers ----
+    def thumbnail_full_preview(self, obj):
+        if not obj.thumbnail_url:
+            return "No thumbnail attached"
+        return format_html(
+            '<a href="{0}" target="_blank">'
+            '<img src="{0}" style="max-height:220px;border-radius:8px;" />'
+            '</a><div style="margin-top:4px;"><a href="{0}" target="_blank">{0}</a></div>',
+            obj.thumbnail_url,
+        )
+    thumbnail_full_preview.short_description = "Thumbnail"
 
-            return format_html(
-                """
-                <img
-                    src="{}"
-                    width="80"
-                    style="
-                        border-radius:8px;
-                        border:1px solid #ddd;
-                    "
-                />
-                """,
-                obj.snapshot_url
-            )
-
-        return "-"
-
-    snapshot_preview.short_description = "Snapshot"
-
-    def large_snapshot(self, obj):
-
-        if obj.snapshot_url:
-
-            return format_html(
-                """
-                <img
-                    src="{}"
-                    width="450"
-                    style="
-                        border-radius:10px;
-                        border:1px solid #ccc;
-                    "
-                />
-                """,
-                obj.snapshot_url
-            )
-
-        return "No Image Available"
-
-    large_snapshot.short_description = "Captured Evidence"
+    def clip_preview(self, obj):
+        if not obj.clip_url:
+            return "No clip attached"
+        return format_html(
+            '<video controls style="max-width:420px;border-radius:8px;">'
+            '<source src="{0}" type="video/mp4"></video>'
+            '<div style="margin-top:4px;"><a href="{0}" target="_blank">{0}</a></div>',
+            obj.clip_url,
+        )
+    clip_preview.short_description = "Clip"

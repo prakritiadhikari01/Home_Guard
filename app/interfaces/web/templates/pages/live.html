@@ -1,5 +1,5 @@
-<!DOCTYPE html>
 {% load static %}
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -7,141 +7,553 @@
   <title>HomeGuard – Live Surveillance</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    :root{
+      --c-normal:#3b82f6; --c-normal-bg:rgba(59,130,246,.12); --c-normal-bd:rgba(59,130,246,.3);
+      --c-away:#a855f7;   --c-away-bg:rgba(168,85,247,.12);   --c-away-bd:rgba(168,85,247,.3);
+      --c-high:#f59e0b;   --c-high-bg:rgba(245,158,11,.12);   --c-high-bd:rgba(245,158,11,.3);
+      --c-sos:#ef4444;    --c-sos-bg:rgba(239,68,68,.14);     --c-sos-bd:rgba(239,68,68,.32);
+      --c-safe:#22c55e;   --c-safe-bg:rgba(34,197,94,.12);    --c-safe-bd:rgba(34,197,94,.3);
+    }
+
+    /* ---- Section / category headers ---- */
+    .section-title{ display:flex; align-items:center; gap:9px; }
+    .section-title .rule{ width:3px; height:16px; border-radius:2px; background:var(--c-normal); }
+    .cat-count{ color:#4a6080; font-size:11.5px; font-weight:600; }
+
+    /* ---- Filter tabs ---- */
+    .live-tabs{ display:flex; gap:8px; margin-bottom:18px; }
+    .live-tab{
+      padding:7px 16px; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer;
+      border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03); color:#8ca2c2;
+      transition:.15s;
+    }
+    .live-tab.active{ background:var(--c-normal-bg); border-color:var(--c-normal-bd); color:var(--c-normal); }
+    .live-tab:hover:not(.active){ background:rgba(255,255,255,.06); }
+
+    /* ---- Camera grid / tile ---- */
+    .cam-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:16px; margin-bottom:28px; }
+    .live-cam-card{ cursor:pointer; border-radius:12px; overflow:hidden; transition:.2s; position:relative; }
+    .live-cam-card:hover{ transform:translateY(-2px); box-shadow:0 10px 26px rgba(0,0,0,.4); }
+    .cam-expand-btn{
+      position:absolute; top:10px; right:10px; z-index:3;
+      width:26px; height:26px; border-radius:7px; border:none; cursor:pointer;
+      background:rgba(0,0,0,.45); color:#cdd9ef; display:flex; align-items:center; justify-content:center;
+    }
+    .cam-expand-btn:hover{ background:var(--c-normal); color:white; }
+    .cam-offline-fill{ position:absolute; inset:0; background:#071520; display:flex; align-items:center; justify-content:center; color:#3d5170; font-size:12px; }
+
+    /* ---- Inline lock control overlaid on a paired camera tile ---- */
+    .tile-lock-pill{
+      position:absolute; bottom:44px; right:10px; z-index:3;
+      display:flex; align-items:center; gap:6px;
+      padding:6px 10px 6px 8px; border-radius:20px; cursor:pointer;
+      background:rgba(10,16,28,.78); backdrop-filter:blur(4px);
+      border:1px solid rgba(255,255,255,.1);
+      font-size:11.5px; font-weight:700; color:#cdd9ef; transition:.2s;
+    }
+    .tile-lock-pill:hover{ border-color:rgba(255,255,255,.25); }
+    .tile-lock-pill .dot{ width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+    .tile-lock-pill[data-status="LOCKED"] .dot{ background:var(--c-safe); box-shadow:0 0 6px var(--c-safe); }
+    .tile-lock-pill[data-status="UNLOCKED"] .dot{ background:var(--c-high); box-shadow:0 0 6px var(--c-high); }
+    .tile-lock-pill[data-status="VERIFYING"] .dot{ background:var(--c-normal); animation:dotPulse 1s ease-out infinite; }
+    .tile-lock-pill[data-status="VERIFYING"]{ pointer-events:none; }
+    @keyframes dotPulse{ 0%{opacity:1;} 50%{opacity:.35;} 100%{opacity:1;} }
+
+    /* ---- Fallback strip for locks with no matched camera ---- */
+    .lock-strip-item{
+      display:flex; align-items:center; gap:12px; padding:14px 16px;
+    }
+    .lock-strip-orb{
+      width:38px; height:38px; border-radius:50%; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center; cursor:pointer;
+      background:var(--c-safe-bg); color:var(--c-safe); transition:.2s;
+    }
+    .lock-strip-orb[data-status="UNLOCKED"]{ background:var(--c-high-bg); color:var(--c-high); }
+    .lock-strip-orb[data-status="VERIFYING"]{ background:var(--c-normal-bg); color:var(--c-normal); pointer-events:none; }
+
+    /* ---- Enlarge modal ---- */
+    .cam-modal-backdrop{
+      display:none; position:fixed; inset:0; z-index:50; background:rgba(4,8,16,.82);
+      align-items:center; justify-content:center; padding:24px;
+    }
+    .cam-modal-backdrop.open{ display:flex; }
+    .cam-modal{
+      width:100%; max-width:860px; border-radius:16px; overflow:hidden;
+      background:#0c1524; border:1px solid rgba(255,255,255,.08);
+    }
+    .cam-modal-feed{ position:relative; background:#071520; aspect-ratio:16/9; }
+    .cam-modal-feed img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+    .cam-modal-close{
+      position:absolute; top:12px; right:12px; z-index:2;
+      width:30px; height:30px; border-radius:8px; border:none; cursor:pointer;
+      background:rgba(0,0,0,.5); color:white; display:flex; align-items:center; justify-content:center;
+    }
+    .cam-modal-body{ padding:20px 22px; }
+    .cam-modal-lockrow{
+      margin-top:16px; padding-top:16px; border-top:1px solid rgba(255,255,255,.06);
+      display:flex; align-items:center; justify-content:space-between; gap:14px;
+    }
+    .modal-unlock-btn{
+      display:flex; align-items:center; gap:8px; padding:9px 18px; border-radius:9px;
+      border:none; cursor:pointer; font-size:13px; font-weight:700; transition:.2s;
+    }
+    .modal-unlock-btn:disabled{ opacity:.55; cursor:not-allowed; }
+
+    .empty-state{ text-align:center; color:#4a6080; font-size:13px; padding:40px 20px; }
+  </style>
 </head>
 <body>
 <div class="app-layout">
   <div class="sidebar" id="sidebar"></div>
   <div class="main-content">
     <div id="topbar"></div>
-    <div class="page-body" style="display:flex;gap:20px;padding:0;overflow:hidden;">
+    <div class="page-body">
 
-      <!-- Main Feed -->
-      <div style="flex:1;padding:24px 0 24px 28px;overflow-y:auto;">
-        <div class="cam-feed" style="min-height:420px;border-radius:14px;margin-bottom:16px;">
-          <div class="cam-feed-overlay"></div>
-          <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 700 420" preserveAspectRatio="xMidYMid slice">
-            <rect width="700" height="420" fill="#071520"/>
-            <rect x="200" y="60" width="300" height="280" rx="6" fill="#0a2535"/>
-            <rect x="260" y="90" width="80" height="140" rx="4" fill="#0d3040"/>
-            <rect x="360" y="90" width="80" height="140" rx="4" fill="#0d3040"/>
-            <rect x="270" y="95" width="55" height="120" rx="3" fill="#0f3d50"/>
-            <rect x="370" y="95" width="55" height="120" rx="3" fill="#0f3d50"/>
-            <ellipse cx="350" cy="58" rx="40" ry="12" fill="#0c2535"/>
-            <ellipse cx="290" cy="54" rx="12" ry="5" fill="#1a5060" opacity=".8"/>
-            <ellipse cx="410" cy="54" rx="12" ry="5" fill="#1a5060" opacity=".8"/>
-            <rect x="160" y="280" width="380" height="80" fill="#060e18"/>
-            <rect x="0" y="0" width="700" height="420" fill="rgba(0,200,240,0.02)"/>
-            <!-- scanline effect -->
-            <rect x="0" y="0" width="700" height="420" fill="url(#scan)" opacity=".15"/>
-            <defs><pattern id="scan" patternUnits="userSpaceOnUse" width="1" height="4"><rect y="0" width="1" height="2" fill="rgba(0,220,255,0.1)"/></pattern></defs>
-          </svg>
-          <div style="position:absolute;top:14px;left:14px;display:flex;gap:6px;z-index:2;">
-            <span class="badge badge-live">● LIVE</span>
-            <span class="badge badge-cam">CAM-01</span>
-          </div>
-          <div style="position:absolute;top:14px;right:14px;z-index:2;cursor:pointer;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" opacity=".7"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-          </div>
-          <div class="cam-label" style="background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 100%);padding:16px 20px;">
-            <div>
-              <div style="color:white;font-size:16px;font-weight:700;">Front Door</div>
-              <div style="color:#6a8aaa;font-size:12px;">11:40:15 PM</div>
-            </div>
-            <span class="badge badge-known" style="font-size:10px;padding:4px 10px;">KNOWN PERSON · 99%</span>
-          </div>
-        </div>
-
-        <!-- Camera specs -->
-        <div class="card" style="display:grid;grid-template-columns:repeat(3,1fr);padding:0;">
-          <div style="padding:18px 20px;border-right:1px solid rgba(255,255,255,0.07);">
-            <div style="font-size:10px;letter-spacing:.1em;color:#3a4a6a;margin-bottom:6px;">RESOLUTION</div>
-            <div style="color:white;font-size:15px;font-weight:600;">2160p · 30fps</div>
-          </div>
-          <div style="padding:18px 20px;border-right:1px solid rgba(255,255,255,0.07);">
-            <div style="font-size:10px;letter-spacing:.1em;color:#3a4a6a;margin-bottom:6px;">AI MODEL</div>
-            <div style="color:white;font-size:15px;font-weight:600;">YOLO-v8 + Face</div>
-          </div>
-          <div style="padding:18px 20px;">
-            <div style="font-size:10px;letter-spacing:.1em;color:#3a4a6a;margin-bottom:6px;">LATENCY</div>
-            <div style="color:#22c55e;font-size:15px;font-weight:600;">42 ms</div>
-          </div>
-        </div>
+      <div class="live-tabs">
+        <div class="live-tab active" data-filter="all" onclick="setFilter('all', this)">All Devices</div>
+        <div class="live-tab" data-filter="camera" onclick="setFilter('camera', this)">Cameras</div>
+        <div class="live-tab" data-filter="smart_lock" onclick="setFilter('smart_lock', this)">Smart Locks</div>
       </div>
 
-      <!-- Right: All Cameras -->
-      <div style="width:340px;padding:24px 28px 24px 0;overflow-y:auto;">
-        <div style="font-size:10px;letter-spacing:.12em;color:#3a4a6a;margin-bottom:14px;">ALL CAMERAS</div>
-        <div style="display:flex;flex-direction:column;gap:14px;">
-
-          <!-- CAM 01 -->
-          <div class="card" style="overflow:hidden;cursor:pointer;border-color:rgba(59,130,246,0.3);">
-            <div class="cam-feed" style="height:140px;border-radius:0;">
-              <div class="cam-feed-overlay"></div>
-              <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 300 140" preserveAspectRatio="xMidYMid slice">
-                <rect width="300" height="140" fill="#071520"/>
-                <rect x="70" y="20" width="160" height="100" rx="4" fill="#0a2535"/>
-                <rect x="100" y="35" width="50" height="75" rx="3" fill="#0d3040"/>
-                <rect x="158" y="35" width="50" height="75" rx="3" fill="#0d3040"/>
-              </svg>
-              <div style="position:absolute;top:10px;left:10px;display:flex;gap:4px;"><span class="badge badge-live">● LIVE</span><span class="badge badge-cam">CAM-01</span></div>
-              <div style="position:absolute;top:10px;right:10px;cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" opacity=".6"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></div>
-              <div class="cam-label" style="padding:10px 12px;">
-                <div><div style="color:white;font-size:12px;font-weight:600;">Front Door</div><div style="color:#6a8aaa;font-size:10px;">11:40:15 PM</div></div>
-                <span class="badge badge-known">KNOWN PERSON · 99%</span>
-              </div>
-            </div>
+      <div id="cameraSectionWrap">
+        <div class="section-title mb-3">
+          <span class="rule"></span>
+          <div>
+            <div style="color:white;font-size:15px;font-weight:700;">Cameras</div>
+            <div style="color:#4a6080;font-size:11px;margin-top:1px;" id="camSubtitle">Loading…</div>
           </div>
-
-          <!-- CAM 02 -->
-          <div class="card" style="overflow:hidden;cursor:pointer;">
-            <div class="cam-feed" style="height:140px;border-radius:0;">
-              <div class="cam-feed-overlay"></div>
-              <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 300 140" preserveAspectRatio="xMidYMid slice">
-                <rect width="300" height="140" fill="#050e20"/>
-                <ellipse cx="200" cy="50" rx="80" ry="40" fill="#1a3a6a" opacity=".4"/>
-                <rect x="60" y="80" width="180" height="40" rx="4" fill="#0a1a35"/>
-                <ellipse cx="150" cy="90" rx="40" ry="14" fill="#1a3060"/>
-              </svg>
-              <div style="position:absolute;top:10px;left:10px;display:flex;gap:4px;"><span class="badge badge-live">● LIVE</span><span class="badge badge-cam">CAM-02</span></div>
-              <div style="position:absolute;top:10px;right:10px;cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" opacity=".6"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></div>
-              <div class="cam-label" style="padding:10px 12px;">
-                <div><div style="color:white;font-size:12px;font-weight:600;">Driveway</div><div style="color:#6a8aaa;font-size:10px;">11:40:15 PM</div></div>
-                <span class="badge badge-vehicle">VEHICLE · 92%</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- CAM 03 -->
-          <div class="card" style="overflow:hidden;cursor:pointer;">
-            <div class="cam-feed" style="height:140px;border-radius:0;">
-              <div class="cam-feed-overlay"></div>
-              <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 300 140" preserveAspectRatio="xMidYMid slice">
-                <rect width="300" height="140" fill="#030c18"/>
-                <rect x="0" y="60" width="300" height="80" fill="#060e20"/>
-                <rect x="30" y="40" width="60" height="80" fill="#0a1828" rx="2"/>
-                <rect x="210" y="40" width="60" height="80" fill="#0a1828" rx="2"/>
-                <ellipse cx="150" cy="55" rx="100" ry="30" fill="#0d1e35" opacity=".8"/>
-                <circle cx="40" cy="30" r="15" fill="#1a3050" stroke="#2a4570" stroke-width="1"/>
-              </svg>
-              <div style="position:absolute;top:10px;left:10px;display:flex;gap:4px;"><span class="badge badge-live">● LIVE</span><span class="badge badge-cam">CAM-03</span></div>
-              <div style="position:absolute;top:10px;right:10px;cursor:pointer;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" opacity=".6"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg></div>
-              <div class="cam-label" style="padding:10px 12px;">
-                <div><div style="color:white;font-size:12px;font-weight:600;">Backyard</div><div style="color:#6a8aaa;font-size:10px;">11:40:15 PM</div></div>
-                <span class="badge badge-clear">CLEAR</span>
-              </div>
-            </div>
-          </div>
-
+          <span class="cat-count" id="camCount"></span>
         </div>
+        <div id="camGrid" class="cam-grid"></div>
+      </div>
+
+      <div id="lockSectionWrap" style="display:none;">
+        <div class="section-title mb-3">
+          <span class="rule" style="background:var(--c-away);"></span>
+          <div>
+            <div style="color:white;font-size:15px;font-weight:700;">Other Locks</div>
+            <div style="color:#4a6080;font-size:11px;margin-top:1px;">Not paired with a camera feed</div>
+          </div>
+        </div>
+        <div id="lockStrip" class="card" style="padding:4px 16px;"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Enlarge modal -->
+<div class="cam-modal-backdrop" id="camModalBackdrop" onclick="if(event.target===this) closeCamModal()">
+  <div class="cam-modal">
+    <div class="cam-modal-feed">
+      <button class="cam-modal-close" onclick="closeCamModal()">✕</button>
+      <img id="modalFeedImg" style="display:none;" alt="">
+      <div id="modalFeedFallback" class="cam-offline-fill">No live feed</div>
+      <div style="position:absolute;top:12px;left:12px;z-index:2;" id="modalLiveBadge"></div>
+    </div>
+    <div class="cam-modal-body">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div id="modalCamName" style="color:white;font-size:17px;font-weight:700;"></div>
+          <div id="modalCamLocation" style="color:#6a8aaa;font-size:12.5px;margin-top:3px;"></div>
+        </div>
+        <span class="badge" id="modalDetectionBadge"></span>
+      </div>
+      <div class="cam-modal-lockrow" id="modalLockRow" style="display:none;">
+        <div>
+          <div style="color:#cdd9ef;font-size:13px;font-weight:700;" id="modalLockLabel">Locked</div>
+          <div style="color:#6a8aaa;font-size:11.5px;margin-top:2px;" id="modalLockDesc"></div>
+        </div>
+        <button class="modal-unlock-btn" id="modalLockBtn" onclick="toggleLock(currentModalLockId, true)"></button>
       </div>
     </div>
   </div>
 </div>
+
 <script src="{% static 'js/sidebar.js' %}"></script>
 <script>
-  document.getElementById('sidebar').innerHTML = renderSidebar('live');
-  initHomeSwitcher();
-  document.getElementById('topbar').innerHTML = renderTopbar('Live Surveillance', 'Real-time AI-overlaid feeds across the residence');
+
+const dotColorMap = { critical:'#ef4444', warning:'#eab308', success:'#22c55e' };
+let allDevices = [];          // raw device list
+let cameras = [];             // enriched camera entries {..., pairedLockId}
+let lockStates = new Map();   // lockId -> { id, deviceName, location, status, verificationId, pollTimer, pollTimeout, last_access_result, last_unlocked_by_name }
+let currentFilter = 'all';
+let currentModalCamId = null;
+let currentModalLockId = null;
+
+function detectionBadgeClass(text){
+    const t = (text || '').toLowerCase();
+    if (t.includes('unknown') || t.includes('intruder')) return 'badge-warning';
+    if (t.includes('vehicle')) return 'badge-vehicle';
+    return 'badge-known';
+}
+
+function normLoc(s){ return (s || '').trim().toLowerCase(); }
+
+/* ===================== LOAD ===================== */
+
+async function loadLivePage(){
+    const token = localStorage.getItem("access");
+    const homeId = localStorage.getItem("active_home");
+    const headers = { Authorization: `Bearer ${token}` };
+
+    try {
+        const [devicesRes, dashRes] = await Promise.all([
+            fetch(`/api/homes/${homeId}/devices/`, { headers }),
+            fetch(`/api/dashboard/${homeId}/`, { headers }),
+        ]);
+
+        if (!devicesRes.ok) throw new Error('devices fetch failed');
+        allDevices = await devicesRes.json();
+
+        let livePreview = [];
+        if (dashRes.ok) {
+            const dash = await dashRes.json();
+            livePreview = dash.live_preview || [];
+        }
+
+        const camDevices = allDevices.filter(d => d.device_type === 'camera');
+        const lockDevices = allDevices.filter(d => d.device_type === 'smart_lock');
+
+        // Enrich cameras with stream_url / current_detection from the dashboard preview, matched by id
+        cameras = camDevices.map(cam => {
+            const preview = livePreview.find(p => p.id === cam.id) || {};
+            return {
+                ...cam,
+                stream_url: preview.stream_url || null,
+                current_detection: preview.current_detection || null,
+            };
+        });
+
+        // Init lock state map
+        lockDevices.forEach(l => {
+            lockStates.set(l.id, {
+                id: l.id, deviceName: l.name, location: l.location,
+                status: null, verificationId: null,
+                pollTimer: null, pollTimeout: null,
+                last_access_result: null, last_unlocked_by_name: null,
+            });
+        });
+
+        // Pair each lock to a camera by matching location (exact, then substring)
+        cameras.forEach(cam => { cam.pairedLockId = null; });
+        lockDevices.forEach(lock => {
+            const loc = normLoc(lock.location);
+            let match = cameras.find(c => normLoc(c.location) === loc && !c.pairedLockId);
+            if (!match && loc) {
+                match = cameras.find(c => !c.pairedLockId && (normLoc(c.location).includes(loc) || loc.includes(normLoc(c.location))));
+            }
+            if (match) match.pairedLockId = lock.id;
+        });
+
+        // Fetch live status for every lock (paired or not)
+        await Promise.all(lockDevices.map(l => refreshLock(l.id)));
+
+        renderAll();
+    } catch (err) {
+        console.error("Failed to load live page:", err);
+        document.getElementById('camGrid').innerHTML =
+            `<div class="empty-state" style="grid-column:1/-1;">Couldn't load devices right now. Please refresh.</div>`;
+    }
+}
+
+/* ===================== RENDER ===================== */
+
+function setFilter(filter, tabEl){
+    currentFilter = filter;
+    document.querySelectorAll('.live-tab').forEach(t => t.classList.remove('active'));
+    tabEl.classList.add('active');
+    renderAll();
+}
+
+function renderAll(){
+    document.getElementById('cameraSectionWrap').style.display = (currentFilter === 'smart_lock') ? 'none' : 'block';
+    renderCameraGrid();
+    renderUnpairedLockStrip();
+}
+
+function renderCameraGrid(){
+    const grid = document.getElementById('camGrid');
+    const subtitle = document.getElementById('camSubtitle');
+    const countEl = document.getElementById('camCount');
+
+    if (!cameras.length){
+        subtitle.textContent = 'No cameras registered';
+        countEl.textContent = '';
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">No cameras have been added to this home yet.</div>`;
+        return;
+    }
+
+    const onlineCount = cameras.filter(c => c.status === 'online').length;
+    subtitle.textContent = onlineCount
+        ? `${onlineCount} camera${onlineCount > 1 ? 's' : ''} streaming · AI overlays active`
+        : 'No cameras streaming';
+    countEl.textContent = `${cameras.length} total`;
+
+    grid.innerHTML = cameras.map((cam, idx) => {
+        const isOnline = cam.status === 'online';
+        const hasDetection = cam.current_detection && cam.current_detection !== 'No Activity';
+        const badge = hasDetection
+            ? `<span class="badge ${detectionBadgeClass(cam.current_detection)}">${cam.current_detection}</span>`
+            : '';
+        const camCode = `CAM-${String(idx + 1).padStart(2, '0')}`;
+        const lock = cam.pairedLockId ? lockStates.get(cam.pairedLockId) : null;
+
+        return `
+        <div class="live-cam-card card" onclick="openCamModal('${cam.id}')">
+          <div class="cam-feed" style="min-height:180px;">
+            <div class="cam-feed-overlay"></div>
+            ${isOnline && cam.stream_url
+                ? `<img src="${cam.stream_url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" alt="${cam.name}">`
+                : `<div class="cam-offline-fill">${isOnline ? 'No live feed' : 'Camera offline'}</div>`
+            }
+            <div style="position:absolute;top:10px;left:10px;display:flex;gap:4px;z-index:2;">
+                <span class="badge ${isOnline ? 'badge-live' : ''}" style="${isOnline ? '' : 'background:rgba(255,255,255,.08);color:#6a7a9a;'}">${isOnline ? '● LIVE' : '○ OFFLINE'}</span>
+                <span class="badge badge-cam">${camCode}</span>
+            </div>
+            <button class="cam-expand-btn" onclick="event.stopPropagation(); openCamModal('${cam.id}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            </button>
+            ${lock ? renderLockPillHtml(lock) : ''}
+            <div class="cam-label">
+                <div>
+                    <div style="color:white;font-size:12.5px;font-weight:600;">${cam.name}</div>
+                    <div style="color:#6a8aaa;font-size:10px;">${cam.location || ''}</div>
+                </div>
+                ${badge}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+}
+
+function renderLockPillHtml(lock){
+    const status = lock.status || 'LOCKED';
+    const label = status === 'VERIFYING' ? 'Verifying…' : (status === 'LOCKED' ? 'Locked' : 'Unlocked');
+    return `
+      <div class="tile-lock-pill" data-status="${status}" data-lock-id="${lock.id}"
+           onclick="event.stopPropagation(); toggleLock('${lock.id}', false)">
+        <span class="dot"></span><span>${label}</span>
+      </div>`;
+}
+
+function renderUnpairedLockStrip(){
+    const wrap = document.getElementById('lockSectionWrap');
+    const unpaired = [...lockStates.values()].filter(l =>
+        !cameras.some(c => c.pairedLockId === l.id)
+    );
+
+    if (currentFilter === 'camera' || !unpaired.length) {
+        wrap.style.display = 'none';
+        return;
+    }
+    wrap.style.display = 'block';
+
+    document.getElementById('lockStrip').innerHTML = unpaired.map(lock => {
+        const status = lock.status || 'LOCKED';
+        const label = status === 'VERIFYING' ? 'Verifying…' : (status === 'LOCKED' ? 'Locked' : 'Unlocked');
+        const sub = status === 'VERIFYING' ? 'Look at the camera' : (status === 'LOCKED' ? 'Secure' : 'Tap to secure');
+        return `
+        <div class="lock-strip-item">
+          <div class="lock-strip-orb" data-status="${status}" onclick="toggleLock('${lock.id}', false)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div style="flex:1;">
+            <div style="color:white;font-size:13.5px;font-weight:700;">${lock.deviceName}</div>
+            <div style="color:#6a8aaa;font-size:11.5px;">${lock.location || ''} · ${sub}</div>
+          </div>
+        </div>`;
+    }).join('');
+}
+
+/* ===================== LOCK LOGIC (per-lock, keyed by id) ===================== */
+
+async function refreshLock(lockId){
+    const token = localStorage.getItem("access");
+    const homeId = localStorage.getItem("active_home");
+    const lock = lockStates.get(lockId);
+    if (!lock) return null;
+
+    try {
+        const res = await fetch(`/api/homes/${homeId}/locks/${lockId}/`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error('lock fetch failed');
+        const data = await res.json();
+        lock.status = data.status;
+        lock.verificationId = data.current_verification_id;
+        lock.last_access_result = data.last_access_result;
+        lock.last_unlocked_by_name = data.last_unlocked_by_name;
+        return lock;
+    } catch (err) {
+        return null;
+    }
+}
+
+function stopLockPolling(lockId){
+    const lock = lockStates.get(lockId);
+    if (!lock) return;
+    if (lock.pollTimer) { clearInterval(lock.pollTimer); lock.pollTimer = null; }
+    if (lock.pollTimeout) { clearTimeout(lock.pollTimeout); lock.pollTimeout = null; }
+}
+
+function startLockPolling(lockId, verificationId){
+    stopLockPolling(lockId);
+    const lock = lockStates.get(lockId);
+
+    lock.pollTimer = setInterval(async () => {
+        const updated = await refreshLock(lockId);
+        if (!updated) return;
+
+        rerenderLockUI(lockId);
+
+        if (updated.verificationId !== verificationId) { stopLockPolling(lockId); return; }
+        if (updated.status === 'VERIFYING') return;
+        if (updated.status === 'UNLOCKED') return; // keep watching for the 15s auto-relock
+
+        stopLockPolling(lockId);
+    }, 1000);
+
+    lock.pollTimeout = setTimeout(async () => {
+        stopLockPolling(lockId);
+        await refreshLock(lockId);
+        rerenderLockUI(lockId);
+    }, 25000);
+}
+
+async function toggleLock(lockId, fromModal){
+    const lock = lockStates.get(lockId);
+    if (!lock || lock.status === null || lock.status === 'VERIFYING') return;
+
+    const token = localStorage.getItem("access");
+    const homeId = localStorage.getItem("active_home");
+    const action = lock.status === 'LOCKED' ? 'unlock' : 'lock';
+
+    try {
+        const res = await fetch(`/api/homes/${homeId}/locks/${lockId}/${action}/`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error(`${action} failed`);
+
+        if (action === 'unlock') {
+            const data = await res.json(); // { status, verification_id, message }
+            lock.status = 'VERIFYING';
+            lock.verificationId = data.verification_id;
+            rerenderLockUI(lockId);
+            startLockPolling(lockId, data.verification_id);
+        } else {
+            stopLockPolling(lockId);
+            await refreshLock(lockId);
+            rerenderLockUI(lockId);
+        }
+    } catch (err) {
+        alert(`Could not ${action} the door. Please try again.`);
+    }
+}
+
+function rerenderLockUI(lockId){
+    const lock = lockStates.get(lockId);
+    if (!lock) return;
+
+    // Pill on the camera tile
+    const pill = document.querySelector(`.tile-lock-pill[data-lock-id="${lockId}"]`);
+    if (pill) {
+        const status = lock.status || 'LOCKED';
+        pill.dataset.status = status;
+        pill.querySelector('span:last-child').textContent =
+            status === 'VERIFYING' ? 'Verifying…' : (status === 'LOCKED' ? 'Locked' : 'Unlocked');
+    } else {
+        renderCameraGrid(); // pairing/lock wasn't on the DOM yet (unlikely) — full re-render
+    }
+
+    // Unpaired strip
+    renderUnpairedLockStrip();
+
+    // Modal, if this lock's card is currently open
+    if (currentModalLockId === lockId) updateModalLockUI();
+}
+
+/* ===================== ENLARGE MODAL ===================== */
+
+function openCamModal(camId){
+    const cam = cameras.find(c => c.id === camId);
+    if (!cam) return;
+    currentModalCamId = camId;
+    currentModalLockId = cam.pairedLockId || null;
+
+    const img = document.getElementById('modalFeedImg');
+    const fallback = document.getElementById('modalFeedFallback');
+    const isOnline = cam.status === 'online';
+
+    if (isOnline && cam.stream_url) {
+        img.src = cam.stream_url; img.style.display = 'block'; fallback.style.display = 'none';
+    } else {
+        img.style.display = 'none'; fallback.style.display = 'flex';
+        fallback.textContent = isOnline ? 'No live feed' : 'Camera offline';
+    }
+
+    document.getElementById('modalLiveBadge').innerHTML =
+        `<span class="badge ${isOnline ? 'badge-live' : ''}" style="${isOnline ? '' : 'background:rgba(255,255,255,.08);color:#6a7a9a;'}">${isOnline ? '● LIVE' : '○ OFFLINE'}</span>`;
+
+    document.getElementById('modalCamName').textContent = cam.name;
+    document.getElementById('modalCamLocation').textContent = cam.location || '';
+
+    const hasDetection = cam.current_detection && cam.current_detection !== 'No Activity';
+    const detBadge = document.getElementById('modalDetectionBadge');
+    if (hasDetection) {
+        detBadge.textContent = cam.current_detection;
+        detBadge.className = `badge ${detectionBadgeClass(cam.current_detection)}`;
+        detBadge.style.display = 'inline-block';
+    } else {
+        detBadge.style.display = 'none';
+    }
+
+    document.getElementById('modalLockRow').style.display = currentModalLockId ? 'flex' : 'none';
+    if (currentModalLockId) updateModalLockUI();
+
+    document.getElementById('camModalBackdrop').classList.add('open');
+}
+
+function updateModalLockUI(){
+    const lock = lockStates.get(currentModalLockId);
+    if (!lock) return;
+    const status = lock.status || 'LOCKED';
+
+    document.getElementById('modalLockLabel').textContent =
+        status === 'VERIFYING' ? 'Verifying…' : (status === 'LOCKED' ? 'Locked' : 'Unlocked');
+
+    document.getElementById('modalLockDesc').textContent =
+        status === 'VERIFYING' ? 'Look at this camera to verify your identity.'
+        : status === 'LOCKED' ? (lock.last_access_result === 'DENIED' ? 'Last scan wasn\'t recognized.' : 'Face verification required to unlock.')
+        : `Unlocked${lock.last_unlocked_by_name ? ' by ' + lock.last_unlocked_by_name : ''}. Relocks automatically.`;
+
+    const btn = document.getElementById('modalLockBtn');
+    btn.disabled = status === 'VERIFYING';
+    btn.style.background = status === 'LOCKED' ? 'var(--c-normal)' : 'rgba(255,255,255,0.1)';
+    btn.style.color = status === 'LOCKED' ? 'white' : '#cdd9ef';
+    btn.textContent = status === 'VERIFYING' ? 'Verifying…' : (status === 'LOCKED' ? 'Unlock with face scan' : 'Lock door');
+}
+
+function closeCamModal(){
+    document.getElementById('camModalBackdrop').classList.remove('open');
+    currentModalCamId = null;
+    currentModalLockId = null;
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCamModal(); });
+
+/* ===================== INIT ===================== */
+
+document.getElementById("sidebar").innerHTML = renderSidebar("live");
+document.getElementById("topbar").innerHTML = renderTopbar(
+    "Live Surveillance",
+    "All active cameras and locks in one place."
+);
+loadTopbarUser();
+initHomeSwitcher();
+loadHomeNotifications();
+loadLivePage();
+
 </script>
 </body>
 </html>

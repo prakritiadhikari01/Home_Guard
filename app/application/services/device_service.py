@@ -1,6 +1,7 @@
 # app/application/services/device_service.py
 from django.core.exceptions import PermissionDenied
-
+from app.infrastructure.db.models.smart_lock_model import SmartLock
+from app.domain.value_objects.lock_status import LockStatus
 from app.domain.value_objects.device_type import (
     DeviceType,
 )
@@ -63,21 +64,27 @@ class DeviceService:
     ):
         DeviceService._get_membership_or_raise(acting_user, home)
 
-        device = (
-            DeviceService.device_repository
-            .create_device(
-                home=home,
-                **validated_data,
-            )
+        device = DeviceService.device_repository.create_device(
+            home=home,
+            **validated_data,
         )
+
+        # Automatically create SmartLock for smart lock devices
+        if device.device_type == DeviceType.SMART_LOCK.value:
+            SmartLock.objects.get_or_create(
+                device=device,
+                defaults={
+                    "status": LockStatus.LOCKED.value,
+                },
+            )
+
         try:
             AIClient().register_device(device)
         except Exception:
-            pass  # engine may be temporarily unreachable; device is still saved
+            pass
 
-        
         return device
-
+    
     @staticmethod
     def get_home_devices(home):
 

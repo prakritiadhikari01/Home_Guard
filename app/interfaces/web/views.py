@@ -53,3 +53,4 @@ def home_setup_page(request):
 
 def scan_page(request):
     return render(request, "pages/scan.html")
+

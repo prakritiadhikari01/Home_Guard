@@ -5,7 +5,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView, PermissionDenied
 from rest_framework import status
-
 from app.application.services.enrollment_service import (
     EnrollmentService,
 )
@@ -73,6 +72,13 @@ class StartEnrollmentView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+
+        print("=" * 60)
+        print("Authorization:", request.META.get("HTTP_AUTHORIZATION"))
+        print("User:", request.user)
+        print("Authenticated:", request.user.is_authenticated)
+        print("=" * 60)
+        
         session = EnrollmentService.start_enrollment(user=request.user)
         return Response({
             "session_id": session.id,

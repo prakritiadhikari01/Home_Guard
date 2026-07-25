@@ -57,6 +57,15 @@ class Device(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True,
     )
+    # registered with a stream_url matching an existing camera in the same
+    paired_camera = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="paired_locks",
+        limit_choices_to={"device_type": DeviceType.CAMERA.value},
+    )
 
     class Meta:
         app_label = "devices"

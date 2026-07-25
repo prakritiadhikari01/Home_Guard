@@ -16,24 +16,28 @@
     <div class="page-body">
 
       <!-- Filter tabs -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
         <div style="display:flex;gap:8px;flex-wrap:wrap;" id="filterTabs">
           <button class="filter-tab active" onclick="filterEvents('all',this)">All</button>
           <button class="filter-tab" onclick="filterEvents('recognized',this)">Recognized</button>
           <button class="filter-tab" onclick="filterEvents('unknown',this)">Unknown</button>
           <button class="filter-tab" onclick="filterEvents('alerts',this)">Alerts</button>
+          <button class="filter-tab" onclick="filterEvents('doors',this)">Doors</button>
           <button class="filter-tab" onclick="filterEvents('vehicles',this)">Vehicles</button>
           <button class="filter-tab" onclick="filterEvents('animals',this)">Animals</button>
         </div>
-        <button style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#8a9ab8;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-          Filter
+        <button onclick="loadEvents(currentCategory)" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#8a9ab8;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh
         </button>
       </div>
 
       <!-- Events -->
       <div style="display:flex;flex-direction:column;gap:10px;max-width:760px;" id="eventList"></div>
 
+    </div>
+    <div class="modal-overlay hidden" id="eventModalOverlay" onclick="if(event.target===this) closeEventDetail()">
+      <div class="event-modal" id="eventModalBody"></div>
     </div>
   </div>
 </div>
@@ -46,50 +50,308 @@
 .filter-tab.active, .filter-tab:hover {
   background: #3b82f6; color: white; border-color: #3b82f6;
 }
+.timeline-item.is-open {
+  border-left: 2px solid #3b82f6;
+  padding-left: 10px;
+  animation: pulse-bg 1.6s ease-in-out infinite;
+}
+@keyframes pulse-bg {
+  0%, 100% { background: rgba(59,130,246,0.03); }
+  50% { background: rgba(59,130,246,0.08); }
+}
+.skeleton-item {
+  height: 64px; border-radius: 10px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 37%, rgba(255,255,255,0.03) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shine 1.4s ease-in-out infinite;
+}
+@keyframes skeleton-shine { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+.grid-message { color:#4a6080; font-size:13px; text-align:center; padding:40px 20px; border:1px dashed rgba(255,255,255,0.08); border-radius:14px; }
+.grid-message.is-error { color:#f87171; border-color:rgba(248,113,113,0.2); }
+
+.timeline-item { cursor: pointer; }
+
+.event-menu-wrap { position:relative; margin-left:4px; }
+.event-menu-btn {
+  background:transparent; border:none; color:#4a5a7a; font-size:18px; line-height:1;
+  cursor:pointer; padding:4px 8px; border-radius:6px;
+}
+.event-menu-btn:hover { background:rgba(255,255,255,0.06); color:white; }
+.event-menu-dropdown {
+  display:none; position:absolute; right:0; top:28px; z-index:20;
+  background:#0f1a2e; border:1px solid rgba(255,255,255,0.1); border-radius:8px;
+  min-width:200px; box-shadow:0 8px 24px rgba(0,0,0,0.4); overflow:hidden;
+}
+.event-menu-dropdown.open { display:block; }
+.event-menu-dropdown button {
+  width:100%; text-align:left; background:none; border:none; color:#f87171;
+  font-size:13px; padding:10px 14px; cursor:pointer;
+}
+.event-menu-dropdown button:hover { background:rgba(248,113,113,0.1); }
+
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(5,10,20,0.75);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; padding: 20px;
+}
+.modal-overlay.hidden { display: none; }
+.event-modal {
+  background: #0f1626; border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px; max-width: 560px; width: 100%;
+  max-height: 85vh; overflow-y: auto; padding: 24px;
+}
+.event-modal-close {
+  float: right; background: none; border: none; color: #6a8aaa;
+  font-size: 20px; cursor: pointer; line-height: 1;
+}
+.event-modal-media {
+  width: 100%; border-radius: 10px; margin: 14px 0; background: #000;
+}
+.stepper { display: flex; flex-direction: column; gap: 0; margin: 20px 0; }
+.step-row { display: flex; gap: 12px; align-items: flex-start; }
+.step-dot-col { display: flex; flex-direction: column; align-items: center; }
+.step-dot {
+  width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,0.15); background: transparent;
+}
+.step-dot.done { background: #22c55e; border-color: #22c55e; }
+.step-dot.active {
+  background: #3b82f6; border-color: #3b82f6;
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+.step-dot.pending { background: transparent; }
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(59,130,246,0); }
+}
+.step-line {
+  width: 2px; flex: 1; min-height: 22px;
+  background: rgba(255,255,255,0.1);
+}
+.step-line.done { background: #22c55e; }
+.step-label { font-size: 13px; color: #6a8aaa; padding-bottom: 22px; }
+.step-label.done, .step-label.active { color: white; font-weight: 500; }
+.step-label.active { color: #60a5fa; }
+.event-modal-meta { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 13px; color: #8a9ab8; margin-top: 10px; }
+.event-modal-meta b { color: #cdd9ef; }
 </style>
 
 <script src="{% static 'js/sidebar.js' %}"></script>
 <script>
+  const API_BASE = "/api";
+  const TOKEN = localStorage.getItem("access");
+  const HOME_ID = localStorage.getItem("active_home");
+
+  if (!TOKEN) {
+    window.location.href = "{% url 'web:login' %}";
+  }
+
+  function authHeaders(extra = {}) {
+    return { Authorization: `Bearer ${TOKEN}`, ...extra };
+  }
+
+  function handleAuthFailure(res) {
+    if (res.status === 401) {
+      localStorage.clear();
+      window.location.href = "{% url 'web:login' %}";
+      return true;
+    }
+    return false;
+  }
+
   document.getElementById('sidebar').innerHTML = renderSidebar('timeline');
   initHomeSwitcher();
   document.getElementById('topbar').innerHTML = renderTopbar('Activity Timeline', 'Chronological feed of all detected events');
 
-  const events = [
-    { type:'recognized', cam:'CAM-01', time:'15:42', title:'Alex entered Front Door', sub:'Facial recognition · 99.2%', dot:'#22c55e', badge:'RECOGNIZED', badgeClass:'badge-recognized' },
-    { type:'vehicles', cam:'CAM-02', time:'14:22', title:'Unknown vehicle in Driveway', sub:'Plate captured · classed as delivery', dot:'#eab308', badge:'WARNING', badgeClass:'badge-warning' },
-    { type:'recognized', cam:'CAM-01', time:'13:08', title:'Elena exited Front Door', sub:'Recognized member · low risk', dot:'#22c55e', badge:'RECOGNIZED', badgeClass:'badge-recognized' },
-    { type:'animals', cam:'CAM-03', time:'12:55', title:'Motion detected · Side Path', sub:'Likely animal · 64% confidence', dot:'#eab308', badge:'WARNING', badgeClass:'badge-warning' },
-    { type:'alerts', cam:'CAM-03', time:'03:42', title:'Repeated unknown presence · Backyard', sub:'Loitering pattern · 3 cycles', dot:'#ef4444', badge:'CRITICAL', badgeClass:'badge-critical' },
-    { type:'recognized', cam:'CAM-02', time:'Yesterday', title:'Marcus entered Garage', sub:'Facial recognition · 97.4%', dot:'#22c55e', badge:'RECOGNIZED', badgeClass:'badge-recognized' },
-    { type:'unknown', cam:'CAM-01', time:'Yesterday', title:'Unidentified person at Front Door', sub:'No match found · doorbell triggered', dot:'#eab308', badge:'WARNING', badgeClass:'badge-warning' },
+  const badgeClassMap = { critical: 'badge-critical', warning: 'badge-warning', success: 'badge-recognized' };
+  const dotColorMap = { critical: '#ef4444', warning: '#eab308', success: '#22c55e' };
+
+  let currentCategory = 'all';
+  let eventsById = {}; // populated on every loadEvents() call
+
+  const PIPELINE_STEPS = [
+    { key: 'MOTION_DETECTED',    label: 'Motion detected' },
+    { key: 'OBJECT_DETECTED',    label: 'Object detected' },
+    { key: 'TRACKING',           label: 'Tracking' },
+    { key: 'FACE_RECOGNIZED',    label: 'Face recognition' },
+    { key: 'ENRICHMENT_QUEUED',  label: 'Enrichment queued' },
+    { key: 'ENRICHED',           label: 'AI summary & clip attached' },
   ];
 
-  function renderEvents(filter) {
+  function formatTime(ts) {
+    const d = new Date(ts), now = new Date();
+    if (d.toDateString() === now.toDateString()) {
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    const yest = new Date(now); yest.setDate(now.getDate() - 1);
+    if (d.toDateString() === yest.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  }
+
+  function renderSkeleton() {
+    document.getElementById('eventList').innerHTML =
+      Array.from({ length: 5 }).map(() => `<div class="skeleton-item"></div>`).join('');
+  }
+
+  function renderEvents(events) {
     const list = document.getElementById('eventList');
-    const filtered = filter === 'all' ? events : events.filter(e => e.type === filter);
-    list.innerHTML = filtered.map(e => `
-      <div class="timeline-item">
-        <span style="width:10px;height:10px;border-radius:50%;background:${e.dot};flex-shrink:0;margin-top:4px;"></span>
+    eventsById = {};
+    events.forEach(e => { eventsById[e.id] = e; });
+
+    if (!events.length) {
+      list.innerHTML = `<div class="grid-message">No events in this category yet — check back after your cameras detect something.</div>`;
+      return;
+    }
+
+    list.innerHTML = events.map(e => `
+      <div class="timeline-item ${e.status === 'OPEN' ? 'is-open' : ''}" data-event-id="${e.id}" onclick="openEventDetail('${e.id}')" style="position:relative;">
+        <span style="width:10px;height:10px;border-radius:50%;background:${dotColorMap[e.badge_level] || '#6a8aaa'};flex-shrink:0;margin-top:4px;"></span>
         <div style="flex:1;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-            <span class="badge ${e.badgeClass}">${e.badge}</span>
-            <span style="font-size:11px;color:#4a5a7a;">${e.cam}</span>
+            <span class="badge ${badgeClassMap[e.badge_level] || 'badge-warning'}">${e.status === 'OPEN' ? 'LIVE' : (e.badge_level || 'info').toUpperCase()}</span>
+            <span style="font-size:11px;color:#4a5a7a;">${e.camera_name || e.camera_location || ''}</span>
+            ${e.confidence_score ? `<span style="font-size:11px;color:#3a4a6a;">${Math.round(e.confidence_score * 100)}%</span>` : ''}
           </div>
           <div style="color:white;font-size:15px;font-weight:600;">${e.title}</div>
-          <div style="color:#6a8aaa;font-size:13px;margin-top:3px;">${e.sub}</div>
+          <div style="color:#6a8aaa;font-size:13px;margin-top:3px;">${e.subtitle}</div>
         </div>
-        <div style="color:#4a5a7a;font-size:12px;white-space:nowrap;">${e.time}</div>
+        <div style="color:#4a5a7a;font-size:12px;white-space:nowrap;">${formatTime(e.timestamp)}</div>
+        <div class="event-menu-wrap">
+          <button class="event-menu-btn" onclick="toggleEventMenu(event, '${e.id}')">⋮</button>
+          <div class="event-menu-dropdown" id="menu-${e.id}">
+            <button onclick="deleteEvent(event, '${e.id}')">
+              ${e.status === 'OPEN' ? 'Close & delete stuck session' : 'Delete'}
+            </button>
+          </div>
+        </div>
       </div>
     `).join('');
   }
 
-  function filterEvents(type, btn) {
-    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderEvents(type);
+  function toggleEventMenu(evt, eventId) {
+    evt.stopPropagation();
+    document.querySelectorAll('.event-menu-dropdown.open').forEach(el => {
+      if (el.id !== `menu-${eventId}`) el.classList.remove('open');
+    });
+    document.getElementById(`menu-${eventId}`).classList.toggle('open');
+  }
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.event-menu-dropdown.open').forEach(el => el.classList.remove('open'));
+  });
+
+  async function deleteEvent(evt, eventId) {
+    evt.stopPropagation();
+    if (!confirm('Delete this event? This cannot be undone.')) return;
+    try {
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/events/${eventId}/`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) throw new Error('Delete failed');
+      const card = document.querySelector(`[data-event-id="${eventId}"]`);
+      if (card) card.remove();
+      delete eventsById[eventId];
+    } catch (err) {
+      console.error(err);
+      alert("Couldn't delete this event. Please try again.");
+    }
   }
 
-  renderEvents('all');
+  function stepperHtml(event) {
+    // ENRICHED events are functionally "done" even though pipeline_stage
+    // might still say something earlier if the event never advanced through
+    // every stage explicitly (e.g. enrichment ran without a recognized face).
+    let currentIndex = PIPELINE_STEPS.findIndex(s => s.key === event.pipeline_stage);
+    if (event.is_enriched) currentIndex = PIPELINE_STEPS.length - 1;
+    if (currentIndex === -1) currentIndex = 0;
+
+    return PIPELINE_STEPS.map((step, i) => {
+      const isDone = i < currentIndex || (i === currentIndex && event.is_enriched);
+      const isActive = i === currentIndex && !event.is_enriched;
+      const dotClass = isDone ? 'done' : (isActive ? 'active' : 'pending');
+      const labelClass = isDone ? 'done' : (isActive ? 'active' : '');
+      const isLast = i === PIPELINE_STEPS.length - 1;
+      return `
+        <div class="step-row">
+          <div class="step-dot-col">
+            <div class="step-dot ${dotClass}"></div>
+            ${!isLast ? `<div class="step-line ${isDone ? 'done' : ''}"></div>` : ''}
+          </div>
+          <div class="step-label ${labelClass}">${step.label}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function openEventDetail(id) {
+    const e = eventsById[id];
+    if (!e) return;
+
+    const statusText = e.status === 'OPEN'
+      ? "Still watching — this session hasn't closed yet."
+      : e.is_enriched
+        ? "Fully processed — clip and AI summary attached."
+        : "Closed, waiting on clip/summary processing.";
+
+    document.getElementById('eventModalBody').innerHTML = `
+      <button class="event-modal-close" onclick="closeEventDetail()">&times;</button>
+      <div style="font-size:17px;font-weight:600;color:white;">${e.title}</div>
+      <div style="font-size:13px;color:#6a8aaa;margin-top:4px;">${statusText}</div>
+
+      ${e.clip_url
+        ? `<video class="event-modal-media" src="${e.clip_url}" controls></video>`
+        : e.thumbnail_url
+          ? `<img class="event-modal-media" src="${e.thumbnail_url}" alt="Snapshot">`
+          : ''}
+
+      <div class="stepper">${stepperHtml(e)}</div>
+
+      ${e.event_summary ? `<div style="color:#cdd9ef;font-size:14px;line-height:1.5;margin-bottom:10px;">${e.event_summary}</div>` : ''}
+
+      <div class="event-modal-meta">
+        <span><b>Camera:</b> ${e.camera_name || e.camera_location || '—'}</span>
+        <span><b>Confidence:</b> ${e.confidence_score ? Math.round(e.confidence_score * 100) + '%' : '—'}</span>
+        <span><b>Duration:</b> ${e.duration_seconds ? e.duration_seconds + 's' : '—'}</span>
+        <span><b>Time:</b> ${new Date(e.timestamp).toLocaleString()}</span>
+      </div>
+    `;
+    document.getElementById('eventModalOverlay').classList.remove('hidden');
+  }
+
+  function closeEventDetail() {
+    document.getElementById('eventModalOverlay').classList.add('hidden');
+  }
+
+  async function loadEvents(category = 'all') {
+    currentCategory = category;
+    renderSkeleton();
+    try {
+      const res = await fetch(`${API_BASE}/homes/${HOME_ID}/events/?category=${encodeURIComponent(category)}&limit=100`, {
+        headers: authHeaders({ 'Accept': 'application/json' }),
+      });
+      if (handleAuthFailure(res)) return;
+      if (!res.ok) throw new Error('Failed to load events');
+      const events = await res.json();
+      renderEvents(events);
+    } catch (err) {
+      console.error(err);
+      document.getElementById('eventList').innerHTML =
+        `<div class="grid-message is-error">Could not load activity. Please check your connection and refresh.</div>`;
+    }
+  }
+
+  function filterEvents(category, btn) {
+    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadEvents(category);
+  }
+
+  loadEvents('all');
+
+  // Light auto-refresh so "LIVE" (OPEN) sessions update without a manual
+  // reload — keeps the timeline feeling real-time without websockets.
+  setInterval(() => loadEvents(currentCategory), 15000);
 </script>
 </body>
 </html>

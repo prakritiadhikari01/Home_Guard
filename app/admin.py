@@ -6,6 +6,11 @@ from app.infrastructure.db.models.user_settings_model import UserSettings
 from app.infrastructure.db.models.home_settings_model import HomeSettings
 import json
 
+from django.utils.html import format_html
+
+from app.infrastructure.db.models.alerts_model import Alert
+
+
 print("APP ADMIN LOADED")
 
 
@@ -189,3 +194,152 @@ class FaceProfileAdmin(admin.ModelAdmin):
         )
 
     formatted_embeddings.short_description = "Embedding JSON"
+
+
+@admin.register(Alert)
+class AlertAdmin(admin.ModelAdmin):
+    """
+    Admin interface for security alerts.
+    """
+
+    list_display = (
+        "id",
+        "home",
+        "event",
+        "severity_badge",
+        "reason",
+        "status_badge",
+        "created_at",
+        "resolved_at",
+        "resolved_by",
+    )
+
+    list_filter = (
+        "status",
+        "severity",
+        "reason",
+        "created_at",
+        "home",
+    )
+
+    search_fields = (
+        "id",
+        "home__name",
+        "event__id",
+        "reason",
+    )
+
+    readonly_fields = (
+        "id",
+        "home",
+        "event",
+        "severity",
+        "reason",
+        "created_at",
+        "resolved_at",
+        "resolved_by",
+    )
+
+    ordering = ("-created_at",)
+
+    date_hierarchy = "created_at"
+
+    list_select_related = (
+        "home",
+        "event",
+        "resolved_by",
+    )
+
+    actions = (
+        "mark_resolved",
+        "mark_dismissed",
+    )
+
+    fieldsets = (
+        (
+            "Alert",
+            {
+                "fields": (
+                    "id",
+                    "home",
+                    "event",
+                )
+            },
+        ),
+        (
+            "Details",
+            {
+                "fields": (
+                    "severity",
+                    "reason",
+                    "status",
+                )
+            },
+        ),
+        (
+            "Resolution",
+            {
+                "fields": (
+                    "resolved_by",
+                    "resolved_at",
+                )
+            },
+        ),
+        (
+            "Metadata",
+            {
+                "fields": (
+                    "created_at",
+                )
+            },
+        ),
+    )
+
+    def severity_badge(self, obj):
+        colors = {
+            "WARNING": "#f39c12",
+            "CRITICAL": "#e74c3c",
+        }
+
+        color = colors.get(obj.severity, "#7f8c8d")
+
+        return format_html(
+            '<strong style="color:{};">{}</strong>',
+            color,
+            obj.severity,
+        )
+
+    severity_badge.short_description = "Severity"
+
+    def status_badge(self, obj):
+        colors = {
+            "ACTIVE": "#d63031",
+            "RESOLVED": "#27ae60",
+            "DISMISSED": "#636e72",
+        }
+
+        color = colors.get(obj.status, "#000")
+
+        return format_html(
+            '<strong style="color:{};">{}</strong>',
+            color,
+            obj.status,
+        )
+
+    status_badge.short_description = "Status"
+
+    @admin.action(description="Mark selected alerts as Resolved")
+    def mark_resolved(self, request, queryset):
+        from django.utils import timezone
+
+        queryset.filter(status="ACTIVE").update(
+            status="RESOLVED",
+            resolved_by=request.user,
+            resolved_at=timezone.now(),
+        )
+
+    @admin.action(description="Dismiss selected alerts")
+    def mark_dismissed(self, request, queryset):
+        queryset.filter(status="ACTIVE").update(
+            status="DISMISSED",
+        )

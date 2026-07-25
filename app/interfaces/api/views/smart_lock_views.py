@@ -1,4 +1,3 @@
-# app/interfaces/api/views/smart_lock_views.py
 from django.shortcuts import get_object_or_404
 
 from rest_framework.views import APIView
@@ -13,6 +12,7 @@ from app.application.services.smart_lock_service import SmartLockService
 from app.interfaces.api.serializers.smart_lock_serializer import (
     SmartLockSerializer,
     SmartLockDetailSerializer,
+    UnlockAttemptSerializer,
 )
 
 
@@ -23,11 +23,16 @@ class UnlockDoorView(APIView):
         home = get_object_or_404(Home, id=home_id)
         device = get_object_or_404(Device, id=lock_id, home=home)
 
-        result = SmartLockService.manual_unlock(
+        smart_lock, verification_id = SmartLockService.request_unlock(
             acting_user=request.user,
             device=device,
         )
-        return Response(result)
+        data = UnlockAttemptSerializer({
+            "status": smart_lock.status,
+            "verification_id": verification_id,
+            "message": "Look at the camera on the door.",
+        }).data
+        return Response(data, status=202)
 
 
 class LockDoorView(APIView):
