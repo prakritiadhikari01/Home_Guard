@@ -34,7 +34,7 @@ Owners and admins can override individual permissions for any member. A separate
 
 ## 3. Architecture
 
-<img width="1005" height="1820" alt="activity drawio" src="https://github.com/user-attachments/assets/580671fa-d136-4afc-a148-ef1d9eb92e03" />
+<img width="554" height="794" alt="architecture" src="https://github.com/user-attachments/assets/9a99afed-28cb-4286-b2fd-932b6d23bc4c" />
 
 ## 4. Core Workflows
 
