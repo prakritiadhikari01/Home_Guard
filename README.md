@@ -34,27 +34,7 @@ Owners and admins can override individual permissions for any member. A separate
 
 ## 3. Architecture
 
-```
- Browser (dashboard, chat)
-        │
-        ▼
- Django backend ──► Celery workers ──► HomeGuardAI (FastAPI)
-  Interfaces                              detect · track · recognize
-  Application                             summarize · assistant
-  Domain             ◄── events, clips ───┘
-  Infrastructure
-        │
-   PostgreSQL · Cloudinary
-```
-
-Clean Architecture layers:
-
-| Layer | Contents |
-|---|---|
-| Interfaces | DRF views, serializers, permission classes, URL routing, server-rendered templates |
-| Application | Use-case services: Home, HomeMember, HomeInvitation, Device, SmartLock, Enrollment, Dashboard, DetectionEvent |
-| Domain | Framework-independent entities, `AccessPolicy`, `EventOrchestrator` |
-| Infrastructure | Django ORM models, repositories, signals, `AIClient` |
+<img width="1005" height="1820" alt="activity drawio" src="https://github.com/user-attachments/assets/580671fa-d136-4afc-a148-ef1d9eb92e03" />
 
 ## 4. Core Workflows
 
